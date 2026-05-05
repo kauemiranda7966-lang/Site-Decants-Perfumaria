@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Decant's Perfumaria</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 🔥 BANNER -->
+<section class="banner">
+  <img src="img/banner/banner.png" class="banner-img">
+</section>
+
+<!-- 🔍 BUSCA -->
+<section class="busca">
+  <input 
+    type="text" 
+    id="searchInput" 
+    placeholder="🔎 Buscar perfume..."
+    onkeyup="pesquisarProdutos()"
+  >
+</section>
+
+<!-- ⭐ DESTAQUES -->
+<section class="destaques">
+  <h2>Destaques</h2>
+
+  <div class="destaque-grid">
+    <div class="card">
+      <img src="img/produtos/masculinos/bleu_de_chanel.png">
+      <h3>Bleu de Chanel</h3>
+      <div class="precos">
+        <div>5ml <strong>R$ 80,99</strong></div>
+        <div>10ml <strong>R$ 139,99</strong></div>
+      </div>
+      <div class="botoes">
+        <button class="btn-comprar" onclick="comprar('Bleu de Chanel')">🛒</button>
+        <button class="btn-ver">+</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <img src="img/produtos/femininos/libre_yves_saint_laurent.png">
+      <h3>Libre</h3>
+      <div class="precos">
+        <div>5ml <strong>R$ 69,99</strong></div>
+        <div>10ml <strong>R$ 129,99</strong></div>
+      </div>
+      <div class="botoes">
+        <button class="btn-comprar" onclick="comprar('Libre')">🛒</button>
+        <button class="btn-ver">+</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MASCULINOS ================= -->
+
+<div class="scroll-catalogo auto-scroll">
+
+  <!-- DIOR -->
+  <div class="card">
+    <img src="img/produtos/masculinos/dior-sauvage.png">
+    <h3>Dior Sauvage</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 109,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Sauvage')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/dior_homme_sport.png">
+    <h3>Dior Homme Sport</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 66,99</strong></div>
+      <div>10ml <strong>R$ 105,00</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Dior Homme Sport')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- CHANEL -->
+  <div class="card">
+    <img src="img/produtos/masculinos/bleu_de_chanel.png">
+    <h3>Bleu de Chanel</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 80,99</strong></div>
+      <div>10ml <strong>R$ 139,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Bleu de Chanel')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/allure_homme_sport.png">
+    <h3>Allure Homme Sport</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 80,99</strong></div>
+      <div>10ml <strong>R$ 139,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Allure Homme Sport')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- ARMAF -->
+  <div class="card">
+    <img src="img/produtos/masculinos/club_de_nuit_intense.png">
+    <h3>Club de Nuit Intense</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 54,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Club de Nuit Intense')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- LATTAFA -->
+  <div class="card">
+    <img src="img/produtos/masculinos/asad_lattafa.png">
+    <h3>Asad Lattafa</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Asad Lattafa')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- CAROLINA HERRERA -->
+  <div class="card">
+    <img src="img/produtos/masculinos/212_vip_black.png">
+    <h3>212 VIP Black</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 46,99</strong></div>
+      <div>10ml <strong>R$ 75,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('212 VIP Black')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/212_men.png">
+    <h3>212 Men</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('212 Men')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- OUTROS -->
+  <div class="card">
+    <img src="img/produtos/masculinos/Encre_Noire.png">
+    <h3>Encre Noire</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 99,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Encre Noire')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/Ferrari_Black.png">
+    <h3>Ferrari Black</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 34,99</strong></div>
+      <div>10ml <strong>R$ 49,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Ferrari Black')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- JPG -->
+  <div class="card">
+    <img src="img/produtos/masculinos/le_male_elixir.png">
+    <h3>Le Male Elixir</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 114,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Le Male Elixir')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/le_male_le_parfum.png">
+    <h3>Le Male Le Parfum</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Le Male Le Parfum')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <!-- PACO -->
+  <div class="card">
+    <img src="img/produtos/masculinos/one_million_paco_rabanne.png">
+    <h3>One Million</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 46,99</strong></div>
+      <div>10ml <strong>R$ 74,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('One Million')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/Phantom_Paco_Rabanne.png">
+    <h3>Phantom</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 49,99</strong></div>
+      <div>10ml <strong>R$ 84,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Phantom')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/Invictus_Victory.png">
+    <h3>Invictus Victory</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 94,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Invictus Victory')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/Invictus_Victory_Elixir.png">
+    <h3>Invictus Victory Elixir</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 94,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Invictus Victory Elixir')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/Silver_Scence.png">
+    <h3>Silver Scent</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Silver Scent')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/versace_eros.png">
+    <h3>Versace Eros</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 69,99</strong></div>
+      <div>10ml <strong>R$ 99,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Versace Eros')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/homme_Issey_miyake.png">
+    <h3>L'eau d'Issey Miyake</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('L eau Issey Miyake')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/masculinos/Hugo_Boss_Bottled_Night.png">
+    <h3>Hugo Boss Night</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Hugo Boss Night')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= FEMININOS ================= -->
+
+<div class="scroll-catalogo auto-scroll">
+
+  <div class="card">
+    <img src="img/produtos/femininos/Good_Girl.jpg">
+    <h3>Good Girl</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 94,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Good Girl')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/scandal.jpg">
+    <h3>Scandal Feminino</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 109,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Scandal Feminino')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/libre_yves_saint_laurent.png">
+    <h3>Libre Yves Saint</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 69,99</strong></div>
+      <div>10ml <strong>R$ 129,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Libre Yves Saint')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/yara_rosa.png">
+    <h3>Yara Rosa</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Yara Rosa')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/la_vie_est_belle.png">
+    <h3>La Vie Est Belle</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 89,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('La Vie Est Belle')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/212_vip_rose.png">
+    <h3>212 VIP Rosé</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 89,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('212 VIP Rose')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/lady_million.png">
+    <h3>Lady Million</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 109,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Lady Million')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/issey_miyake_fem.png">
+    <h3>Issey Miyake Fem</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 54,99</strong></div>
+      <div>10ml <strong>R$ 99,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Issey Miyake fem')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/afeef_lattafa.png">
+    <h3>Afeef Lattafa</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 44,99</strong></div>
+      <div>10ml <strong>R$ 69,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Afeef Lattafa')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/royal_amber_rougue.png">
+    <h3>Royal Amber Rouge</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 109,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Royal Amber')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/my_way.png">
+    <h3>My Way</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 109,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('My Way')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <img src="img/produtos/femininos/Idole.png">
+    <h3>Idôle</h3>
+    <div class="precos">
+      <div>5ml <strong>R$ 59,99</strong></div>
+      <div>10ml <strong>R$ 109,99</strong></div>
+    </div>
+    <div class="botoes">
+      <button onclick="comprar('Idole')">🛒</button>
+      <button>+</button>
+    </div>
+  </div>
+
+</div>
