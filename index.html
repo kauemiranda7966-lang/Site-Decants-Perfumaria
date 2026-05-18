@@ -2,140 +2,178 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Decant's Perfumaria</title>
 
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- FONT AWESOME -->
-  <link rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=15">
 
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  >
 </head>
 
 <body>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- TOPBAR -->
 <div class="topbar">
   ✦ FRETE GRÁTIS PARA TODO O BRASIL ACIMA DE R$199 ✦
 </div>
 
-<!-- HEADER -->
-
 <header class="header">
-
-<div class="logo">
-  <img src="img/logo/logo.png">
-</div>
+  <div class="logo">
+    <img src="img/logo/logo.png" alt="Decant's Perfumaria">
+  </div>
 
   <nav class="menu">
     <a href="#">Início</a>
     <a onclick="mostrarCategoria('masculino')">Masculinos</a>
     <a onclick="mostrarCategoria('feminino')">Femininos</a>
-    <a href="#">Contato</a>
+    <a href="contatos.html">Contato</a>
   </nav>
 
-  <!-- ICONS -->
-
   <div class="icons">
-  <i class="fa-solid fa-magnifying-glass"></i>
-  <i class="fa-regular fa-user"></i>
-  <i class="fa-solid fa-bag-shopping"></i>
-</div>
-
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <a href="admin.html" aria-label="Painel do dono"><i class="fa-regular fa-user"></i></a>
+    <i class="fa-solid fa-bag-shopping"></i>
+  </div>
 </header>
 
-<!-- BANNER -->
-
 <section class="banner">
-
-  <img src="img/banner/banner.png" class="banner-img">
+  <img src="img/banner/banner.png" class="banner-img" alt="Banner Decant's Perfumaria">
 
   <div class="banner-content">
-
     <button onclick="scrollToProdutos()">
       EXPLORAR CATÁLOGO
     </button>
-
   </div>
-
 </section>
 
-<!-- BUSCA -->
-
 <section class="busca-avancada">
-
   <div class="campo-busca">
     <i class="fa-solid fa-magnifying-glass"></i>
-
-    <input id="searchInput"
-    placeholder="Buscar perfume, marca ou fragrância...">
+    <input id="searchInput" placeholder="Buscar perfume, marca ou fragrância...">
   </div>
 
   <div class="filtro">
     <i class="fa-solid fa-layer-group"></i>
-
-    <select>
-      <option>Categoria</option>
+    <select id="categoriaFiltro">
+      <option value="">Categoria</option>
+      <option value="">Todos os perfumes</option>
+      <option value="masculino">Masculinos</option>
+      <option value="feminino">Femininos</option>
     </select>
   </div>
 
   <div class="filtro">
     <i class="fa-solid fa-venus-mars"></i>
-
-    <select>
-      <option>Gênero</option>
+    <select id="generoFiltro">
+      <option value="">Gênero</option>
+      <option value="">Todos</option>
+      <option value="masculino">Masculino</option>
+      <option value="feminino">Feminino</option>
     </select>
   </div>
 
   <div class="filtro">
     <i class="fa-solid fa-spa"></i>
-
-    <select>
-      <option>Família Olfativa</option>
+    <select id="familiaFiltro">
+      <option value="">Família Olfativa</option>
     </select>
   </div>
 
   <div class="filtro">
     <i class="fa-solid fa-fire"></i>
-
-    <select>
-      <option>Intensidade</option>
+    <select id="intensidadeFiltro">
+      <option value="">Intensidade</option>
     </select>
   </div>
 
   <button onclick="pesquisarProdutos()">
     FILTRAR
   </button>
-
 </section>
 
-<!-- DESTAQUES -->
-<section class="destaques">
-  <div class="destaque">
-    <img src="img/destaques/sauvage_elixir_d.png">
-    <div>
-      <h2>SAUVAGE ELIXIR</h2>
-      <p>R$ 59,99</p>
-      <button onclick="comprar('Sauvage')">COMPRAR</button>
-    </div>
+<section class="destaques-secao">
+  <div class="titulo-categoria">
+    <span></span>
+    <h2>DESTAQUES</h2>
+    <span></span>
   </div>
 
-  <div class="destaque">
-    <img src="img/destaques/la_vie_est_belle_d.png">
-    <div>
-      <h2>LA VIE EST BELLE</h2>
-      <p>R$ 54,99</p>
-      <button onclick="comprar('La Vie Est Belle')">COMPRAR</button>
+  <div class="destaques carousel-premium" aria-label="Destaques de perfumes">
+    <div class="carousel-slide ativo" data-produto="Dior Sauvage">
+      <img src="img/highlights/masculine/dior_sauvage.png" alt="Dior Sauvage">
+      <div class="carousel-conteudo">
+        <span class="selo-destaque">Mais vendidos&#128293;</span>
+        <p class="carousel-kicker">Masculino intenso</p>
+        <h2>DIOR SAUVAGE</h2>
+        <p class="carousel-preco">R$ 59,99</p>
+        <div class="acoes-destaque">
+          <button class="btn-comprar" onclick="comprar('Dior Sauvage')">COMPRAR</button>
+          <button class="btn-ver-mais" onclick="verMaisProduto('Dior Sauvage')">VER MAIS</button>
+        </div>
+      </div>
     </div>
+
+    <div class="carousel-slide" data-produto="La Vie Est Belle">
+      <img src="img/highlights/feminine/la_vie_est_belle.png" alt="La Vie Est Belle">
+      <div class="carousel-conteudo">
+        <span class="selo-destaque">Mais vendidos&#128293;</span>
+        <p class="carousel-kicker">Feminino assinatura</p>
+        <h2>LA VIE EST BELLE</h2>
+        <p class="carousel-preco">R$ 54,99</p>
+        <div class="acoes-destaque">
+          <button class="btn-comprar" onclick="comprar('La Vie Est Belle')">COMPRAR</button>
+          <button class="btn-ver-mais" onclick="verMaisProduto('La Vie Est Belle')">VER MAIS</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="carousel-slide" data-produto="Versace Eros">
+      <img src="img/highlights/masculine/versace_eros.png" alt="Versace Eros">
+      <div class="carousel-conteudo">
+        <span class="selo-destaque">Ofertas</span>
+        <strong class="selo-desconto">10% OFF</strong>
+        <p class="carousel-kicker">Energia sedutora</p>
+        <h2>VERSACE EROS</h2>
+        <p class="carousel-preco">R$ 69,99</p>
+        <div class="acoes-destaque">
+          <button class="btn-comprar" onclick="comprar('Versace Eros')">COMPRAR</button>
+          <button class="btn-ver-mais" onclick="verMaisProduto('Versace Eros')">VER MAIS</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="carousel-slide" data-produto="Yara Rosa">
+      <img src="img/highlights/feminine/yara_rosa.png" alt="Yara Rosa">
+      <div class="carousel-conteudo">
+        <span class="selo-destaque">Ofertas</span>
+        <strong class="selo-desconto">10% OFF</strong>
+        <p class="carousel-kicker">Doce moderno</p>
+        <h2>YARA ROSA</h2>
+        <p class="carousel-preco">R$ 54,99</p>
+        <div class="acoes-destaque">
+          <button class="btn-comprar" onclick="comprar('Yara Rosa')">COMPRAR</button>
+          <button class="btn-ver-mais" onclick="verMaisProduto('Yara Rosa')">VER MAIS</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="carousel-controle carousel-anterior" type="button" aria-label="Destaque anterior">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="carousel-controle carousel-proximo" type="button" aria-label="Próximo destaque">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+
+    <div class="carousel-indicadores" aria-label="Indicadores do carrossel"></div>
   </div>
 </section>
 
-<!-- PRODUTOS -->
 <section class="catalogo">
   <div class="catalogo-header">
     <div class="titulo-categoria">
@@ -143,7 +181,7 @@
       <h2>MASCULINOS</h2>
       <span></span>
     </div>
-    <button onclick="mostrarCategoria('masculino')">VER TODOS</button>
+    <button onclick="abrirCatalogo('masculino')">VER TODOS</button>
   </div>
   <div id="masculinosContainer" class="produtos-scroll"></div>
 
@@ -153,12 +191,11 @@
       <h2>FEMININOS</h2>
       <span></span>
     </div>
-    <button onclick="mostrarCategoria('feminino')">VER TODOS</button>
+    <button onclick="abrirCatalogo('feminino')">VER TODOS</button>
   </div>
   <div id="femininosContainer" class="produtos-scroll"></div>
 </section>
 
-<!-- BENEFÍCIOS -->
 <section class="beneficios">
   <div>
     <i class="fa-solid fa-truck-fast"></i>
@@ -185,7 +222,6 @@
   </div>
 </section>
 
-<!-- FOOTER -->
 <footer class="footer">
   <div>
     <h3>DECANT'S</h3>
@@ -204,6 +240,6 @@
   </div>
 </footer>
 
-<script src="js/script.js"></script>
+<script src="js/script.js?v=18"></script>
 </body>
 </html>

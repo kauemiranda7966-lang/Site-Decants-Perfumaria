@@ -1,43 +1,54 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Produtos</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Perfumes | Decant's Perfumaria</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css?v=15">
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  >
 </head>
-<body>
 
-<header>
-  <h1>Produtos</h1>
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="produtos.html">Produtos</a>
-    <a href="contato.html">Contato</a>
-  </nav>
-</header>
+<body class="pagina-catalogo">
+  <header class="catalogo-topo">
+    <a class="catalogo-voltar" href="index.html" aria-label="Voltar para o início">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Voltar</span>
+    </a>
 
-<section class="produtos">
-
-  <div class="grid">
-
-    <div class="card">
-      <img src="img/produtos/acqua.jpg">
-      <h3>Acqua di Gio</h3>
-      <p>5ml - R$ 49,90</p>
-      <a href="#" class="btn" onclick="comprar('Acqua di Gio 5ml')">Comprar</a>
+    <div class="catalogo-identidade">
+      <h1>CATÁLOGO DE PERFUMES</h1>
+      <p>DECANT'S PERFUMARIA</p>
     </div>
 
-    <div class="card">
-      <img src="img/produtos/sauvage.jpg">
-      <h3>Dior Sauvage</h3>
-      <p>10ml - R$ 79,90</p>
-      <a href="#" class="btn" onclick="comprar('Dior Sauvage 10ml')">Comprar</a>
+    <a class="catalogo-logo" href="index.html" aria-label="Decant's Perfumaria">
+      <img src="img/logo/logo.png" alt="Decant's Perfumaria">
+    </a>
+  </header>
+
+  <main class="catalogo-pagina">
+    <div class="catalogo-tabs" aria-label="Categorias do catálogo">
+      <a id="tabMasculino" href="produtos.html?categoria=masculino">Masculinos</a>
+      <a id="tabFeminino" href="produtos.html?categoria=feminino">Femininos</a>
     </div>
 
-  </div>
+    <div class="catalogo-subtitulo">
+      <span></span>
+      <h2 id="catalogoTituloCategoria">Perfumes</h2>
+      <span></span>
+    </div>
 
-</section>
+    <section id="catalogoPagina" class="catalogo-grid" aria-live="polite"></section>
+  </main>
 
-<script src="js/script.js"></script>
+  <script src="js/script.js?v=18"></script>
 </body>
 </html>
