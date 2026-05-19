@@ -51,7 +51,7 @@ leadTelefone.addEventListener("input", mascararTelefone);
 
 iniciarAdmin();
 
-// Funcao: iniciarAdmin
+// #INICIAR_ADMIN
 async function iniciarAdmin() {
   try {
     const sessao = await api("/api/session");
@@ -67,7 +67,7 @@ async function iniciarAdmin() {
   }
 }
 
-// Funcao: salvarLead
+// #SALVAR_LEAD
 async function salvarLead(event) {
   event.preventDefault();
   leadMensagem.hidden = true;
@@ -95,7 +95,7 @@ async function salvarLead(event) {
   }
 }
 
-// Funcao: tentarAcessoDono
+// #TENTAR_ACESSO_DONO
 async function tentarAcessoDono() {
   const usuario = document.getElementById("leadEmail").value.trim();
   const senha = leadTelefone.value.trim();
@@ -116,7 +116,7 @@ async function tentarAcessoDono() {
   }
 }
 
-// Funcao: entrarAdmin
+// #ENTRAR_ADMIN
 async function entrarAdmin(event) {
   event.preventDefault();
   loginErro.hidden = true;
@@ -140,7 +140,7 @@ async function entrarAdmin(event) {
   }
 }
 
-// Funcao: sair
+// #SAIR
 async function sair() {
   await api("/api/logout", { method: "POST" });
   autenticado = false;
@@ -149,7 +149,7 @@ async function sair() {
   limparFormulario();
 }
 
-// Funcao: alternarAcesso
+// #ALTERNAR_ACESSO
 function alternarAcesso(permitido, usuario = "") {
   leadCapture.hidden = permitido;
   loginAdmin.hidden = true;
@@ -161,13 +161,13 @@ function alternarAcesso(permitido, usuario = "") {
   adminStatus.textContent = permitido ? `Conectado como ${usuario}` : "Novidades, promocoes e alertas de perfumes selecionados.";
 }
 
-// Funcao: carregarProdutosAdmin
+// #CARREGAR_PRODUTOS_ADMIN
 async function carregarProdutosAdmin() {
   produtosAdmin = await api("/api/products");
   renderizarAdmin();
 }
 
-// Funcao: salvarProduto
+// #SALVAR_PRODUTO
 async function salvarProduto(event) {
   event.preventDefault();
   if (!autenticado) return;
@@ -200,7 +200,7 @@ async function salvarProduto(event) {
   await carregarProdutosAdmin();
 }
 
-// Funcao: editarProduto
+// #EDITAR_PRODUTO
 function editarProduto(indice) {
   const produto = produtosAdmin[indice];
   if (!produto) return;
@@ -224,7 +224,7 @@ function editarProduto(indice) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// Funcao: excluirProdutoSelecionado
+// #EXCLUIR_PRODUTO_SELECIONADO
 async function excluirProdutoSelecionado() {
   const indice = Number(campos.indice.value);
   if (!Number.isInteger(indice)) return;
@@ -238,7 +238,7 @@ async function excluirProdutoSelecionado() {
   await carregarProdutosAdmin();
 }
 
-// Funcao: limparFormulario
+// #LIMPAR_FORMULARIO
 function limparFormulario() {
   produtoForm.reset();
   campos.indice.value = "";
@@ -249,7 +249,7 @@ function limparFormulario() {
   produtoForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// Funcao: atualizarModoFormulario
+// #ATUALIZAR_MODO_FORMULARIO
 function atualizarModoFormulario(modo) {
   const editando = modo === "editar";
   formTitulo.textContent = editando ? "Editar produto" : "Adicionar produto";
@@ -257,7 +257,7 @@ function atualizarModoFormulario(modo) {
   formTitulo.classList.toggle("adicionar", !editando);
 }
 
-// Funcao: resetarCatalogo
+// #RESETAR_CATALOGO
 async function resetarCatalogo() {
   const confirmar = window.confirm("Restaurar o catalogo original? As alteracoes salvas no banco serao apagadas.");
   if (!confirmar) return;
@@ -267,7 +267,7 @@ async function resetarCatalogo() {
   await carregarProdutosAdmin();
 }
 
-// Funcao: renderizarAdmin
+// #RENDERIZAR_ADMIN
 function renderizarAdmin() {
   atualizarResumo();
 
@@ -304,14 +304,14 @@ function renderizarAdmin() {
   `).join("");
 }
 
-// Funcao: filtrarAdmin
+// #FILTRAR_ADMIN
 function filtrarAdmin(event) {
   filtroAdmin = event.currentTarget.dataset.filtro || "todos";
   filtrosAdmin.forEach(botao => botao.classList.toggle("ativo", botao.dataset.filtro === filtroAdmin));
   renderizarAdmin();
 }
 
-// Funcao: filtrarProdutoAdmin
+// #FILTRAR_PRODUTO_ADMIN
 function filtrarProdutoAdmin(produto) {
   if (filtroAdmin === "estoque") return Number(produto.estoque || 0) > 0;
   if (filtroAdmin === "promocao") return Boolean(produto.promocao);
@@ -320,7 +320,7 @@ function filtrarProdutoAdmin(produto) {
   return true;
 }
 
-// Funcao: atualizarResumo
+// #ATUALIZAR_RESUMO
 function atualizarResumo() {
   document.getElementById("totalProdutos").textContent = produtosAdmin.length;
   document.getElementById("totalEstoque").textContent = produtosAdmin.reduce((total, produto) => total + Number(produto.estoque || 0), 0);
@@ -328,7 +328,7 @@ function atualizarResumo() {
   document.getElementById("totalDestaques").textContent = produtosAdmin.filter(produto => produto.destaque).length;
 }
 
-// Funcao: precoFinalAdmin
+// #PRECO_FINAL_ADMIN
 function precoFinalAdmin(produto, volume) {
   if (volume === 10) {
     return produto.promocao && produto.precoPromocional10 ? produto.precoPromocional10 : produto.preco10;
@@ -337,7 +337,7 @@ function precoFinalAdmin(produto, volume) {
   return produto.promocao && produto.precoPromocional5 ? produto.precoPromocional5 : produto.preco5;
 }
 
-// Funcao: normalizarAdmin
+// #NORMALIZAR_ADMIN
 function normalizarAdmin(texto) {
   return String(texto || "")
     .normalize("NFD")
@@ -346,7 +346,7 @@ function normalizarAdmin(texto) {
     .trim();
 }
 
-// Funcao: mascararTelefone
+// #MASCARAR_TELEFONE
 function mascararTelefone(event) {
   if (/[a-zA-Z]/.test(event.target.value)) return;
 
@@ -363,7 +363,7 @@ function mascararTelefone(event) {
   event.target.value = `(${ddd}) ${inicio}${fim ? `-${fim}` : ""}`;
 }
 
-// Funcao: api
+// #API
 async function api(url, options = {}) {
   const resposta = await fetch(url, {
     credentials: "same-origin",

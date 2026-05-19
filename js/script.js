@@ -25,13 +25,13 @@
   { nome: "Libre Yves Saint", categoria: "feminino", img: "img/produtos/femininos/libre_yves_saint_laurent.png", preco5: "69,99", preco10: "129,99" },
   { nome: "Yara Rosa", categoria: "feminino", img: "img/produtos/femininos/yara_rosa.png", preco5: "54,99", preco10: "69,99" },
   { nome: "La Vie Est Belle", categoria: "feminino", img: "img/produtos/femininos/la_vie_est_belle.png", preco5: "54,99", preco10: "89,99" },
-  { nome: "212 VIP RosÃ©", categoria: "feminino", img: "img/produtos/femininos/212_vip_rose.png", preco5: "54,99", preco10: "89,99" },
+  { nome: "212 VIP Rosé", categoria: "feminino", img: "img/produtos/femininos/212_vip_rose.png", preco5: "54,99", preco10: "89,99" },
   { nome: "Lady Million", categoria: "feminino", img: "img/produtos/femininos/lady_million.png", preco5: "59,99", preco10: "109,99" },
   { nome: "Issey Miyake Fem", categoria: "feminino", img: "img/produtos/femininos/issey_miyake_fem.png", preco5: "54,99", preco10: "99,99" },
   { nome: "Afeef Lattafa", categoria: "feminino", img: "img/produtos/femininos/afeef_lattafa.png", preco5: "44,99", preco10: "69,99" },
   { nome: "Royal Amber Rouge", categoria: "feminino", img: "img/produtos/femininos/royal_amber_rougue.png", preco5: "59,99", preco10: "109,99" },
   { nome: "My Way", categoria: "feminino", img: "img/produtos/femininos/my_way.png", preco5: "59,99", preco10: "109,99" },
-  { nome: "IdÃ´le", categoria: "feminino", img: "img/produtos/femininos/Idole.png", preco5: "59,99", preco10: "109,99" }
+  { nome: "Idôle", categoria: "feminino", img: "img/produtos/femininos/Idole.png", preco5: "59,99", preco10: "109,99" }
 ];
 
 const produtosDestaquePadrao = ["Dior Sauvage", "La Vie Est Belle", "Versace Eros", "Yara Rosa"];
@@ -42,38 +42,38 @@ let checkoutProdutoAtual = null;
 
 const notasPorProduto = {
   "Dior Sauvage": "bergamota, pimenta, lavanda, ambroxan e madeiras",
-  "Dior Homme Sport": "limÃ£o, bergamota, gengibre, elemi e madeiras",
-  "Bleu de Chanel": "cÃ­tricos, hortelÃ£, gengibre, incenso, Ã¢mbar e sÃ¢ndalo",
-  "Allure Homme Sport": "laranja, notas marinhas, pimenta, almÃ­scar e fava tonka",
-  "Club de Nuit Intense": "limÃ£o, abacaxi, bergamota, rosa, bÃ©tula, almÃ­scar e Ã¢mbar",
-  "Asad Lattafa": "pimenta preta, tabaco, baunilha, Ã¢mbar, patchouli e madeiras",
-  "212 VIP Black": "absinto, lavanda, anis, baunilha e almÃ­scar",
-  "212 Men": "folhas verdes, especiarias, lavanda, sÃ¢ndalo e almÃ­scar",
-  "Encre Noire": "cipreste, vetiver, cashmere, almÃ­scar e madeira",
-  "Ferrari Black": "maÃ§Ã£, ameixa, bergamota, canela, baunilha e cedro",
-  "Le Male Elixir": "lavanda, hortelÃ£, baunilha, mel, tabaco e fava tonka",
-  "Le Male Le Parfum": "cardamomo, lavanda, Ã­ris, baunilha e madeiras",
-  "One Million": "toranja, canela, couro, Ã¢mbar, patchouli e especiarias",
-  "Phantom": "lavanda, limÃ£o, maÃ§Ã£, patchouli, baunilha e vetiver",
-  "Invictus Victory": "limÃ£o, pimenta rosa, lavanda, baunilha, fava tonka e Ã¢mbar",
+  "Dior Homme Sport": "limão, bergamota, gengibre, elemi e madeiras",
+  "Bleu de Chanel": "cítricos, hortelã, gengibre, incenso, âmbar e sândalo",
+  "Allure Homme Sport": "laranja, notas marinhas, pimenta, almíscar e fava tonka",
+  "Club de Nuit Intense": "limão, abacaxi, bergamota, rosa, bétula, almíscar e âmbar",
+  "Asad Lattafa": "pimenta preta, tabaco, baunilha, âmbar, patchouli e madeiras",
+  "212 VIP Black": "absinto, lavanda, anis, baunilha e almíscar",
+  "212 Men": "folhas verdes, especiarias, lavanda, sândalo e almíscar",
+  "Encre Noire": "cipreste, vetiver, cashmere, almíscar e madeira",
+  "Ferrari Black": "maçã, ameixa, bergamota, canela, baunilha e cedro",
+  "Le Male Elixir": "lavanda, hortelã, baunilha, mel, tabaco e fava tonka",
+  "Le Male Le Parfum": "cardamomo, lavanda, íris, baunilha e madeiras",
+  "One Million": "toranja, canela, couro, âmbar, patchouli e especiarias",
+  "Phantom": "lavanda, limão, maçã, patchouli, baunilha e vetiver",
+  "Invictus Victory": "limão, pimenta rosa, lavanda, baunilha, fava tonka e âmbar",
   "Invictus Victory Elixir": "lavanda, cardamomo, pimenta, incenso, baunilha e fava tonka",
-  "Silver Scent": "flor de laranjeira, limÃ£o, lavanda, cardamomo, fava tonka e Ã¢mbar",
-  "Versace Eros": "hortelÃ£, maÃ§Ã£ verde, limÃ£o, fava tonka, baunilha e cedro",
-  "L'eau d'Issey Miyake": "yuzu, bergamota, noz-moscada, lÃ­rio, tabaco e sÃ¢ndalo",
-  "Hugo Boss Night": "lavanda, bÃ©tula, violeta, cardamomo e madeiras",
-  "Scandal Masculino EDT": "sÃ¡lvia, mandarina, caramelo, fava tonka, vetiver e cedro",
-  "Good Girl": "amÃªndoa, cafÃ©, jasmim, tuberosa, cacau, fava tonka e baunilha",
-  "Scandal Feminino": "laranja sanguÃ­nea, mel, gardÃªnia, patchouli e caramelo",
-  "Libre Yves Saint": "lavanda, mandarina, flor de laranjeira, jasmim, baunilha e Ã¢mbar gris",
-  "Yara Rosa": "orquÃ­dea, frutas tropicais, baunilha, almÃ­scar e notas doces",
-  "La Vie Est Belle": "Ã­ris, pera, cassis, jasmim, flor de laranjeira, patchouli e pralinÃª",
-  "212 VIP RosÃ©": "champagne rosÃ©, pÃªssego, flor de pÃªssego, almÃ­scar e Ã¢mbar",
+  "Silver Scent": "flor de laranjeira, limão, lavanda, cardamomo, fava tonka e âmbar",
+  "Versace Eros": "hortelã, maçã verde, limão, fava tonka, baunilha e cedro",
+  "L'eau d'Issey Miyake": "yuzu, bergamota, noz-moscada, lírio, tabaco e sândalo",
+  "Hugo Boss Night": "lavanda, bétula, violeta, cardamomo e madeiras",
+  "Scandal Masculino EDT": "sálvia, mandarina, caramelo, fava tonka, vetiver e cedro",
+  "Good Girl": "amêndoa, café, jasmim, tuberosa, cacau, fava tonka e baunilha",
+  "Scandal Feminino": "laranja sanguínea, mel, gardênia, patchouli e caramelo",
+  "Libre Yves Saint": "lavanda, mandarina, flor de laranjeira, jasmim, baunilha e âmbar gris",
+  "Yara Rosa": "orquídea, frutas tropicais, baunilha, almíscar e notas doces",
+  "La Vie Est Belle": "íris, pera, cassis, jasmim, flor de laranjeira, patchouli e pralinê",
+  "212 VIP Rosé": "champagne rosé, pêssego, flor de pêssego, almíscar e âmbar",
   "Lady Million": "framboesa, neroli, flor de laranjeira, jasmim, mel e patchouli",
-  "Issey Miyake Fem": "lÃ³tus, frÃ©sia, rosa, lÃ­rio, peÃ´nia, madeiras e almÃ­scar",
-  "Afeef Lattafa": "bergamota, pimenta rosa, jasmim, tuberosa, baunilha e sÃ¢ndalo",
-  "Royal Amber Rouge": "aÃ§afrÃ£o, jasmim, Ã¢mbar, madeiras, resinas e almÃ­scar",
+  "Issey Miyake Fem": "lótus, frésia, rosa, lírio, peônia, madeiras e almíscar",
+  "Afeef Lattafa": "bergamota, pimenta rosa, jasmim, tuberosa, baunilha e sândalo",
+  "Royal Amber Rouge": "açafrão, jasmim, âmbar, madeiras, resinas e almíscar",
   "My Way": "bergamota, flor de laranjeira, tuberosa, jasmim, baunilha e cedro",
-  "IdÃ´le": "bergamota, pera, rosa, jasmim, almÃ­scar branco e baunilha"
+  "Idôle": "bergamota, pera, rosa, jasmim, almíscar branco e baunilha"
 };
 
 const marcasPorProduto = {
@@ -102,14 +102,14 @@ const marcasPorProduto = {
   "Scandal Feminino": "Jean Paul Gaultier",
   "Libre Yves Saint": "Yves Saint Laurent",
   "Yara Rosa": "Lattafa",
-  "La Vie Est Belle": "LancÃ´me",
-  "212 VIP RosÃ©": "Carolina Herrera",
+  "La Vie Est Belle": "Lancôme",
+  "212 VIP Rosé": "Carolina Herrera",
   "Lady Million": "Paco Rabanne",
   "Issey Miyake Fem": "Issey Miyake",
   "Afeef Lattafa": "Lattafa",
   "Royal Amber Rouge": "Lattafa",
   "My Way": "Giorgio Armani",
-  "IdÃ´le": "LancÃ´me"
+  "Idôle": "Lancôme"
 };
 
 const logosPorMarca = {
@@ -127,7 +127,7 @@ const logosPorMarca = {
   "Issey Miyake": "img/marcas/issey-miyake.png",
   "Hugo Boss": "img/marcas/hugo-boss.png",
   "Yves Saint Laurent": "img/marcas/yves-saint-laurent.png",
-  "LancÃ´me": "img/marcas/lancome.png",
+  "Lancôme": "img/marcas/lancome.png",
   "Giorgio Armani": "img/marcas/giorgio-armani.png",
   "Decant's": "img/marcas/decants.png"
 };
@@ -168,7 +168,16 @@ const imagensDestaquePorProduto = {
   "idole": "img/highlights/feminine/idole.png"
 };
 
-// Funcao: carregarProdutosLoja
+const imagensModalPorProduto = {
+  "dior sauvage": [
+    "img/modal/masculinos/dior_sauvage1.png",
+    "img/modal/masculinos/dior_sauvage2.png",
+    "img/modal/masculinos/dior_sauvage3.png",
+    "img/modal/masculinos/dior_sauvage4.png"
+  ]
+};
+
+// #CARREGAR_PRODUTOS_LOJA
 async function carregarProdutosLoja() {
   if (!window.location.protocol.startsWith("http")) return;
 
@@ -185,27 +194,42 @@ async function carregarProdutosLoja() {
   }
 }
 
-// Funcao: normalizarProdutoLoja
+// #NORMALIZAR_PRODUTO_LOJA
 function normalizarProdutoLoja(produto) {
   const produtoCompleto = {
     ...produto,
+    nome: repararTextoCatalogo(produto.nome || ""),
+    chamada: repararTextoCatalogo(produto.chamada || ""),
     estoque: Number.isFinite(Number(produto.estoque)) ? Number(produto.estoque) : 10,
     promocao: Boolean(produto.promocao),
     precoPromocional5: produto.precoPromocional5 || "",
     precoPromocional10: produto.precoPromocional10 || "",
     destaque: Boolean(produto.destaque),
     selo: produto.selo || "",
-    chamada: produto.chamada || ""
+    img: produto.img || ""
   };
 
   if (!("destaque" in produto)) {
-    produtoCompleto.destaque = produtosDestaquePadrao.includes(produto.nome);
+    produtoCompleto.destaque = produtosDestaquePadrao.includes(produtoCompleto.nome);
   }
 
   return produtoCompleto;
 }
 
-// Funcao: obterPrecoProduto
+// #REPARAR_TEXTO_CATALOGO
+function repararTextoCatalogo(texto) {
+  const valor = String(texto || "");
+  if (!/[\u00c3\u00c2\ufffd]/.test(valor)) return valor;
+
+  try {
+    const bytes = Array.from(valor, caractere => `%${caractere.charCodeAt(0).toString(16).padStart(2, "0")}`).join("");
+    return decodeURIComponent(bytes);
+  } catch (error) {
+    return valor;
+  }
+}
+
+// #OBTER_PRECO_PRODUTO
 function obterPrecoProduto(produto, volume) {
   const precoBase = volume === 10 ? produto.preco10 : produto.preco5;
   const precoPromocional = volume === 10 ? produto.precoPromocional10 : produto.precoPromocional5;
@@ -213,7 +237,7 @@ function obterPrecoProduto(produto, volume) {
   return produto.promocao && precoPromocional ? precoPromocional : precoBase;
 }
 
-// Funcao: renderizarPrecoCard
+// #RENDERIZAR_PRECO_CARD
 function renderizarPrecoCard(produto, volume) {
   const precoBase = volume === 10 ? produto.preco10 : produto.preco5;
   const precoFinal = obterPrecoProduto(produto, volume);
@@ -226,7 +250,7 @@ function renderizarPrecoCard(produto, volume) {
   return `<p>${label} R$ ${precoBase}</p>`;
 }
 
-// Funcao: produtoDisponivel
+// #PRODUTO_DISPONIVEL
 function produtoDisponivel(produto) {
   return Number(produto.estoque) > 0;
 }
@@ -276,13 +300,25 @@ if (searchInput) {
   if (filtro) filtro.addEventListener("change", () => pesquisarProdutos(false));
 });
 
-// Funcao: preencherFiltrosAvancados
+document.addEventListener("keydown", event => {
+  if (!event.target.classList?.contains("modal-volume-card")) return;
+  if (!["Enter", " "].includes(event.key)) return;
+
+  event.preventDefault();
+  selecionarVolumeModal(event.target);
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") fecharDetalhesProduto();
+});
+
+// #PREENCHER_FILTROS_AVANCADOS
 function preencherFiltrosAvancados() {
   preencherSelect(familiaFiltro, obterOpcoesDetalhes("familia"));
   preencherSelect(intensidadeFiltro, obterOpcoesDetalhes("intensidade"));
 }
 
-// Funcao: preencherSelect
+// #PREENCHER_SELECT
 function preencherSelect(select, opcoes) {
   if (!select) return;
 
@@ -294,20 +330,20 @@ function preencherSelect(select, opcoes) {
   });
 }
 
-// Funcao: obterOpcoesDetalhes
+// #OBTER_OPCOES_DETALHES
 function obterOpcoesDetalhes(campo) {
   return [...new Set(produtos.map(produto => montarDetalhesProduto(produto)[campo]))].sort((a, b) =>
     a.localeCompare(b, "pt-BR")
   );
 }
 
-// Funcao: mostrarTodos
+// #MOSTRAR_TODOS
 function mostrarTodos() {
   renderProdutos(produtos.filter(produto => produto.categoria === "masculino"), masculinosContainer);
   renderProdutos(produtos.filter(produto => produto.categoria === "feminino"), femininosContainer);
 }
 
-// Funcao: atualizarVitrine
+// #ATUALIZAR_VITRINE
 function atualizarVitrine() {
   if (familiaFiltro) {
     preencherSelectComOpcoes(familiaFiltro, obterOpcoesDetalhes("familia"));
@@ -330,7 +366,7 @@ function atualizarVitrine() {
   }
 }
 
-// Funcao: preencherSelectComOpcoes
+// #PREENCHER_SELECT_COM_OPCOES
 function preencherSelectComOpcoes(select, opcoes) {
   const valorAtual = select.value;
   const primeiraOpcao = select.options[0]?.cloneNode(true);
@@ -340,7 +376,7 @@ function preencherSelectComOpcoes(select, opcoes) {
   select.value = [...select.options].some(option => option.value === valorAtual) ? valorAtual : "";
 }
 
-// Funcao: mostrarCategoria
+// #MOSTRAR_CATEGORIA
 function mostrarCategoria(tipo) {
   const filtrados = produtos.filter(produto => produto.categoria === tipo);
 
@@ -355,12 +391,12 @@ function mostrarCategoria(tipo) {
   }
 }
 
-// Funcao: abrirCatalogo
+// #ABRIR_CATALOGO
 function abrirCatalogo(tipo) {
   window.location.href = `produtos.html?categoria=${tipo}`;
 }
 
-// Funcao: renderProdutos
+// #RENDER_PRODUTOS
 function renderProdutos(lista, container) {
   if (!container) return;
 
@@ -371,13 +407,14 @@ function renderProdutos(lista, container) {
     return;
   }
 
-  lista.forEach(produto => {
+  lista.forEach((produto, index) => {
     const semEstoque = !produtoDisponivel(produto);
 
     container.innerHTML += `
-      <div class="card ${semEstoque ? "produto-esgotado" : ""}">
-        <img src="${produto.img}" alt="${produto.nome}">
-        ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
+      <div class="card ${semEstoque ? "produto-esgotado" : ""}" style="--card-index: ${index};">
+        <span class="card-brilho" aria-hidden="true"></span>
+        <img src="${produto.img}" alt="${produto.nome}" loading="lazy">
+        ${produto.promocao ? '<span class="tag-promocao">Promoção</span>' : ""}
         <h3>${produto.nome}</h3>
         ${renderizarPrecoCard(produto, 5)}
         ${renderizarPrecoCard(produto, 10)}
@@ -392,7 +429,7 @@ function renderProdutos(lista, container) {
   });
 }
 
-// Funcao: renderizarPaginaCatalogo
+// #RENDERIZAR_PAGINA_CATALOGO
 function renderizarPaginaCatalogo() {
   const parametros = new URLSearchParams(window.location.search);
   const categoria = parametros.get("categoria") === "feminino" ? "feminino" : "masculino";
@@ -407,12 +444,12 @@ function renderizarPaginaCatalogo() {
   if (tabMasculino) tabMasculino.classList.toggle("ativo", categoria === "masculino");
   if (tabFeminino) tabFeminino.classList.toggle("ativo", categoria === "feminino");
 
-  catalogoPagina.innerHTML = produtosCategoria.map(produto => `
-    <article class="catalogo-card ${produtoDisponivel(produto) ? "" : "produto-esgotado"}">
+  catalogoPagina.innerHTML = produtosCategoria.map((produto, index) => `
+    <article class="catalogo-card ${produtoDisponivel(produto) ? "" : "produto-esgotado"}" style="--card-index: ${index};">
       <div class="catalogo-card-imagem">
-        <img src="${produto.img}" alt="${produto.nome}">
+        <img src="${produto.img}" alt="${produto.nome}" loading="lazy">
       </div>
-      ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
+      ${produto.promocao ? '<span class="tag-promocao">Promoção</span>' : ""}
       <h3>${produto.nome}</h3>
       <div class="catalogo-precos">
         <span>5ml: R$ ${obterPrecoProduto(produto, 5)}</span>
@@ -427,7 +464,7 @@ function renderizarPaginaCatalogo() {
   `).join("");
 }
 
-// Funcao: iniciarCarouselDestaques
+// #INICIAR_CAROUSEL_DESTAQUES
 function iniciarCarouselDestaques() {
   const destaques = produtos.filter(produto => produto.destaque).slice(0, 8);
 
@@ -444,7 +481,7 @@ function iniciarCarouselDestaques() {
         <img src="${imagem}" alt="${produto.nome}">
         <div class="carousel-conteudo">
           <span class="selo-destaque">${produto.selo || (produto.promocao ? "Oferta" : "Destaque")}</span>
-          ${produto.promocao ? '<strong class="selo-desconto">PromoÃ§Ã£o</strong>' : ""}
+          ${produto.promocao ? '<strong class="selo-desconto">Promoção</strong>' : ""}
           <p class="carousel-kicker">${produto.chamada || (produto.categoria === "masculino" ? "Masculino selecionado" : "Feminino selecionado")}</p>
           <h2>${produto.nome.toUpperCase()}</h2>
           <p class="carousel-preco">R$ ${obterPrecoProduto(produto, 5)}</p>
@@ -514,7 +551,7 @@ function iniciarCarouselDestaques() {
   reiniciarAutoplay();
 }
 
-// Funcao: verMaisProduto
+// #VER_MAIS_PRODUTO
 function verMaisProduto(nomeProduto) {
   const produto = produtos.find(item => item.nome === nomeProduto);
   if (!produto) return;
@@ -522,93 +559,267 @@ function verMaisProduto(nomeProduto) {
   const detalhes = montarDetalhesProduto(produto);
   const acordes = montarAcordesProduto(detalhes.notas, detalhes.familia);
   const imagemDestaque = obterImagemDestaqueProduto(produto);
-  const temImagemDestaque = Boolean(imagemDestaque);
-  const imagemModal = imagemDestaque || produto.img;
+  const imagensGaleria = montarGaleriaModalProduto(produto, imagemDestaque);
   const marcaProduto = extrairMarcaProduto(produto.nome);
   const logoMarca = obterLogoMarca(marcaProduto);
   const modalExistente = document.querySelector(".modal-produto");
   const semEstoque = !produtoDisponivel(produto);
+  const preco5 = obterPrecoProduto(produto, 5);
+  const preco10 = obterPrecoProduto(produto, 10);
 
   if (modalExistente) modalExistente.remove();
+  document.body.classList.add("modal-aberto");
 
   document.body.insertAdjacentHTML("beforeend", `
-    <div class="modal-produto" onclick="fecharDetalhesProduto(event)">
-      <div class="modal-conteudo ${temImagemDestaque ? "modal-conteudo-destaque" : ""}" ${temImagemDestaque ? `style="--imagem-destaque: url('${imagemDestaque}');"` : ""}>
-        <button class="modal-fechar" aria-label="Fechar" onclick="fecharDetalhesProduto()">&times;</button>
-        <div class="${temImagemDestaque ? "modal-hero-conteudo" : "modal-produto-grid"}">
-          <div class="modal-topo">
-            <span>${produto.categoria === "masculino" ? "Masculino" : "Feminino"}</span>
-            <h2>${produto.nome}</h2>
+    <div class="modal-produto modal-produto-premium" role="dialog" aria-modal="true" aria-labelledby="modalProdutoTitulo" onclick="fecharDetalhesProduto(event)">
+      <div class="modal-conteudo modal-conteudo-premium">
+        <button class="modal-fechar modal-fechar-premium" type="button" aria-label="Fechar" onclick="fecharDetalhesProduto()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+
+        <div class="modal-layout-premium">
+          ${renderizarGaleriaModal(produto, imagensGaleria)}
+          ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10)}
+        </div>
+
+        <div class="modal-compra-premium">
+          <div class="modal-preco-final">
+            <span>A partir de</span>
+            <strong id="modalPrecoSelecionado">R$ ${preco5}</strong>
           </div>
 
-          <div class="modal-imagem-destaque">
-            <img src="${imagemModal}" alt="${produto.nome}">
+          <div class="modal-quantidade" aria-label="Quantidade">
+            <button type="button" aria-label="Diminuir quantidade" onclick="alterarQuantidadeModal(-1)">-</button>
+            <strong id="modalQuantidade">1</strong>
+            <button type="button" aria-label="Aumentar quantidade" onclick="alterarQuantidadeModal(1)">+</button>
           </div>
 
-          <div class="modal-info">
-            <div class="modal-marca">
-              <img src="${logoMarca}" alt="Logo ${marcaProduto}" loading="lazy" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
-              <strong hidden>${marcaProduto}</strong>
-            </div>
+          <button class="modal-btn-whatsapp" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+            <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+            Comprar via WhatsApp
+          </button>
 
-            <div class="modal-editorial">
-              <span>Decant selecionado</span>
-              <p>Uma leitura elegante da fragrancia, pensada para quem quer experimentar antes de escolher o frasco ideal.</p>
-            </div>
+          <button class="modal-btn-principal" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+            <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+            ${semEstoque ? "Produto esgotado" : "Adicionar ao carrinho"}
+          </button>
+        </div>
 
-            <div class="modal-opcoes-volume">
-              <div>
-                <span>5 ml</span>
-                <strong>R$ ${obterPrecoProduto(produto, 5)}</strong>
-              </div>
-              <div>
-                <span>10 ml</span>
-                <strong>R$ ${obterPrecoProduto(produto, 10)}</strong>
-              </div>
-            </div>
-
-            <div class="acordes">
-              <h3>Principais Acordes</h3>
-              ${acordes.map(acorde => `
-                <div class="acorde-barra" style="--largura: ${acorde.valor}%; --cor: ${acorde.cor};">
-                  <span>${acorde.nome}</span>
-                </div>
-              `).join("")}
-            </div>
-
-            <div class="modal-detalhes">
-              <p class="modal-preco">${semEstoque ? "Produto esgotado" : `A partir de R$ ${obterPrecoProduto(produto, 5)}`}</p>
-              <ul>
-                <li><strong>FamÃ­lia olfativa:</strong> ${detalhes.familia}</li>
-                <li><strong>Notas:</strong> ${detalhes.notas}</li>
-                <li><strong>Intensidade:</strong> ${detalhes.intensidade}</li>
-                <li><strong>OcasiÃ£o:</strong> ${detalhes.ocasiao}</li>
-              </ul>
-              <button class="btn-comprar" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>${semEstoque ? "ESGOTADO" : "COMPRAR"}</button>
-            </div>
-          </div>
+        <div class="modal-beneficios-premium" aria-label="Benefícios da compra">
+          <span><i class="fa-solid fa-lock" aria-hidden="true"></i> Compra segura</span>
+          <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Envio rápido</span>
+          <span><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Satisfação garantida</span>
         </div>
       </div>
     </div>
   `);
 
   ajustarFormatoImagemModal();
+  atualizarResumoModal();
+  const imagem = document.querySelector(".modal-galeria-imagem img");
+  if (imagem && imagem.complete && imagem.naturalWidth) finalizarCarregamentoImagemModal(imagem);
 }
 
-// Funcao: obterImagemDestaqueProduto
+// #MONTAR_GALERIA_MODAL_PRODUTO
+function montarGaleriaModalProduto(produto, imagemDestaque) {
+  const imagensModal = imagensModalPorProduto[normalizarTexto(produto.nome)] || [];
+
+  if (imagensModal.length) {
+    return [
+      ...imagensModal
+    ].filter((imagem, index, lista) => imagem && lista.indexOf(imagem) === index);
+  }
+
+  return [
+    imagemDestaque || produto.img,
+    produto.img
+  ].filter((imagem, index, lista) => imagem && lista.indexOf(imagem) === index);
+}
+
+// #RENDERIZAR_GALERIA_MODAL
+function renderizarGaleriaModal(produto, imagens) {
+  const categoria = produto.categoria === "masculino" ? "Masculino" : "Feminino";
+  const imagemPrincipal = imagens[0] || produto.img;
+  const temImagemCinematica = imagemPrincipal.includes("img/modal/");
+
+  return `
+    <section class="modal-galeria-premium ${temImagemCinematica ? "modal-galeria-cinematica" : ""}" aria-label="Galeria do produto">
+      <div class="modal-galeria-imagem modal-imagem-carregando">
+        <span class="modal-skeleton" aria-hidden="true"></span>
+        <span class="modal-selo-categoria">${categoria}</span>
+        <button class="modal-favorito" type="button" aria-label="Favoritar perfume">
+          <i class="fa-regular fa-heart" aria-hidden="true"></i>
+        </button>
+        <img src="${imagemPrincipal}" alt="${produto.nome}" onload="finalizarCarregamentoImagemModal(this)" onerror="marcarImagemModalIndisponivel(this)">
+      </div>
+
+      <div class="modal-thumbs" aria-label="Miniaturas">
+        ${imagens.map((imagem, index) => `
+          <button class="modal-thumb ${index === 0 ? "ativo" : ""} ${imagem.includes("img/modal/") ? "modal-thumb-cinematica" : ""}" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-src="${imagem}">
+            <img src="${imagem}" alt="${produto.nome} miniatura ${index + 1}" loading="lazy">
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+// #RENDERIZAR_INFO_MODAL
+function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10) {
+  const semEstoque = !produtoDisponivel(produto);
+
+  return `
+    <section class="modal-info-premium">
+      <div class="modal-marca-linha">
+        <span>${marcaProduto}</span>
+        <div class="modal-logo-mini">
+          <img src="${logoMarca}" alt="Logo ${marcaProduto}" loading="lazy" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+          <strong hidden>${marcaProduto}</strong>
+        </div>
+      </div>
+
+      <h2 id="modalProdutoTitulo">${produto.nome}</h2>
+
+      <div class="modal-rating" aria-label="Avaliação">
+        <span aria-hidden="true">★★★★★</span>
+        <small>Seleção premium</small>
+      </div>
+
+      <p class="modal-descricao">Uma leitura elegante da fragrancia, pensada para quem quer experimentar antes de escolher o frasco ideal.</p>
+
+      <div class="modal-divisor"></div>
+
+      <div class="modal-secao">
+        <h3>Escolha o tamanho</h3>
+        <div class="modal-opcoes-volume" role="radiogroup" aria-label="Tamanhos disponíveis">
+          ${renderizarVolumeModal(5, preco5, true, semEstoque)}
+          ${renderizarVolumeModal(10, preco10, false, semEstoque)}
+        </div>
+      </div>
+
+      <div class="modal-secao">
+        <h3>Principais acordes</h3>
+        <div class="modal-acordes-premium">
+          ${acordes.map(acorde => `<span style="--cor-chip: ${acorde.cor};">${acorde.nome}</span>`).join("")}
+        </div>
+      </div>
+
+      <div class="modal-atributos-premium">
+        <article>
+          <i class="fa-regular fa-clock" aria-hidden="true"></i>
+          <span>Fixação</span>
+          <strong>${detalhes.intensidade}</strong>
+        </article>
+        <article>
+          <i class="fa-regular fa-sun" aria-hidden="true"></i>
+          <span>Ocasião</span>
+          <strong>${detalhes.ocasiao.split(",")[0]}</strong>
+        </article>
+        <article>
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+          <span>Familia</span>
+          <strong>${detalhes.familia}</strong>
+        </article>
+      </div>
+
+      <p class="modal-notas"><strong>Notas:</strong> ${detalhes.notas}</p>
+    </section>
+  `;
+}
+
+// #RENDERIZAR_VOLUME_MODAL
+function renderizarVolumeModal(volume, preco, ativo, semEstoque) {
+  const valorMl = precoTextoParaNumero(preco) / volume;
+
+  return `
+    <button class="modal-volume-card ${ativo ? "ativo" : ""}" type="button" role="radio" aria-checked="${ativo}" data-volume="${volume}" data-preco="${preco}" onclick="selecionarVolumeModal(this)" ${semEstoque ? "disabled" : ""}>
+      <span>${volume} ml</span>
+      <strong>R$ ${preco}</strong>
+      <small>R$ ${formatarMoedaLoja(valorMl)} / ml</small>
+    </button>
+  `;
+}
+
+// #FINALIZAR_CARREGAMENTO_IMAGEM_MODAL
+function finalizarCarregamentoImagemModal(imagem) {
+  const wrapper = imagem.closest(".modal-imagem-destaque, .modal-galeria-imagem");
+  if (!wrapper) return;
+
+  wrapper.classList.remove("modal-imagem-carregando", "modal-imagem-falhou");
+}
+
+// #MARCAR_IMAGEM_MODAL_INDISPONIVEL
+function marcarImagemModalIndisponivel(imagem) {
+  const wrapper = imagem.closest(".modal-imagem-destaque, .modal-galeria-imagem");
+  if (!wrapper) return;
+
+  wrapper.classList.remove("modal-imagem-carregando");
+  wrapper.classList.add("modal-imagem-falhou");
+}
+
+// #SELECIONAR_VOLUME_MODAL
+function selecionarVolumeModal(elemento) {
+  const grupo = elemento.closest(".modal-opcoes-volume");
+  if (!grupo) return;
+
+  grupo.querySelectorAll(".modal-volume-card").forEach(card => {
+    card.classList.remove("ativo");
+    card.setAttribute("aria-checked", "false");
+  });
+  elemento.classList.add("ativo");
+  elemento.setAttribute("aria-checked", "true");
+  atualizarResumoModal();
+}
+
+// #SELECIONAR_IMAGEM_MODAL
+function selecionarImagemModal(botao) {
+  const modal = botao.closest(".modal-conteudo-premium");
+  const galeria = botao.closest(".modal-galeria-premium");
+  const imagemPrincipal = modal?.querySelector(".modal-galeria-imagem img");
+  const imagemArea = modal?.querySelector(".modal-galeria-imagem");
+  const novaImagem = botao.dataset.src;
+
+  if (!imagemPrincipal || !imagemArea || !novaImagem || imagemPrincipal.getAttribute("src") === novaImagem) return;
+
+  modal.querySelectorAll(".modal-thumb").forEach(thumb => thumb.classList.remove("ativo"));
+  botao.classList.add("ativo");
+  galeria?.classList.toggle("modal-galeria-cinematica", novaImagem.includes("img/modal/"));
+  imagemArea.classList.add("modal-imagem-carregando");
+  imagemPrincipal.setAttribute("src", novaImagem);
+}
+
+// #ALTERAR_QUANTIDADE_MODAL
+function alterarQuantidadeModal(delta) {
+  const quantidadeElemento = document.getElementById("modalQuantidade");
+  if (!quantidadeElemento) return;
+
+  const atual = Number(quantidadeElemento.textContent || 1);
+  quantidadeElemento.textContent = Math.max(1, Math.min(20, atual + delta));
+  atualizarResumoModal();
+}
+
+// #ATUALIZAR_RESUMO_MODAL
+function atualizarResumoModal() {
+  const ativo = document.querySelector(".modal-volume-card.ativo");
+  const precoElemento = document.getElementById("modalPrecoSelecionado");
+  if (!ativo || !precoElemento) return;
+
+  precoElemento.textContent = `R$ ${ativo.dataset.preco}`;
+}
+// #OBTER_IMAGEM_DESTAQUE_PRODUTO
 function obterImagemDestaqueProduto(produto) {
   return imagensDestaquePorProduto[normalizarTexto(produto.nome)] || "";
 }
 
-// Funcao: obterLogoMarca
+// #OBTER_LOGO_MARCA
 function obterLogoMarca(marca) {
   return logosPorMarca[marca] || logosPorMarca["Decant's"];
 }
 
-// Funcao: ajustarFormatoImagemModal
+// #AJUSTAR_FORMATO_IMAGEM_MODAL
 function ajustarFormatoImagemModal() {
   const modal = document.querySelector(".modal-conteudo");
-  const imagem = modal ? modal.querySelector(".modal-imagem-destaque img") : null;
+  const imagem = modal ? modal.querySelector(".modal-galeria-imagem img, .modal-imagem-destaque img") : null;
 
   if (!modal || !imagem) return;
 
@@ -628,14 +839,14 @@ function ajustarFormatoImagemModal() {
   }
 }
 
-// Funcao: montarDetalhesProduto
+// #MONTAR_DETALHES_PRODUTO
 function montarDetalhesProduto(produto) {
   const masculino = produto.categoria === "masculino";
   const nome = normalizarTexto(produto.nome);
 
-  let familia = masculino ? "Amadeirado aromÃ¡tico" : "Floral elegante";
-  let intensidade = "MÃ©dia";
-  let ocasiao = masculino ? "Dia a dia, encontros e ocasiÃµes especiais" : "Dia a dia, encontros e eventos";
+  let familia = masculino ? "Amadeirado aromático" : "Floral elegante";
+  let intensidade = "Média";
+  let ocasiao = masculino ? "Dia a dia, encontros e ocasiões especiais" : "Dia a dia, encontros e eventos";
 
   if (nome.includes("elixir") || nome.includes("victory") || nome.includes("million") || nome.includes("good girl") || nome.includes("scandal")) {
     intensidade = "Alta";
@@ -643,8 +854,8 @@ function montarDetalhesProduto(produto) {
   }
 
   if (nome.includes("sport") || nome.includes("issey") || nome.includes("my way")) {
-    familia = masculino ? "CÃ­trico aromÃ¡tico" : "Floral fresco";
-    intensidade = "MÃ©dia";
+    familia = masculino ? "Cítrico aromático" : "Floral fresco";
+    intensidade = "Média";
     ocasiao = "Dia, trabalho e clima quente";
   }
 
@@ -654,28 +865,28 @@ function montarDetalhesProduto(produto) {
 
   return {
     familia,
-    notas: notasPorProduto[produto.nome] || "notas cÃ­tricas, florais, amadeiradas e almiscaradas",
+    notas: notasPorProduto[produto.nome] || "notas cítricas, florais, amadeiradas e almiscaradas",
     intensidade,
     ocasiao
   };
 }
 
-// Funcao: montarAcordesProduto
+// #MONTAR_ACORDES_PRODUTO
 function montarAcordesProduto(notas, familia) {
   const texto = normalizarTexto(`${notas} ${familia}`);
   const regras = [
-    { nome: "cÃ­trico", cor: "#f5ef3b", termos: ["bergamota", "limao", "laranja", "toranja", "mandarina", "yuzu", "citricos"] },
-    { nome: "aromÃ¡tico", cor: "#3a8c7e", termos: ["lavanda", "hortela", "anis", "absinto", "alecrim", "aromatico"] },
+    { nome: "cítrico", cor: "#f5ef3b", termos: ["bergamota", "limao", "laranja", "toranja", "mandarina", "yuzu", "citricos"] },
+    { nome: "aromático", cor: "#3a8c7e", termos: ["lavanda", "hortela", "anis", "absinto", "alecrim", "aromatico"] },
     { nome: "amadeirado", cor: "#7a4920", termos: ["madeira", "madeiras", "cedro", "sandal", "vetiver", "cashmere", "betula", "cipreste"] },
     { nome: "floral", cor: "#d783a8", termos: ["rosa", "jasmim", "tuberosa", "lirio", "peonia", "gardenia", "flor", "floral", "orquidea", "fresia", "lotus"] },
-    { nome: "Ã¢mbarado", cor: "#8e4519", termos: ["ambar", "amber", "resinas"] },
+    { nome: "âmbarado", cor: "#8e4519", termos: ["ambar", "amber", "resinas"] },
     { nome: "doce", cor: "#c27a45", termos: ["baunilha", "mel", "caramelo", "praline", "chocolate", "cacau", "doce"] },
     { nome: "especiado", cor: "#78a436", termos: ["pimenta", "cardamomo", "canela", "noz", "acafrao", "especiarias"] },
     { nome: "fresco", cor: "#6d9ea6", termos: ["marinhas", "fresco", "verde", "folhas", "champagne"] },
     { nome: "frutado", cor: "#d15265", termos: ["maca", "pera", "pessego", "framboesa", "ameixa", "abacaxi", "cassis", "frutas"] },
     { nome: "almiscarado", cor: "#9a9a90", termos: ["almiscar", "almiscarado"] },
     { nome: "couro", cor: "#5b351f", termos: ["couro", "tabaco", "cafe"] },
-    { nome: "balsÃ¢mico", cor: "#73583e", termos: ["incenso", "tonka", "fava tonka", "balsamico"] }
+    { nome: "balsâmico", cor: "#73583e", termos: ["incenso", "tonka", "fava tonka", "balsamico"] }
   ];
 
   const encontrados = regras
@@ -693,7 +904,7 @@ function montarAcordesProduto(notas, familia) {
     .slice(0, 6);
 
   const base = encontrados.length ? encontrados : [
-    { nome: "aromÃ¡tico", cor: "#3a8c7e", valor: 96 },
+    { nome: "aromático", cor: "#3a8c7e", valor: 96 },
     { nome: "amadeirado", cor: "#7a4920", valor: 82 },
     { nome: "fresco", cor: "#6d9ea6", valor: 70 },
     { nome: "almiscarado", cor: "#9a9a90", valor: 62 }
@@ -705,37 +916,41 @@ function montarAcordesProduto(notas, familia) {
   }));
 }
 
-// Funcao: extrairMarcaProduto
+// #EXTRAIR_MARCA_PRODUTO
 function extrairMarcaProduto(nomeProduto) {
   if (marcasPorProduto[nomeProduto]) return marcasPorProduto[nomeProduto];
 
   const nome = normalizarTexto(nomeProduto);
-  const marcas = ["Dior", "Chanel", "Lattafa", "Paco Rabanne", "Carolina Herrera", "Yves Saint Laurent", "LancÃ´me", "Issey Miyake", "Ferrari", "Versace", "Hugo Boss", "Jean Paul Gaultier", "Armaf", "Lalique", "Jacques Bogart", "Giorgio Armani"];
+  const marcas = ["Dior", "Chanel", "Lattafa", "Paco Rabanne", "Carolina Herrera", "Yves Saint Laurent", "Lancôme", "Issey Miyake", "Ferrari", "Versace", "Hugo Boss", "Jean Paul Gaultier", "Armaf", "Lalique", "Jacques Bogart", "Giorgio Armani"];
   const marca = marcas.find(item => nome.includes(normalizarTexto(item)));
 
   if (marca) return marca;
   if (nome.includes("one million") || nome.includes("phantom") || nome.includes("invictus")) return "Paco Rabanne";
   if (nome.includes("good girl")) return "Carolina Herrera";
   if (nome.includes("libre")) return "Yves Saint Laurent";
-  if (nome.includes("idole") || nome.includes("la vie est belle")) return "LancÃ´me";
+  if (nome.includes("idole") || nome.includes("la vie est belle")) return "Lancôme";
 
   return "Decant's";
 }
 
-// Funcao: fecharDetalhesProduto
+// #FECHAR_DETALHES_PRODUTO
 function fecharDetalhesProduto(event) {
   if (event && !event.target.classList.contains("modal-produto")) return;
 
   const modal = document.querySelector(".modal-produto");
-  if (modal) modal.remove();
+  if (!modal || modal.classList.contains("modal-saindo")) return;
+
+  modal.classList.add("modal-saindo");
+  document.body.classList.remove("modal-aberto");
+  window.setTimeout(() => modal.remove(), 220);
 }
 
-// Funcao: comprar
+// #COMPRAR
 function comprar(nomeProduto) {
   abrirCheckout(nomeProduto);
 }
 
-// Funcao: abrirCheckout
+// #ABRIR_CHECKOUT
 function abrirCheckout(nomeProduto) {
   const produto = produtos.find(item => item.nome === nomeProduto);
   if (produto && !produtoDisponivel(produto)) return;
@@ -821,7 +1036,7 @@ function abrirCheckout(nomeProduto) {
   atualizarTotalCheckout();
 }
 
-// Funcao: montarOpcaoCheckout
+// #MONTAR_OPCAO_CHECKOUT
 function montarOpcaoCheckout(produto, volume, checked) {
   return `
     <label class="checkout-volume ${checked ? "ativo" : ""}">
@@ -832,14 +1047,14 @@ function montarOpcaoCheckout(produto, volume, checked) {
   `;
 }
 
-// Funcao: atualizarVolumeCheckout
+// #ATUALIZAR_VOLUME_CHECKOUT
 function atualizarVolumeCheckout(event) {
   document.querySelectorAll(".checkout-volume").forEach(label => label.classList.remove("ativo"));
   event.currentTarget.closest(".checkout-volume").classList.add("ativo");
   atualizarTotalCheckout();
 }
 
-// Funcao: atualizarTotalCheckout
+// #ATUALIZAR_TOTAL_CHECKOUT
 function atualizarTotalCheckout() {
   if (!checkoutProdutoAtual) return;
 
@@ -850,7 +1065,7 @@ function atualizarTotalCheckout() {
   if (totalElemento) totalElemento.textContent = `R$ ${formatarMoedaLoja(total)}`;
 }
 
-// Funcao: enviarCheckout
+// #ENVIAR_CHECKOUT
 async function enviarCheckout(event, preferirWhatsApp = false) {
   event.preventDefault();
   if (!checkoutProdutoAtual) return;
@@ -918,7 +1133,7 @@ async function enviarCheckout(event, preferirWhatsApp = false) {
   }
 }
 
-// Funcao: fecharCheckout
+// #FECHAR_CHECKOUT
 function fecharCheckout(event) {
   if (event && !event.target.classList.contains("modal-checkout")) return;
 
@@ -926,7 +1141,7 @@ function fecharCheckout(event) {
   if (modal) modal.remove();
 }
 
-// Funcao: montarWhatsAppLocalCheckout
+// #MONTAR_WHATS_APP_LOCAL_CHECKOUT
 function montarWhatsAppLocalCheckout(volume, quantidade) {
   const numeroLoja = "558899641605";
   const preco = precoTextoParaNumero(obterPrecoProduto(checkoutProdutoAtual, volume));
@@ -943,7 +1158,7 @@ function montarWhatsAppLocalCheckout(volume, quantidade) {
   return `https://wa.me/${numeroLoja}?text=${encodeURIComponent(linhas.join("\n"))}`;
 }
 
-// Funcao: exibirAvisoCheckoutIndisponivel
+// #EXIBIR_AVISO_CHECKOUT_INDISPONIVEL
 function exibirAvisoCheckoutIndisponivel(nomeProduto) {
   document.body.insertAdjacentHTML("beforeend", `
     <div class="modal-checkout" onclick="fecharCheckout(event)">
@@ -959,17 +1174,17 @@ function exibirAvisoCheckoutIndisponivel(nomeProduto) {
   `);
 }
 
-// Funcao: precoTextoParaNumero
+// #PRECO_TEXTO_PARA_NUMERO
 function precoTextoParaNumero(valor) {
   return Number(String(valor || "0").replace(/\./g, "").replace(",", "."));
 }
 
-// Funcao: formatarMoedaLoja
+// #FORMATAR_MOEDA_LOJA
 function formatarMoedaLoja(valor) {
   return Number(valor || 0).toFixed(2).replace(".", ",");
 }
 
-// Funcao: mascararTelefoneLoja
+// #MASCARAR_TELEFONE_LOJA
 function mascararTelefoneLoja(event) {
   if (/[a-zA-Z]/.test(event.target.value)) return;
 
@@ -986,7 +1201,7 @@ function mascararTelefoneLoja(event) {
   event.target.value = `(${ddd}) ${inicio}${fim ? `-${fim}` : ""}`;
 }
 
-// Funcao: apiLoja
+// #API_LOJA
 async function apiLoja(url, options = {}) {
   if (!window.location.protocol.startsWith("http")) {
     throw new Error("Abra a loja pelo servidor: http://localhost:8000/index.html");
@@ -1018,7 +1233,7 @@ async function apiLoja(url, options = {}) {
   return dados;
 }
 
-// Funcao: exibirRetornoPagamento
+// #EXIBIR_RETORNO_PAGAMENTO
 function exibirRetornoPagamento() {
   const parametros = new URLSearchParams(window.location.search);
   const pedido = parametros.get("pedido");
@@ -1040,7 +1255,7 @@ function exibirRetornoPagamento() {
   `);
 }
 
-// Funcao: pesquisarProdutos
+// #PESQUISAR_PRODUTOS
 function pesquisarProdutos(rolarAteCatalogo = true) {
   const busca = normalizarTexto(searchInput ? searchInput.value : "");
   const categoria = categoriaFiltro ? categoriaFiltro.value : "";
@@ -1065,7 +1280,7 @@ function pesquisarProdutos(rolarAteCatalogo = true) {
   if (rolarAteCatalogo) scrollToProdutos();
 }
 
-// Funcao: produtoCombinaComFiltro
+// #PRODUTO_COMBINA_COM_FILTRO
 function produtoCombinaComFiltro(produto, busca, categoriaSelecionada, familiaSelecionada, intensidadeSelecionada) {
   const detalhes = montarDetalhesProduto(produto);
   const camposBusca = [
@@ -1086,7 +1301,7 @@ function produtoCombinaComFiltro(produto, busca, categoriaSelecionada, familiaSe
   return combinaBusca && combinaCategoria && combinaFamilia && combinaIntensidade;
 }
 
-// Funcao: normalizarTexto
+// #NORMALIZAR_TEXTO
 function normalizarTexto(texto) {
   return texto
     .toString()
@@ -1096,11 +1311,34 @@ function normalizarTexto(texto) {
     .trim();
 }
 
-// Funcao: scrollToProdutos
+// #SCROLL_TO_PRODUTOS
 function scrollToProdutos() {
   const catalogo = document.querySelector(".catalogo");
 
   if (catalogo) {
     catalogo.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+if (typeof window !== "undefined") {
+  Object.assign(window, {
+    mostrarCategoria,
+    abrirCatalogo,
+    pesquisarProdutos,
+    scrollToProdutos,
+    comprar,
+    verMaisProduto,
+    fecharDetalhesProduto,
+    selecionarImagemModal,
+    selecionarVolumeModal,
+    alterarQuantidadeModal,
+    finalizarCarregamentoImagemModal,
+    marcarImagemModalIndisponivel,
+    abrirCheckout,
+    fecharCheckout,
+    enviarCheckout,
+    atualizarVolumeCheckout,
+    atualizarTotalCheckout,
+    mascararTelefoneLoja
+  });
 }

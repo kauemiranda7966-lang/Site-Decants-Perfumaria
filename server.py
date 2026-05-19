@@ -20,7 +20,7 @@ SESSION_COOKIE = "decants_session"
 SESSION_MAX_AGE = 60 * 60 * 8
 
 
-# Funcao: load_env_file
+#LOAD_ENV_FILE
 def load_env_file():
     env_path = ROOT / ".env"
     if not env_path.exists():
@@ -48,7 +48,7 @@ PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
 SESSIONS = {}
 
 
-# Funcao: connect_db
+#CONNECT_DB
 def connect_db():
     DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
@@ -56,7 +56,7 @@ def connect_db():
     return conn
 
 
-# Funcao: init_db
+#INIT_DB
 def init_db():
     with connect_db() as conn:
         conn.execute(
@@ -129,7 +129,7 @@ def init_db():
             seed_products(conn)
 
 
-# Funcao: seed_products
+#SEED_PRODUCTS
 def seed_products(conn):
     products = load_default_products()
     featured = {"Dior Sauvage", "La Vie Est Belle", "Versace Eros", "Yara Rosa"}
@@ -144,7 +144,7 @@ def seed_products(conn):
         insert_product(conn, product, index)
 
 
-# Funcao: load_default_products
+#LOAD_DEFAULT_PRODUCTS
 def load_default_products():
     script = (ROOT / "js" / "script.js").read_text(encoding="utf-8")
     match = re.search(r"const produtosPadrao = (\[.*?\]);", script, re.S)
@@ -154,7 +154,7 @@ def load_default_products():
     return json.loads(data)
 
 
-# Funcao: product_from_row
+#PRODUCT_FROM_ROW
 def product_from_row(row):
     return {
         "id": row["id"],
@@ -173,7 +173,7 @@ def product_from_row(row):
     }
 
 
-# Funcao: normalize_product
+#NORMALIZE_PRODUCT
 def normalize_product(payload):
     product = {
         "nome": str(payload.get("nome", "")).strip(),
@@ -198,7 +198,7 @@ def normalize_product(payload):
     return product
 
 
-# Funcao: normalize_lead
+#NORMALIZE_LEAD
 def normalize_lead(payload):
     email = str(payload.get("email", "")).strip().lower()
     telefone = re.sub(r"\D+", "", str(payload.get("telefone", "")))
@@ -211,7 +211,7 @@ def normalize_lead(payload):
     return {"email": email, "telefone": telefone}
 
 
-# Funcao: parse_price
+#PARSE_PRICE
 def parse_price(value):
     clean = str(value or "0").strip().replace(".", "").replace(",", ".")
     try:
@@ -220,12 +220,12 @@ def parse_price(value):
         return 0.0
 
 
-# Funcao: money_to_brl
+#MONEY_TO_BRL
 def money_to_brl(value):
     return f"{value:.2f}".replace(".", ",")
 
 
-# Funcao: get_public_base_url
+#GET_PUBLIC_BASE_URL
 def get_public_base_url(handler):
     if PUBLIC_BASE_URL:
         return PUBLIC_BASE_URL.rstrip("/")
@@ -235,7 +235,7 @@ def get_public_base_url(handler):
     return f"{protocol}://{host}"
 
 
-# Funcao: product_price
+#PRODUCT_PRICE
 def product_price(product, volume):
     promo_key = "precoPromocional10" if volume == 10 else "precoPromocional5"
     base_key = "preco10" if volume == 10 else "preco5"
@@ -243,7 +243,7 @@ def product_price(product, volume):
     return parse_price(price)
 
 
-# Funcao: normalize_checkout
+#NORMALIZE_CHECKOUT
 def normalize_checkout(payload):
     customer = payload.get("customer") or {}
     name = str(customer.get("name", "")).strip()
@@ -279,7 +279,7 @@ def normalize_checkout(payload):
     }
 
 
-# Funcao: build_order_items
+#BUILD_ORDER_ITEMS
 def build_order_items(conn, checkout_items):
     order_items = []
     for item in checkout_items:
@@ -311,7 +311,7 @@ def build_order_items(conn, checkout_items):
     return order_items
 
 
-# Funcao: build_whatsapp_url
+#BUILD_WHATSAPP_URL
 def build_whatsapp_url(reference, customer, items, total, payment_url=""):
     lines = [
         f"Ola! Pedido {reference} - Decant's Perfumaria",
@@ -334,7 +334,7 @@ def build_whatsapp_url(reference, customer, items, total, payment_url=""):
     return f"https://wa.me/{STORE_WHATSAPP_NUMBER}?text={message}"
 
 
-# Funcao: create_mercado_pago_preference
+#CREATE_MERCADO_PAGO_PREFERENCE
 def create_mercado_pago_preference(reference, customer, items, total, base_url):
     if not MERCADO_PAGO_ACCESS_TOKEN:
         return ""
@@ -392,7 +392,7 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
         raise ValueError(f"Nao foi possivel conectar ao Mercado Pago: {exc.reason}")
 
 
-# Funcao: fetch_mercado_pago_payment
+#FETCH_MERCADO_PAGO_PAYMENT
 def fetch_mercado_pago_payment(payment_id):
     if not MERCADO_PAGO_ACCESS_TOKEN or not payment_id:
         return {}
@@ -406,7 +406,7 @@ def fetch_mercado_pago_payment(payment_id):
         return json.loads(response.read().decode("utf-8"))
 
 
-# Funcao: insert_product
+#INSERT_PRODUCT
 def insert_product(conn, product, position=None):
     if position is None:
         position = conn.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM products").fetchone()[0]
@@ -435,7 +435,7 @@ def insert_product(conn, product, position=None):
     )
 
 
-# Funcao: reset_products
+#RESET_PRODUCTS
 def reset_products():
     with connect_db() as conn:
         conn.execute("DELETE FROM products")
@@ -443,7 +443,7 @@ def reset_products():
         seed_products(conn)
 
 
-# Funcao: password_hash
+#PASSWORD_HASH
 def password_hash(password):
     return hashlib.pbkdf2_hmac(
         "sha256",
@@ -453,20 +453,20 @@ def password_hash(password):
     )
 
 
-# Funcao: check_password
+#CHECK_PASSWORD
 def check_password(password):
     expected = password_hash(ADMIN_PASSWORD)
     received = password_hash(password)
     return hmac.compare_digest(expected, received)
 
 
-# Funcao: sign_session
+#SIGN_SESSION
 def sign_session(token):
     signature = hmac.new(SECRET_KEY.encode("utf-8"), token.encode("utf-8"), hashlib.sha256).digest()
     return token + "." + base64.urlsafe_b64encode(signature).decode("ascii").rstrip("=")
 
 
-# Funcao: verify_session
+#VERIFY_SESSION
 def verify_session(value):
     if not value or "." not in value:
         return False
@@ -482,19 +482,19 @@ def verify_session(value):
 
 
 class DecantsHandler(http.server.SimpleHTTPRequestHandler):
-    # Funcao: translate_path
+    #TRANSLATE_PATH
     def translate_path(self, path):
         path = unquote(path.split("?", 1)[0].split("#", 1)[0])
         parts = [part for part in path.split("/") if part and part not in {".", ".."}]
         return str(ROOT.joinpath(*parts))
 
-    # Funcao: end_headers
+    #END_HEADERS
     def end_headers(self):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "same-origin")
         super().end_headers()
 
-    # Funcao: do_GET
+    #DO_GET
     def do_GET(self):
         if self.path.startswith("/api/products"):
             self.handle_get_products()
@@ -507,7 +507,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             return
         super().do_GET()
 
-    # Funcao: do_POST
+    #DO_POST
     def do_POST(self):
         if self.path.startswith("/api/leads"):
             self.handle_create_lead()
@@ -541,7 +541,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             return
         self.send_error(404)
 
-    # Funcao: do_PUT
+    #DO_PUT
     def do_PUT(self):
         match = re.match(r"/api/products/(\d+)", self.path)
         if not match:
@@ -581,7 +581,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 return
         self.send_json({"ok": True})
 
-    # Funcao: do_DELETE
+    #DO_DELETE
     def do_DELETE(self):
         match = re.match(r"/api/products/(\d+)", self.path)
         if not match:
@@ -596,13 +596,13 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 return
         self.send_json({"ok": True})
 
-    # Funcao: handle_get_products
+    #HANDLE_GET_PRODUCTS
     def handle_get_products(self):
         with connect_db() as conn:
             rows = conn.execute("SELECT * FROM products ORDER BY position, id").fetchall()
         self.send_json([product_from_row(row) for row in rows])
 
-    # Funcao: handle_create_lead
+    #HANDLE_CREATE_LEAD
     def handle_create_lead(self):
         try:
             lead = normalize_lead(self.read_json())
@@ -624,7 +624,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
         self.send_json({"ok": True, "message": "Cadastro recebido."}, status=201)
 
-    # Funcao: handle_checkout
+    #HANDLE_CHECKOUT
     def handle_checkout(self):
         try:
             checkout = normalize_checkout(self.read_json())
@@ -700,7 +700,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as error:
             self.send_json({"error": f"Nao foi possivel criar o pedido: {error}"}, status=500)
 
-    # Funcao: handle_get_order
+    #HANDLE_GET_ORDER
     def handle_get_order(self):
         reference = self.path.rsplit("/", 1)[-1].split("?", 1)[0].strip().upper()
         if not re.match(r"^DEC[A-F0-9]{8}$", reference):
@@ -728,7 +728,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             }
         )
 
-    # Funcao: handle_payment_webhook
+    #HANDLE_PAYMENT_WEBHOOK
     def handle_payment_webhook(self):
         try:
             payload = self.read_json()
@@ -768,7 +768,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as exc:
             self.send_json({"ok": False, "error": str(exc)}, status=200)
 
-    # Funcao: handle_login
+    #HANDLE_LOGIN
     def handle_login(self):
         payload = self.read_json()
         if payload.get("user") != ADMIN_USER or not check_password(str(payload.get("password", ""))):
@@ -786,7 +786,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"ok": True, "user": ADMIN_USER}).encode("utf-8"))
 
-    # Funcao: handle_logout
+    #HANDLE_LOGOUT
     def handle_logout(self):
         session = self.get_cookie(SESSION_COOKIE)
         if session and "." in session:
@@ -797,14 +797,14 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({"ok": True}).encode("utf-8"))
 
-    # Funcao: read_json
+    #READ_JSON
     def read_json(self):
         size = int(self.headers.get("Content-Length", 0))
         if size == 0:
             return {}
         return json.loads(self.rfile.read(size).decode("utf-8"))
 
-    # Funcao: send_json
+    #SEND_JSON
     def send_json(self, payload, status=200):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -813,29 +813,29 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    # Funcao: get_cookie
+    #GET_COOKIE
     def get_cookie(self, name):
         raw = self.headers.get("Cookie", "")
         jar = cookies.SimpleCookie(raw)
         return jar[name].value if name in jar else ""
 
-    # Funcao: is_authenticated
+    #IS_AUTHENTICATED
     def is_authenticated(self):
         return verify_session(self.get_cookie(SESSION_COOKIE))
 
-    # Funcao: require_auth
+    #REQUIRE_AUTH
     def require_auth(self):
         if not self.is_authenticated():
             self.send_json({"error": "Login necessario."}, status=401)
             return False
         return True
 
-    # Funcao: log_message
+    #LOG_MESSAGE
     def log_message(self, format, *args):
         print("%s - %s" % (self.address_string(), format % args))
 
 
-# Funcao: main
+#MAIN
 def main():
     init_db()
     port = int(os.environ.get("PORT", "8000"))
