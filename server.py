@@ -380,7 +380,7 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
         }
         preference["auto_return"] = "approved"
 
-    if PUBLIC_BASE_URL and is_public_base_url(base_url):
+    if is_public_base_url(base_url):
         preference["notification_url"] = f"{base_url}/api/payments/webhook"
 
     body = json.dumps(preference, ensure_ascii=False).encode("utf-8")
