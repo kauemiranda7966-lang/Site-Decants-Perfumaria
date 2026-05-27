@@ -15,7 +15,8 @@ from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parent
-DB_PATH = Path(os.environ.get("DECANTS_DB_PATH", ROOT / "data" / "decants.sqlite3"))
+DEFAULT_DB_PATH = ROOT / "data" / "decants.sqlite3"
+DB_PATH = Path(os.environ.get("DECANTS_DB_PATH", DEFAULT_DB_PATH))
 SESSION_COOKIE = "decants_session"
 SESSION_MAX_AGE = 60 * 60 * 8
 
@@ -52,8 +53,14 @@ SESSIONS = {}
 
 #CONNECT_DB
 def connect_db():
-    DB_PATH.parent.mkdir(exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    db_path = DB_PATH
+    try:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        db_path = DEFAULT_DB_PATH
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
