@@ -15,7 +15,7 @@ from urllib.parse import unquote
 
 
 ROOT = Path(__file__).resolve().parent
-DB_PATH = ROOT / "data" / "decants.sqlite3"
+DB_PATH = Path(os.environ.get("DECANTS_DB_PATH", ROOT / "data" / "decants.sqlite3"))
 SESSION_COOKIE = "decants_session"
 SESSION_MAX_AGE = 60 * 60 * 8
 
@@ -44,6 +44,8 @@ ADMIN_PASSWORD = os.environ.get("DECANTS_ADMIN_PASSWORD", "Wellida123 senha")
 SECRET_KEY = os.environ.get("DECANTS_SECRET_KEY", "troque-esta-chave-em-producao")
 STORE_WHATSAPP_NUMBER = re.sub(r"\D+", "", os.environ.get("DECANTS_WHATSAPP_NUMBER", "558899641605"))
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
+MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
+MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
 PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
 SESSIONS = {}
 
@@ -230,9 +232,19 @@ def get_public_base_url(handler):
     if PUBLIC_BASE_URL:
         return PUBLIC_BASE_URL.rstrip("/")
 
+    render_url = os.environ.get("RENDER_EXTERNAL_URL", "").strip()
+    if render_url:
+        return render_url.rstrip("/")
+
     host = handler.headers.get("Host", "localhost:8000")
     protocol = "https" if handler.headers.get("X-Forwarded-Proto") == "https" else "http"
     return f"{protocol}://{host}"
+
+
+#IS_PUBLIC_BASE_URL
+def is_public_base_url(base_url):
+    host = parse.urlparse(base_url).hostname or ""
+    return host not in {"localhost", "127.0.0.1", "::1"}
 
 
 #PRODUCT_PRICE
@@ -356,19 +368,20 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
             "email": customer["email"],
             "phone": {"number": customer["phone"]},
         },
-        "back_urls": {
-            "success": f"{base_url}/index.html?pedido={reference}&pagamento=aprovado",
-            "failure": f"{base_url}/index.html?pedido={reference}&pagamento=recusado",
-            "pending": f"{base_url}/index.html?pedido={reference}&pagamento=pendente",
-        },
         "statement_descriptor": "DECANTS PERF",
         "metadata": {"order_reference": reference, "total": total},
     }
 
-    if PUBLIC_BASE_URL:
+    if is_public_base_url(base_url):
+        preference["back_urls"] = {
+            "success": f"{base_url}/index.html?pedido={reference}&pagamento=aprovado",
+            "failure": f"{base_url}/index.html?pedido={reference}&pagamento=recusado",
+            "pending": f"{base_url}/index.html?pedido={reference}&pagamento=pendente",
+        }
+        preference["auto_return"] = "approved"
+
+    if PUBLIC_BASE_URL and is_public_base_url(base_url):
         preference["notification_url"] = f"{base_url}/api/payments/webhook"
-        if not base_url.startswith("http://localhost") and not base_url.startswith("http://127.0.0.1"):
-            preference["auto_return"] = "approved"
 
     body = json.dumps(preference, ensure_ascii=False).encode("utf-8")
     req = request.Request(
@@ -404,6 +417,54 @@ def fetch_mercado_pago_payment(payment_id):
     )
     with request.urlopen(req, timeout=12) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+#EXTRACT_MERCADO_PAGO_PAYMENT_ID
+def extract_mercado_pago_payment_id(payload, query):
+    data = payload.get("data") if isinstance(payload, dict) else {}
+    candidates = [
+        data.get("id") if isinstance(data, dict) else "",
+        payload.get("id") if isinstance(payload, dict) else "",
+        query.get("data.id", [""])[0],
+        query.get("id", [""])[0],
+    ]
+    for candidate in candidates:
+        payment_id = str(candidate or "").strip()
+        if payment_id:
+            return payment_id
+    return ""
+
+
+#VERIFY_MERCADO_PAGO_WEBHOOK_SIGNATURE
+def verify_mercado_pago_webhook_signature(headers, payment_id, query):
+    if not MERCADO_PAGO_WEBHOOK_SECRET:
+        return True
+
+    signature_header = headers.get("x-signature", "")
+    request_id = headers.get("x-request-id", "")
+    if not signature_header or not request_id or not payment_id:
+        return False
+
+    signature_parts = {}
+    for part in signature_header.split(","):
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        signature_parts[key.strip()] = value.strip()
+
+    timestamp = signature_parts.get("ts", "")
+    signature = signature_parts.get("v1", "")
+    if not timestamp or not signature:
+        return False
+
+    data_id = query.get("data.id", [""])[0] or payment_id
+    manifest = f"id:{data_id};request-id:{request_id};ts:{timestamp};"
+    expected = hmac.new(
+        MERCADO_PAGO_WEBHOOK_SECRET.encode("utf-8"),
+        manifest.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
 
 
 #INSERT_PRODUCT
@@ -732,11 +793,12 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     def handle_payment_webhook(self):
         try:
             payload = self.read_json()
-            payment_id = (
-                str((payload.get("data") or {}).get("id") or "")
-                or str(payload.get("id") or "")
-                or parse.parse_qs(parse.urlparse(self.path).query).get("id", [""])[0]
-            )
+            query = parse.parse_qs(parse.urlparse(self.path).query)
+            payment_id = extract_mercado_pago_payment_id(payload, query)
+            if not verify_mercado_pago_webhook_signature(self.headers, payment_id, query):
+                self.send_json({"ok": False, "error": "Assinatura invalida."}, status=401)
+                return
+
             payment = fetch_mercado_pago_payment(payment_id)
             reference = str(payment.get("external_reference") or "").strip()
             status = str(payment.get("status") or "pending").strip() or "pending"
