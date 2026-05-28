@@ -170,10 +170,51 @@ const imagensDestaquePorProduto = {
 
 const imagensModalPorProduto = {
   "dior sauvage": [
-    "img/modal/masculinos/dior_sauvage1.png",
-    "img/modal/masculinos/dior_sauvage2.png",
-    "img/modal/masculinos/dior_sauvage3.png",
-    "img/modal/masculinos/dior_sauvage4.png"
+    "img/modal/masculinos/dior_sauvage/dior_sauvage1.png",
+    "img/modal/masculinos/dior_sauvage/dior_sauvage2.png",
+    "img/modal/masculinos/dior_sauvage/dior_sauvage3.png",
+    "img/modal/masculinos/dior_sauvage/dior_sauvage4.png"
+  ],
+  "ferrari black": [
+    "img/modal/masculinos/ferrari_black/ferrari_black1.png",
+    "img/modal/masculinos/ferrari_black/ferrari_black2.png",
+    "img/modal/masculinos/ferrari_black/ferrari_black3.png",
+    "img/modal/masculinos/ferrari_black/ferrari_black4.png"
+  ],
+  "212 men": [
+    "img/modal/masculinos/212_man/212_men1.png",
+    "img/modal/masculinos/212_man/212_men2.png",
+    "img/modal/masculinos/212_man/212_men3.png",
+    "img/modal/masculinos/212_man/212_men4.png"
+  ],
+  "l'eau d'issey miyake": [
+    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake1.png",
+    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake2.png",
+    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake3.png",
+    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake4.png"
+  ],
+  "invictus victory": [
+    "img/modal/masculinos/Invictus_Victory/Invictus_Victory1.png",
+    "img/modal/masculinos/Invictus_Victory/Invictus_Victory2.png",
+    "img/modal/masculinos/Invictus_Victory/Invictus_Victory3.png"
+  ],
+  "le male elixir": [
+    "img/modal/masculinos/le_male_elixir/le_male_elixir1.png",
+    "img/modal/masculinos/le_male_elixir/le_male_elixir2.png",
+    "img/modal/masculinos/le_male_elixir/le_male_elixir3.png",
+    "img/modal/masculinos/le_male_elixir/le_male_elixir4.png"
+  ],
+  "le male le parfum": [
+    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum1.png",
+    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum2.png",
+    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum3.png",
+    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum4.png"
+  ],
+  "one million": [
+    "img/modal/masculinos/one_million/one_million1.png",
+    "img/modal/masculinos/one_million/one_million2.png",
+    "img/modal/masculinos/one_million/one_million3.png",
+    "img/modal/masculinos/one_million/one_million4.png"
   ]
 };
 
@@ -566,6 +607,7 @@ function verMaisProduto(nomeProduto) {
   const semEstoque = !produtoDisponivel(produto);
   const preco5 = obterPrecoProduto(produto, 5);
   const preco10 = obterPrecoProduto(produto, 10);
+  const avaliacao = obterAvaliacaoProduto(produto.nome);
 
   if (modalExistente) modalExistente.remove();
   document.body.classList.add("modal-aberto");
@@ -579,7 +621,7 @@ function verMaisProduto(nomeProduto) {
 
         <div class="modal-layout-premium">
           ${renderizarGaleriaModal(produto, imagensGaleria)}
-          ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10)}
+          ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10, avaliacao)}
         </div>
 
         <div class="modal-compra-premium">
@@ -607,7 +649,7 @@ function verMaisProduto(nomeProduto) {
 
         <div class="modal-beneficios-premium" aria-label="Benefícios da compra">
           <span><i class="fa-solid fa-lock" aria-hidden="true"></i> Compra segura</span>
-          <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Envio rápido</span>
+          <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Envio rápido para todo o Brasil</span>
           <span><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Satisfação garantida</span>
         </div>
       </div>
@@ -650,6 +692,14 @@ function renderizarGaleriaModal(produto, imagens) {
         <button class="modal-favorito" type="button" aria-label="Favoritar perfume">
           <i class="fa-regular fa-heart" aria-hidden="true"></i>
         </button>
+        ${imagens.length > 1 ? `
+          <button class="modal-galeria-seta modal-galeria-anterior" type="button" aria-label="Imagem anterior" onclick="navegarImagemModal(-1)">
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          </button>
+          <button class="modal-galeria-seta modal-galeria-proxima" type="button" aria-label="Próxima imagem" onclick="navegarImagemModal(1)">
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </button>
+        ` : ""}
         <img src="${imagemPrincipal}" alt="${produto.nome}" onload="finalizarCarregamentoImagemModal(this)" onerror="marcarImagemModalIndisponivel(this)">
       </div>
 
@@ -665,7 +715,7 @@ function renderizarGaleriaModal(produto, imagens) {
 }
 
 // #RENDERIZAR_INFO_MODAL
-function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10) {
+function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10, avaliacao) {
   const semEstoque = !produtoDisponivel(produto);
 
   return `
@@ -680,10 +730,7 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
 
       <h2 id="modalProdutoTitulo">${produto.nome}</h2>
 
-      <div class="modal-rating" aria-label="Avaliação">
-        <span aria-hidden="true">★★★★★</span>
-        <small>Seleção premium</small>
-      </div>
+      ${renderizarAvaliacaoModal(produto.nome, avaliacao)}
 
       <p class="modal-descricao">Uma leitura elegante da fragrancia, pensada para quem quer experimentar antes de escolher o frasco ideal.</p>
 
@@ -723,8 +770,70 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
       </div>
 
       <p class="modal-notas"><strong>Notas:</strong> ${detalhes.notas}</p>
+
+      <div class="modal-avaliar" aria-label="Avaliar perfume">
+        <div>
+          <span>Avalie este perfume</span>
+          <strong id="modalAvaliacaoSelecionadaTexto">Toque em uma nota</strong>
+        </div>
+        <div class="modal-avaliar-estrelas" role="radiogroup" aria-label="Nota do perfume">
+          ${[1, 2, 3, 4, 5].map(nota => `
+            <button type="button" aria-label="${nota} estrela${nota > 1 ? "s" : ""}" data-nota="${nota}" onclick="avaliarPerfumeModal(this)">★</button>
+          `).join("")}
+        </div>
+        <button class="modal-avaliar-enviar" type="button" data-produto="${produto.nome}" onclick="enviarAvaliacaoPerfume(this)">Enviar avaliação</button>
+        <small id="modalAvaliacaoMensagem" hidden></small>
+      </div>
     </section>
   `;
+}
+
+// #RENDERIZAR_AVALIACAO_MODAL
+function renderizarAvaliacaoModal(nomeProduto, avaliacao) {
+  const estrelasCheias = Math.floor(avaliacao.media);
+  const meiaEstrela = avaliacao.media - estrelasCheias >= 0.5;
+  const estrelas = Array.from({ length: 5 }, (_, index) => {
+    if (index < estrelasCheias) return "★";
+    if (index === estrelasCheias && meiaEstrela) return "★";
+    return "☆";
+  }).join("");
+
+  return `
+    <div class="modal-rating" aria-label="Avaliação média de ${avaliacao.media.toFixed(1)} em 5">
+      <span aria-hidden="true">${estrelas}</span>
+      <small>${avaliacao.media.toFixed(1)} (${avaliacao.total} avaliações)</small>
+    </div>
+  `;
+}
+
+// #OBTER_AVALIACAO_PRODUTO
+function obterAvaliacaoProduto(nomeProduto) {
+  const chave = `avaliacao-${normalizarTexto(nomeProduto)}`;
+  const salvas = JSON.parse(localStorage.getItem("decantsAvaliacoes") || "{}");
+  const local = salvas[chave];
+  const base = {
+    media: 4.6,
+    total: 128
+  };
+
+  if (!local) return base;
+
+  return {
+    media: Number(local.media) || base.media,
+    total: Number(local.total) || base.total
+  };
+}
+
+// #SALVAR_AVALIACAO_PRODUTO
+function salvarAvaliacaoProduto(nomeProduto, nota) {
+  const chave = `avaliacao-${normalizarTexto(nomeProduto)}`;
+  const salvas = JSON.parse(localStorage.getItem("decantsAvaliacoes") || "{}");
+  const atual = obterAvaliacaoProduto(nomeProduto);
+  const total = atual.total + 1;
+  const media = ((atual.media * atual.total) + nota) / total;
+  salvas[chave] = { media, total };
+  localStorage.setItem("decantsAvaliacoes", JSON.stringify(salvas));
+  return salvas[chave];
 }
 
 // #RENDERIZAR_VOLUME_MODAL
@@ -786,6 +895,58 @@ function selecionarImagemModal(botao) {
   galeria?.classList.toggle("modal-galeria-cinematica", novaImagem.includes("img/modal/"));
   imagemArea.classList.add("modal-imagem-carregando");
   imagemPrincipal.setAttribute("src", novaImagem);
+}
+
+// #NAVEGAR_IMAGEM_MODAL
+function navegarImagemModal(direcao) {
+  const modal = document.querySelector(".modal-conteudo-premium");
+  const thumbs = [...(modal?.querySelectorAll(".modal-thumb") || [])];
+  if (!thumbs.length) return;
+
+  const atual = Math.max(0, thumbs.findIndex(thumb => thumb.classList.contains("ativo")));
+  const proximo = (atual + direcao + thumbs.length) % thumbs.length;
+  selecionarImagemModal(thumbs[proximo]);
+}
+
+// #AVALIAR_PERFUME_MODAL
+function avaliarPerfumeModal(botao) {
+  const grupo = botao.closest(".modal-avaliar");
+  const nota = Number(botao.dataset.nota || 0);
+  if (!grupo || !nota) return;
+
+  grupo.dataset.nota = String(nota);
+  grupo.querySelectorAll(".modal-avaliar-estrelas button").forEach(estrela => {
+    const ativa = Number(estrela.dataset.nota) <= nota;
+    estrela.classList.toggle("ativo", ativa);
+    estrela.setAttribute("aria-checked", String(ativa && Number(estrela.dataset.nota) === nota));
+  });
+
+  const texto = document.getElementById("modalAvaliacaoSelecionadaTexto");
+  if (texto) texto.textContent = `${nota} de 5 estrelas`;
+}
+
+// #ENVIAR_AVALIACAO_PERFUME
+function enviarAvaliacaoPerfume(botao) {
+  const grupo = botao.closest(".modal-avaliar");
+  const nota = Number(grupo?.dataset.nota || 0);
+  const mensagem = document.getElementById("modalAvaliacaoMensagem");
+  if (!grupo || !mensagem) return;
+
+  mensagem.hidden = false;
+
+  if (!nota) {
+    mensagem.textContent = "Escolha uma nota antes de enviar.";
+    mensagem.classList.add("erro");
+    return;
+  }
+
+  const avaliacao = salvarAvaliacaoProduto(botao.dataset.produto, nota);
+  const rating = document.querySelector(".modal-rating small");
+  if (rating) rating.textContent = `${Number(avaliacao.media).toFixed(1)} (${avaliacao.total} avaliações)`;
+
+  mensagem.classList.remove("erro");
+  mensagem.textContent = "Obrigado pela avaliação.";
+  botao.disabled = true;
 }
 
 // #ALTERAR_QUANTIDADE_MODAL
@@ -1330,7 +1491,10 @@ if (typeof window !== "undefined") {
     verMaisProduto,
     fecharDetalhesProduto,
     selecionarImagemModal,
+    navegarImagemModal,
     selecionarVolumeModal,
+    avaliarPerfumeModal,
+    enviarAvaliacaoPerfume,
     alterarQuantidadeModal,
     finalizarCarregamentoImagemModal,
     marcarImagemModalIndisponivel,
