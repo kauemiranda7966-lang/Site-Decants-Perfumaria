@@ -607,7 +607,6 @@ function verMaisProduto(nomeProduto) {
   const semEstoque = !produtoDisponivel(produto);
   const preco5 = obterPrecoProduto(produto, 5);
   const preco10 = obterPrecoProduto(produto, 10);
-  const avaliacao = obterAvaliacaoProduto(produto.nome);
 
   if (modalExistente) modalExistente.remove();
   document.body.classList.add("modal-aberto");
@@ -621,7 +620,7 @@ function verMaisProduto(nomeProduto) {
 
         <div class="modal-layout-premium">
           ${renderizarGaleriaModal(produto, imagensGaleria)}
-          ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10, avaliacao)}
+          ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10)}
         </div>
 
         <div class="modal-compra-premium">
@@ -715,7 +714,7 @@ function renderizarGaleriaModal(produto, imagens) {
 }
 
 // #RENDERIZAR_INFO_MODAL
-function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10, avaliacao) {
+function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10) {
   const semEstoque = !produtoDisponivel(produto);
 
   return `
@@ -729,8 +728,6 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
       </div>
 
       <h2 id="modalProdutoTitulo">${produto.nome}</h2>
-
-      ${renderizarAvaliacaoModal(produto.nome, avaliacao)}
 
       <p class="modal-descricao">Uma leitura elegante da fragrancia, pensada para quem quer experimentar antes de escolher o frasco ideal.</p>
 
@@ -770,70 +767,8 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
       </div>
 
       <p class="modal-notas"><strong>Notas:</strong> ${detalhes.notas}</p>
-
-      <div class="modal-avaliar" aria-label="Avaliar perfume">
-        <div>
-          <span>Avalie este perfume</span>
-          <strong id="modalAvaliacaoSelecionadaTexto">Toque em uma nota</strong>
-        </div>
-        <div class="modal-avaliar-estrelas" role="radiogroup" aria-label="Nota do perfume">
-          ${[1, 2, 3, 4, 5].map(nota => `
-            <button type="button" aria-label="${nota} estrela${nota > 1 ? "s" : ""}" data-nota="${nota}" onclick="avaliarPerfumeModal(this)">★</button>
-          `).join("")}
-        </div>
-        <button class="modal-avaliar-enviar" type="button" data-produto="${produto.nome}" onclick="enviarAvaliacaoPerfume(this)">Enviar avaliação</button>
-        <small id="modalAvaliacaoMensagem" hidden></small>
-      </div>
     </section>
   `;
-}
-
-// #RENDERIZAR_AVALIACAO_MODAL
-function renderizarAvaliacaoModal(nomeProduto, avaliacao) {
-  const estrelasCheias = Math.floor(avaliacao.media);
-  const meiaEstrela = avaliacao.media - estrelasCheias >= 0.5;
-  const estrelas = Array.from({ length: 5 }, (_, index) => {
-    if (index < estrelasCheias) return "★";
-    if (index === estrelasCheias && meiaEstrela) return "★";
-    return "☆";
-  }).join("");
-
-  return `
-    <div class="modal-rating" aria-label="Avaliação média de ${avaliacao.media.toFixed(1)} em 5">
-      <span aria-hidden="true">${estrelas}</span>
-      <small>${avaliacao.media.toFixed(1)} (${avaliacao.total} avaliações)</small>
-    </div>
-  `;
-}
-
-// #OBTER_AVALIACAO_PRODUTO
-function obterAvaliacaoProduto(nomeProduto) {
-  const chave = `avaliacao-${normalizarTexto(nomeProduto)}`;
-  const salvas = JSON.parse(localStorage.getItem("decantsAvaliacoes") || "{}");
-  const local = salvas[chave];
-  const base = {
-    media: 4.6,
-    total: 128
-  };
-
-  if (!local) return base;
-
-  return {
-    media: Number(local.media) || base.media,
-    total: Number(local.total) || base.total
-  };
-}
-
-// #SALVAR_AVALIACAO_PRODUTO
-function salvarAvaliacaoProduto(nomeProduto, nota) {
-  const chave = `avaliacao-${normalizarTexto(nomeProduto)}`;
-  const salvas = JSON.parse(localStorage.getItem("decantsAvaliacoes") || "{}");
-  const atual = obterAvaliacaoProduto(nomeProduto);
-  const total = atual.total + 1;
-  const media = ((atual.media * atual.total) + nota) / total;
-  salvas[chave] = { media, total };
-  localStorage.setItem("decantsAvaliacoes", JSON.stringify(salvas));
-  return salvas[chave];
 }
 
 // #RENDERIZAR_VOLUME_MODAL
@@ -906,47 +841,6 @@ function navegarImagemModal(direcao) {
   const atual = Math.max(0, thumbs.findIndex(thumb => thumb.classList.contains("ativo")));
   const proximo = (atual + direcao + thumbs.length) % thumbs.length;
   selecionarImagemModal(thumbs[proximo]);
-}
-
-// #AVALIAR_PERFUME_MODAL
-function avaliarPerfumeModal(botao) {
-  const grupo = botao.closest(".modal-avaliar");
-  const nota = Number(botao.dataset.nota || 0);
-  if (!grupo || !nota) return;
-
-  grupo.dataset.nota = String(nota);
-  grupo.querySelectorAll(".modal-avaliar-estrelas button").forEach(estrela => {
-    const ativa = Number(estrela.dataset.nota) <= nota;
-    estrela.classList.toggle("ativo", ativa);
-    estrela.setAttribute("aria-checked", String(ativa && Number(estrela.dataset.nota) === nota));
-  });
-
-  const texto = document.getElementById("modalAvaliacaoSelecionadaTexto");
-  if (texto) texto.textContent = `${nota} de 5 estrelas`;
-}
-
-// #ENVIAR_AVALIACAO_PERFUME
-function enviarAvaliacaoPerfume(botao) {
-  const grupo = botao.closest(".modal-avaliar");
-  const nota = Number(grupo?.dataset.nota || 0);
-  const mensagem = document.getElementById("modalAvaliacaoMensagem");
-  if (!grupo || !mensagem) return;
-
-  mensagem.hidden = false;
-
-  if (!nota) {
-    mensagem.textContent = "Escolha uma nota antes de enviar.";
-    mensagem.classList.add("erro");
-    return;
-  }
-
-  const avaliacao = salvarAvaliacaoProduto(botao.dataset.produto, nota);
-  const rating = document.querySelector(".modal-rating small");
-  if (rating) rating.textContent = `${Number(avaliacao.media).toFixed(1)} (${avaliacao.total} avaliações)`;
-
-  mensagem.classList.remove("erro");
-  mensagem.textContent = "Obrigado pela avaliação.";
-  botao.disabled = true;
 }
 
 // #ALTERAR_QUANTIDADE_MODAL
@@ -1493,8 +1387,6 @@ if (typeof window !== "undefined") {
     selecionarImagemModal,
     navegarImagemModal,
     selecionarVolumeModal,
-    avaliarPerfumeModal,
-    enviarAvaliacaoPerfume,
     alterarQuantidadeModal,
     finalizarCarregamentoImagemModal,
     marcarImagemModalIndisponivel,
