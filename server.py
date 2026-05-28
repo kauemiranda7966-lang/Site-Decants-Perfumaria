@@ -48,6 +48,14 @@ MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
 MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
 MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
 PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
+ADMIN_ALLOWED_ORIGINS = {
+    origin.strip().rstrip("/")
+    for origin in os.environ.get(
+        "DECANTS_ALLOWED_ORIGINS",
+        "https://kauemiranda7966-lang.github.io,http://localhost:8000,http://127.0.0.1:8000",
+    ).split(",")
+    if origin.strip()
+}
 SESSIONS = {}
 
 
@@ -558,9 +566,27 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #END_HEADERS
     def end_headers(self):
+        self.add_cors_headers()
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "same-origin")
         super().end_headers()
+
+    #ADD_CORS_HEADERS
+    def add_cors_headers(self):
+        origin = (self.headers.get("Origin") or "").rstrip("/")
+        if origin not in ADMIN_ALLOWED_ORIGINS:
+            return
+
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Access-Control-Allow-Credentials", "true")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        self.send_header("Vary", "Origin")
+
+    #DO_OPTIONS
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.end_headers()
 
     #DO_GET
     def do_GET(self):
@@ -850,7 +876,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header(
             "Set-Cookie",
-            f"{SESSION_COOKIE}={sign_session(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age={SESSION_MAX_AGE}",
+            f"{SESSION_COOKIE}={sign_session(token)}; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}",
         )
         self.end_headers()
         self.wfile.write(json.dumps({"ok": True, "user": ADMIN_USER}).encode("utf-8"))
@@ -862,9 +888,20 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             SESSIONS.pop(session.split(".", 1)[0], None)
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Set-Cookie", f"{SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0")
+        self.send_header("Set-Cookie", f"{SESSION_COOKIE}=; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age=0")
         self.end_headers()
         self.wfile.write(json.dumps({"ok": True}).encode("utf-8"))
+
+    #COOKIE_SAME_SITE
+    def cookie_same_site(self):
+        origin = (self.headers.get("Origin") or "").rstrip("/")
+        host = self.headers.get("Host", "")
+        same_origin = not origin or origin.endswith(host)
+
+        if same_origin:
+            return "SameSite=Lax"
+
+        return "SameSite=None; Secure"
 
     #READ_JSON
     def read_json(self):

@@ -1,6 +1,7 @@
 ﻿let produtosAdmin = [];
 let autenticado = false;
 let filtroAdmin = "todos";
+const API_ORIGIN = obterOrigemApiAdmin();
 
 const campos = {
   indice: document.getElementById("produtoIndice"),
@@ -59,9 +60,9 @@ async function iniciarAdmin() {
     alternarAcesso(autenticado, sessao.user);
     if (autenticado) await carregarProdutosAdmin();
   } catch (error) {
-    adminStatus.textContent = "Cadastre-se para receber novidades assim que o clube estiver online.";
-    leadCapture.hidden = false;
-    loginAdmin.hidden = true;
+    adminStatus.textContent = "Entre com o usuario e senha do dono para acessar o painel.";
+    leadCapture.hidden = true;
+    loginAdmin.hidden = false;
     adminConteudo.hidden = true;
     resetarCatalogoBotao.hidden = true;
   }
@@ -151,14 +152,14 @@ async function sair() {
 
 // #ALTERNAR_ACESSO
 function alternarAcesso(permitido, usuario = "") {
-  leadCapture.hidden = permitido;
-  loginAdmin.hidden = true;
+  leadCapture.hidden = true;
+  loginAdmin.hidden = permitido;
   adminConteudo.hidden = !permitido;
   sairAdmin.hidden = !permitido;
   resetarCatalogoBotao.hidden = !permitido;
   adminKicker.textContent = permitido ? "Painel do dono" : "Clube Decant's";
-  adminTitulo.textContent = permitido ? "Controle de estoque e vitrine" : "Receba ofertas secretas primeiro";
-  adminStatus.textContent = permitido ? `Conectado como ${usuario}` : "Novidades, promocoes e alertas de perfumes selecionados.";
+  adminTitulo.textContent = permitido ? "Controle de estoque e vitrine" : "Entrar no painel administrativo";
+  adminStatus.textContent = permitido ? `Conectado como ${usuario}` : "Entre com o usuario e senha do dono para acessar o painel.";
 }
 
 // #CARREGAR_PRODUTOS_ADMIN
@@ -365,18 +366,43 @@ function mascararTelefone(event) {
 
 // #API
 async function api(url, options = {}) {
-  const resposta = await fetch(url, {
-    credentials: "same-origin",
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options
-  });
+  let resposta;
+
+  try {
+    resposta = await fetch(`${API_ORIGIN}${url}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options
+    });
+  } catch (error) {
+    throw new Error("Nao consegui conectar ao servidor do painel. Abra pelo link publicado no Render ou tente novamente em alguns segundos.");
+  }
 
   const texto = await resposta.text();
-  const dados = texto ? JSON.parse(texto) : {};
+  let dados = {};
+
+  try {
+    dados = texto ? JSON.parse(texto) : {};
+  } catch (error) {
+    throw new Error("O servidor respondeu em formato invalido. Recarregue a pagina e tente novamente.");
+  }
 
   if (!resposta.ok) {
     throw new Error(dados.error || "Erro ao comunicar com o servidor.");
   }
 
   return dados;
+}
+
+// #OBTER_ORIGEM_API_ADMIN
+function obterOrigemApiAdmin() {
+  const host = window.location.hostname;
+  const origemAtual = window.location.origin;
+  const origemProducao = "https://site-decants-perfumaria.onrender.com";
+
+  if (host.includes("github.io") || window.location.protocol === "file:") {
+    return origemProducao;
+  }
+
+  return origemAtual;
 }
