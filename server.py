@@ -3,22 +3,35 @@ import hashlib
 import hmac
 import http.server
 import json
+import mimetypes
 import os
 import re
 import secrets
 import sqlite3
 import time
+from email import policy
+from email.parser import BytesParser
 from http import cookies
 from pathlib import Path
 from urllib import error, parse, request
 from urllib.parse import unquote
+
+try:
+    import bcrypt
+except ImportError:
+    bcrypt = None
 
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_DB_PATH = ROOT / "data" / "decants.sqlite3"
 DB_PATH = Path(os.environ.get("DECANTS_DB_PATH", DEFAULT_DB_PATH))
 SESSION_COOKIE = "decants_session"
+CSRF_COOKIE = "decants_csrf"
 SESSION_MAX_AGE = 60 * 60 * 8
+UPLOAD_DIR = ROOT / "img" / "uploads"
+LOGIN_ATTEMPTS = {}
+LOGIN_LIMIT = 5
+LOGIN_WINDOW = 15 * 60
 
 
 #LOAD_ENV_FILE
@@ -42,8 +55,10 @@ load_env_file()
 
 ADMIN_USER = os.environ.get("DECANTS_ADMIN_USER", "decantsperfumaria1@gmail.com")
 ADMIN_PASSWORD = os.environ.get("DECANTS_ADMIN_PASSWORD", "Wellida123 senha")
+ADMIN_PASSWORD_HASH = os.environ.get("DECANTS_ADMIN_PASSWORD_HASH", "")
 SECRET_KEY = os.environ.get("DECANTS_SECRET_KEY", "troque-esta-chave-em-producao")
 STORE_WHATSAPP_NUMBER = re.sub(r"\D+", "", os.environ.get("DECANTS_WHATSAPP_NUMBER", "558899641605"))
+ADMIN_DOMAIN = os.environ.get("DECANTS_ADMIN_DOMAIN", "admin.decantperfumaria.com.br")
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
 MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
 MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
@@ -56,6 +71,7 @@ ADMIN_ALLOWED_ORIGINS = {
     ).split(",")
     if origin.strip()
 }
+ADMIN_ALLOWED_ORIGINS.add(f"https://{ADMIN_DOMAIN}")
 SESSIONS = {}
 
 
@@ -100,6 +116,7 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS leads (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL DEFAULT '',
                 email TEXT NOT NULL,
                 telefone TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -107,6 +124,9 @@ def init_db():
             )
             """
         )
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(leads)").fetchall()}
+        if "nome" not in columns:
+            conn.execute("ALTER TABLE leads ADD COLUMN nome TEXT NOT NULL DEFAULT ''")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS orders (
@@ -128,6 +148,20 @@ def init_db():
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS order_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL,
+                old_status TEXT NOT NULL DEFAULT '',
+                new_status TEXT NOT NULL,
+                note TEXT NOT NULL DEFAULT '',
+                admin_user TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(order_id) REFERENCES orders(id)
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS order_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 order_id INTEGER NOT NULL,
@@ -138,6 +172,20 @@ def init_db():
                 unit_price REAL NOT NULL,
                 subtotal REAL NOT NULL,
                 FOREIGN KEY(order_id) REFERENCES orders(id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS admin_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_user TEXT NOT NULL DEFAULT '',
+                action TEXT NOT NULL,
+                entity TEXT NOT NULL DEFAULT '',
+                entity_id TEXT NOT NULL DEFAULT '',
+                ip TEXT NOT NULL DEFAULT '',
+                details TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
@@ -217,6 +265,7 @@ def normalize_product(payload):
 
 #NORMALIZE_LEAD
 def normalize_lead(payload):
+    nome = str(payload.get("nome", "")).strip()
     email = str(payload.get("email", "")).strip().lower()
     telefone = re.sub(r"\D+", "", str(payload.get("telefone", "")))
 
@@ -225,7 +274,7 @@ def normalize_lead(payload):
     if len(telefone) < 10:
         raise ValueError("Informe um telefone com DDD.")
 
-    return {"email": email, "telefone": telefone}
+    return {"nome": nome[:120], "email": email, "telefone": telefone}
 
 
 #PARSE_PRICE
@@ -511,29 +560,91 @@ def insert_product(conn, product, position=None):
     )
 
 
-#RESET_PRODUCTS
-def reset_products():
-    with connect_db() as conn:
-        conn.execute("DELETE FROM products")
-        conn.execute("DELETE FROM sqlite_sequence WHERE name = 'products'")
-        seed_products(conn)
-
-
-#PASSWORD_HASH
-def password_hash(password):
-    return hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        SECRET_KEY.encode("utf-8"),
-        120000,
-    )
-
-
 #CHECK_PASSWORD
 def check_password(password):
-    expected = password_hash(ADMIN_PASSWORD)
-    received = password_hash(password)
-    return hmac.compare_digest(expected, received)
+    password_bytes = password.encode("utf-8")
+    if ADMIN_PASSWORD_HASH:
+        if bcrypt is None:
+            return False
+        try:
+            return bcrypt.checkpw(password_bytes, ADMIN_PASSWORD_HASH.encode("utf-8"))
+        except ValueError:
+            return False
+
+    # Fallback only keeps local development usable. Production should set
+    # DECANTS_ADMIN_PASSWORD_HASH with a bcrypt hash and remove plaintext secrets.
+    return hmac.compare_digest(password, ADMIN_PASSWORD)
+
+
+#CREATE_CSRF_TOKEN
+def create_csrf_token():
+    return secrets.token_urlsafe(32)
+
+
+#SAFE_UPLOAD_NAME
+def safe_upload_name(filename):
+    stem = Path(filename or "produto").stem
+    suffix = Path(filename or "").suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        suffix = ".png"
+    stem = re.sub(r"[^a-zA-Z0-9_-]+", "-", stem).strip("-").lower() or "produto"
+    return f"{int(time.time())}-{secrets.token_hex(4)}-{stem}{suffix}"
+
+
+#PARSE_MULTIPART_IMAGE
+def parse_multipart_image(headers, body):
+    content_type = headers.get("Content-Type", "")
+    message_bytes = (
+        f"Content-Type: {content_type}\r\nMIME-Version: 1.0\r\n\r\n".encode("utf-8")
+        + body
+    )
+    message = BytesParser(policy=policy.default).parsebytes(message_bytes)
+    if not message.is_multipart():
+        raise ValueError("Envie uma imagem em multipart/form-data.")
+
+    for part in message.iter_parts():
+        disposition = part.get_content_disposition()
+        if disposition != "form-data":
+            continue
+        params = dict(part.get_params(header="content-disposition") or [])
+        if params.get("name") != "image":
+            continue
+        filename = part.get_filename()
+        payload = part.get_payload(decode=True) or b""
+        if not filename or not payload:
+            raise ValueError("Imagem obrigatoria.")
+        return filename, payload
+
+    raise ValueError("Imagem obrigatoria.")
+
+
+#ADMIN_CLIENT_IP
+def admin_client_ip(handler):
+    forwarded = handler.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",", 1)[0].strip()
+    return handler.client_address[0] if handler.client_address else ""
+
+
+#RATE_LIMITED
+def rate_limited(ip):
+    now = time.time()
+    attempts = [stamp for stamp in LOGIN_ATTEMPTS.get(ip, []) if stamp > now - LOGIN_WINDOW]
+    LOGIN_ATTEMPTS[ip] = attempts
+    return len(attempts) >= LOGIN_LIMIT
+
+
+#REGISTER_FAILED_LOGIN
+def register_failed_login(ip):
+    now = time.time()
+    attempts = [stamp for stamp in LOGIN_ATTEMPTS.get(ip, []) if stamp > now - LOGIN_WINDOW]
+    attempts.append(now)
+    LOGIN_ATTEMPTS[ip] = attempts
+
+
+#CLEAR_LOGIN_ATTEMPTS
+def clear_login_attempts(ip):
+    LOGIN_ATTEMPTS.pop(ip, None)
 
 
 #SIGN_SESSION
@@ -568,6 +679,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         self.add_cors_headers()
         self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "same-origin")
         super().end_headers()
 
@@ -590,6 +702,34 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #DO_GET
     def do_GET(self):
+        if self.is_admin_page_request():
+            self.serve_admin_app()
+            return
+        if self.path.startswith("/api/admin/dashboard"):
+            if not self.require_auth():
+                return
+            self.handle_admin_dashboard()
+            return
+        if self.path.startswith("/api/admin/orders/"):
+            if not self.require_auth():
+                return
+            self.handle_admin_order_detail()
+            return
+        if self.path.startswith("/api/admin/orders"):
+            if not self.require_auth():
+                return
+            self.handle_admin_orders()
+            return
+        if self.path.startswith("/api/admin/customers"):
+            if not self.require_auth():
+                return
+            self.handle_admin_customers()
+            return
+        if self.path.startswith("/api/admin/logs"):
+            if not self.require_auth():
+                return
+            self.handle_admin_logs()
+            return
         if self.path.startswith("/api/products"):
             self.handle_get_products()
             return
@@ -597,7 +737,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_get_order()
             return
         if self.path.startswith("/api/session"):
-            self.send_json({"authenticated": self.is_authenticated(), "user": ADMIN_USER if self.is_authenticated() else ""})
+            self.handle_session()
             return
         super().do_GET()
 
@@ -607,9 +747,13 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_create_lead()
             return
         if self.path.startswith("/api/login"):
+            if not self.require_csrf():
+                return
             self.handle_login()
             return
         if self.path.startswith("/api/logout"):
+            if not self.require_csrf():
+                return
             self.handle_logout()
             return
         if self.path.startswith("/api/checkout"):
@@ -618,30 +762,48 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith("/api/payments/webhook"):
             self.handle_payment_webhook()
             return
-        if self.path.startswith("/api/products/reset"):
+        if self.path.startswith("/api/admin/upload"):
             if not self.require_auth():
                 return
-            reset_products()
-            self.handle_get_products()
+            if not self.require_csrf():
+                return
+            self.handle_admin_upload()
             return
         if self.path.startswith("/api/products"):
             if not self.require_auth():
                 return
+            if not self.require_csrf():
+                return
             payload = self.read_json()
             product = normalize_product(payload)
             with connect_db() as conn:
-                insert_product(conn, product)
+                cursor = conn.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM products")
+                position = cursor.fetchone()[0]
+                insert_product(conn, product, position)
+                product_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            self.log_admin_action("product_create", "products", str(product_id), product["nome"])
             self.send_json({"ok": True}, status=201)
             return
         self.send_error(404)
 
     #DO_PUT
     def do_PUT(self):
+        order_match = re.match(r"/api/admin/orders/(\d+)/status", self.path)
+        if order_match:
+            if not self.require_auth():
+                return
+            if not self.require_csrf():
+                return
+            self.handle_admin_update_order_status(int(order_match.group(1)))
+            return
+
         match = re.match(r"/api/products/(\d+)", self.path)
         if not match:
             self.send_error(404)
             return
         if not self.require_auth():
+            return
+        if not self.require_csrf():
             return
         product_id = int(match.group(1))
         product = normalize_product(self.read_json())
@@ -673,6 +835,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             if result.rowcount == 0:
                 self.send_error(404)
                 return
+        self.log_admin_action("product_update", "products", str(product_id), product["nome"])
         self.send_json({"ok": True})
 
     #DO_DELETE
@@ -683,18 +846,248 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             return
         if not self.require_auth():
             return
+        if not self.require_csrf():
+            return
         with connect_db() as conn:
             result = conn.execute("DELETE FROM products WHERE id = ?", (int(match.group(1)),))
             if result.rowcount == 0:
                 self.send_error(404)
                 return
+        self.log_admin_action("product_delete", "products", match.group(1), "")
         self.send_json({"ok": True})
+
+    #IS_ADMIN_HOST
+    def is_admin_host(self):
+        host = self.headers.get("Host", "").split(":", 1)[0].lower()
+        return host == ADMIN_DOMAIN.lower() or host.startswith("localhost") or host.startswith("127.0.0.1")
+
+    #IS_ADMIN_PAGE_REQUEST
+    def is_admin_page_request(self):
+        if not self.is_admin_host():
+            return False
+        path = parse.urlparse(self.path).path
+        host = self.headers.get("Host", "").split(":", 1)[0].lower()
+        if host == ADMIN_DOMAIN.lower() and path == "/":
+            return True
+        return path in {"/login", "/dashboard", "/produtos", "/pedidos", "/clientes", "/logs"}
+
+    #SERVE_ADMIN_APP
+    def serve_admin_app(self):
+        path = ROOT / "admin.html"
+        content = path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+
+    #HANDLE_ADMIN_DASHBOARD
+    def handle_admin_dashboard(self):
+        with connect_db() as conn:
+            metrics = conn.execute(
+                """
+                SELECT
+                    COALESCE(SUM(total), 0) AS total_sales,
+                    COUNT(*) AS total_orders,
+                    SUM(CASE WHEN status IN ('approved', 'paid', 'delivered', 'completed') THEN total ELSE 0 END) AS paid_sales
+                FROM orders
+                """
+            ).fetchone()
+            product_count = conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
+            customers = conn.execute("SELECT COUNT(DISTINCT customer_email) FROM orders").fetchone()[0]
+            stock_value_rows = conn.execute("SELECT estoque, preco5, preco10, promocao, precoPromocional5, precoPromocional10 FROM products").fetchall()
+            recent_orders = conn.execute(
+                """
+                SELECT id, reference, customer_name, total, status, created_at
+                FROM orders ORDER BY created_at DESC LIMIT 6
+                """
+            ).fetchall()
+
+        stock_value = sum(product_price(row, 10) * int(row["estoque"] or 0) for row in stock_value_rows)
+        self.send_json(
+            {
+                "totalSales": round(float(metrics["total_sales"] or 0), 2),
+                "paidSales": round(float(metrics["paid_sales"] or 0), 2),
+                "totalOrders": int(metrics["total_orders"] or 0),
+                "productCount": product_count,
+                "customerCount": customers,
+                "stockValue": round(stock_value, 2),
+                "recentOrders": [dict(row) for row in recent_orders],
+            }
+        )
+
+    #HANDLE_ADMIN_ORDERS
+    def handle_admin_orders(self):
+        with connect_db() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, reference, customer_name, customer_email, customer_phone, total, status, created_at, updated_at
+                FROM orders ORDER BY created_at DESC
+                """
+            ).fetchall()
+        self.send_json([dict(row) for row in rows])
+
+    #HANDLE_ADMIN_ORDER_DETAIL
+    def handle_admin_order_detail(self):
+        match = re.match(r"/api/admin/orders/(\d+)", self.path)
+        if not match:
+            self.send_error(404)
+            return
+        order_id = int(match.group(1))
+        with connect_db() as conn:
+            order = conn.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
+            if not order:
+                self.send_error(404)
+                return
+            items = conn.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
+            history = conn.execute(
+                "SELECT old_status, new_status, note, admin_user, created_at FROM order_history WHERE order_id = ? ORDER BY created_at DESC",
+                (order_id,),
+            ).fetchall()
+        payload = dict(order)
+        payload["items"] = [dict(item) for item in items]
+        payload["history"] = [dict(item) for item in history]
+        self.send_json(payload)
+
+    #HANDLE_ADMIN_UPDATE_ORDER_STATUS
+    def handle_admin_update_order_status(self, order_id):
+        payload = self.read_json()
+        new_status = str(payload.get("status", "")).strip()
+        note = str(payload.get("note", "")).strip()
+        allowed = {
+            "whatsapp_pending", "awaiting_payment", "pending", "approved",
+            "preparing", "shipped", "delivered", "cancelled", "refunded",
+        }
+        if new_status not in allowed:
+            self.send_json({"error": "Status invalido."}, status=400)
+            return
+
+        with connect_db() as conn:
+            order = conn.execute("SELECT id, status FROM orders WHERE id = ?", (order_id,)).fetchone()
+            if not order:
+                self.send_error(404)
+                return
+            old_status = order["status"]
+            conn.execute(
+                "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (new_status, order_id),
+            )
+            conn.execute(
+                """
+                INSERT INTO order_history (order_id, old_status, new_status, note, admin_user)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (order_id, old_status, new_status, note, ADMIN_USER),
+            )
+        self.log_admin_action("order_status_update", "orders", str(order_id), f"{old_status} -> {new_status}")
+        self.send_json({"ok": True})
+
+    #HANDLE_ADMIN_CUSTOMERS
+    def handle_admin_customers(self):
+        with connect_db() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    customer_email AS email,
+                    MAX(customer_name) AS name,
+                    MAX(customer_phone) AS phone,
+                    MAX(customer_address) AS address,
+                    COUNT(*) AS order_count,
+                    COALESCE(SUM(total), 0) AS total_spent,
+                    MAX(created_at) AS last_order_at
+                FROM orders
+                GROUP BY customer_email
+                ORDER BY last_order_at DESC
+                """
+            ).fetchall()
+            leads = conn.execute(
+                """
+                SELECT email, nome AS name, telefone AS phone, created_at
+                FROM leads
+                WHERE email NOT IN (SELECT DISTINCT customer_email FROM orders)
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
+        customers = [dict(row) for row in rows]
+        for lead in leads:
+            customers.append(
+                {
+                    "email": lead["email"],
+                    "name": lead["name"] or "Lead Clube de Ofertas",
+                    "phone": lead["phone"],
+                    "address": "",
+                    "order_count": 0,
+                    "total_spent": 0,
+                    "last_order_at": lead["created_at"],
+                }
+            )
+        self.send_json(customers)
+
+    #HANDLE_ADMIN_LOGS
+    def handle_admin_logs(self):
+        with connect_db() as conn:
+            rows = conn.execute(
+                "SELECT admin_user, action, entity, entity_id, ip, details, created_at FROM admin_logs ORDER BY created_at DESC LIMIT 100"
+            ).fetchall()
+        self.send_json([dict(row) for row in rows])
+
+    #HANDLE_ADMIN_UPLOAD
+    def handle_admin_upload(self):
+        content_type = self.headers.get("Content-Type", "")
+        if not content_type.startswith("multipart/form-data"):
+            self.send_json({"error": "Envie uma imagem em multipart/form-data."}, status=400)
+            return
+
+        size = int(self.headers.get("Content-Length", 0))
+        if size <= 0:
+            self.send_json({"error": "Imagem obrigatoria."}, status=400)
+            return
+        if size > 6 * 1024 * 1024:
+            self.send_json({"error": "Imagem maior que 5MB."}, status=400)
+            return
+
+        try:
+            original_filename, image_bytes = parse_multipart_image(self.headers, self.rfile.read(size))
+        except ValueError as error:
+            self.send_json({"error": str(error)}, status=400)
+            return
+
+        if len(image_bytes) > 5 * 1024 * 1024:
+            self.send_json({"error": "Imagem maior que 5MB."}, status=400)
+            return
+
+        filename = safe_upload_name(original_filename)
+        mime = mimetypes.guess_type(filename)[0] or ""
+        if not mime.startswith("image/"):
+            self.send_json({"error": "Formato de imagem invalido."}, status=400)
+            return
+
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        target = UPLOAD_DIR / filename
+        target.write_bytes(image_bytes)
+
+        url = f"/img/uploads/{filename}"
+        self.log_admin_action("image_upload", "uploads", filename, url)
+        self.send_json({"ok": True, "url": url}, status=201)
 
     #HANDLE_GET_PRODUCTS
     def handle_get_products(self):
         with connect_db() as conn:
             rows = conn.execute("SELECT * FROM products ORDER BY position, id").fetchall()
         self.send_json([product_from_row(row) for row in rows])
+
+    #HANDLE_SESSION
+    def handle_session(self):
+        csrf = self.get_cookie(CSRF_COOKIE) or create_csrf_token()
+        authenticated = self.is_authenticated()
+        body = {"authenticated": authenticated, "user": ADMIN_USER if authenticated else "", "csrfToken": csrf}
+        encoded = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.send_header("Set-Cookie", f"{CSRF_COOKIE}={csrf}; {self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}")
+        self.end_headers()
+        self.wfile.write(encoded)
 
     #HANDLE_CREATE_LEAD
     def handle_create_lead(self):
@@ -709,11 +1102,13 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         with connect_db() as conn:
             conn.execute(
                 """
-                INSERT INTO leads (email, telefone)
-                VALUES (?, ?)
-                ON CONFLICT(email, telefone) DO UPDATE SET created_at = CURRENT_TIMESTAMP
+                INSERT INTO leads (nome, email, telefone)
+                VALUES (?, ?, ?)
+                ON CONFLICT(email, telefone) DO UPDATE SET
+                    nome = excluded.nome,
+                    created_at = CURRENT_TIMESTAMP
                 """,
-                (lead["email"], lead["telefone"]),
+                (lead["nome"], lead["email"], lead["telefone"]),
             )
 
         self.send_json({"ok": True, "message": "Cadastro recebido."}, status=201)
@@ -865,21 +1260,32 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #HANDLE_LOGIN
     def handle_login(self):
+        ip = admin_client_ip(self)
+        if rate_limited(ip):
+            self.send_json({"error": "Muitas tentativas. Aguarde alguns minutos e tente novamente."}, status=429)
+            return
+
         payload = self.read_json()
         if payload.get("user") != ADMIN_USER or not check_password(str(payload.get("password", ""))):
+            register_failed_login(ip)
+            self.log_admin_action("login_failed", "auth", "", payload.get("user", ""))
             self.send_json({"error": "Usuario ou senha invalidos."}, status=401)
             return
 
+        clear_login_attempts(ip)
         token = secrets.token_urlsafe(32)
         SESSIONS[token] = time.time() + SESSION_MAX_AGE
+        csrf = self.get_cookie(CSRF_COOKIE) or create_csrf_token()
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header(
             "Set-Cookie",
             f"{SESSION_COOKIE}={sign_session(token)}; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}",
         )
+        self.send_header("Set-Cookie", f"{CSRF_COOKIE}={csrf}; {self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}")
         self.end_headers()
-        self.wfile.write(json.dumps({"ok": True, "user": ADMIN_USER}).encode("utf-8"))
+        self.log_admin_action("login_success", "auth", "", ADMIN_USER)
+        self.wfile.write(json.dumps({"ok": True, "user": ADMIN_USER, "csrfToken": csrf}).encode("utf-8"))
 
     #HANDLE_LOGOUT
     def handle_logout(self):
@@ -889,7 +1295,9 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Set-Cookie", f"{SESSION_COOKIE}=; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age=0")
+        self.send_header("Set-Cookie", f"{CSRF_COOKIE}=; {self.cookie_same_site()}; Path=/; Max-Age=0")
         self.end_headers()
+        self.log_admin_action("logout", "auth", "", ADMIN_USER)
         self.wfile.write(json.dumps({"ok": True}).encode("utf-8"))
 
     #COOKIE_SAME_SITE
@@ -897,9 +1305,11 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         origin = (self.headers.get("Origin") or "").rstrip("/")
         host = self.headers.get("Host", "")
         same_origin = not origin or origin.endswith(host)
+        host_name = host.split(":", 1)[0].lower()
+        secure = "; Secure" if self.headers.get("X-Forwarded-Proto") == "https" or host_name == ADMIN_DOMAIN.lower() else ""
 
         if same_origin:
-            return "SameSite=Lax"
+            return f"SameSite=Lax{secure}"
 
         return "SameSite=None; Secure"
 
@@ -935,6 +1345,29 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"error": "Login necessario."}, status=401)
             return False
         return True
+
+    #REQUIRE_CSRF
+    def require_csrf(self):
+        expected = self.get_cookie(CSRF_COOKIE)
+        received = self.headers.get("X-CSRF-Token", "")
+        if not expected or not received or not hmac.compare_digest(expected, received):
+            self.send_json({"error": "Token CSRF invalido. Recarregue a pagina."}, status=403)
+            return False
+        return True
+
+    #LOG_ADMIN_ACTION
+    def log_admin_action(self, action, entity="", entity_id="", details=""):
+        try:
+            with connect_db() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO admin_logs (admin_user, action, entity, entity_id, ip, details)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (ADMIN_USER, action, entity, str(entity_id), admin_client_ip(self), str(details)[:500]),
+                )
+        except Exception as exc:
+            print(f"Falha ao gravar log administrativo: {exc}")
 
     #LOG_MESSAGE
     def log_message(self, format, *args):

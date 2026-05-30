@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1180">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Decant's Perfumaria</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,6 +32,7 @@
     <a href="#">Início</a>
     <a onclick="mostrarCategoria('masculino')">Masculinos</a>
     <a onclick="mostrarCategoria('feminino')">Femininos</a>
+    <a onclick="scrollToClubeOfertas()">Clube de Ofertas</a>
     <a href="contatos.html">Contato</a>
   </nav>
 
@@ -193,6 +194,36 @@
     <button onclick="abrirCatalogo('feminino')">VER TODOS</button>
   </div>
   <div id="femininosContainer" class="produtos-scroll"></div>
+</section>
+
+<section id="clube-ofertas" class="clube-ofertas" aria-labelledby="clubeOfertasTitulo">
+  <div class="clube-ofertas-conteudo">
+    <div class="clube-ofertas-texto">
+      <span>Clube de Ofertas</span>
+      <h2 id="clubeOfertasTitulo">Receba promocoes exclusivas da Decant's</h2>
+      <p>Cadastre seu contato para receber novidades, reposicoes e condicoes especiais antes da vitrine geral.</p>
+    </div>
+
+    <form id="clubeOfertasForm" class="clube-ofertas-form" novalidate>
+      <label>
+        Nome <small>opcional</small>
+        <input id="clubeNome" name="nome" autocomplete="name" placeholder="Seu nome">
+      </label>
+
+      <label>
+        Gmail/E-mail
+        <input id="clubeEmail" name="email" type="email" autocomplete="email" placeholder="seuemail@gmail.com" required>
+      </label>
+
+      <label>
+        Telefone/WhatsApp
+        <input id="clubeTelefone" name="telefone" autocomplete="tel" inputmode="tel" placeholder="(88) 99999-9999" required>
+      </label>
+
+      <button type="submit">Quero Receber Promocoes</button>
+      <p id="clubeOfertasMensagem" class="clube-ofertas-mensagem" aria-live="polite" hidden></p>
+    </form>
+  </div>
 </section>
 
 <section class="beneficios">

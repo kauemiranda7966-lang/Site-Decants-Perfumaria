@@ -20,9 +20,11 @@ services:
         value: 558899641605
       - key: DECANTS_SECRET_KEY
         generateValue: true
+      - key: DECANTS_ADMIN_DOMAIN
+        value: admin.decantperfumaria.com.br
       - key: DECANTS_ADMIN_USER
         sync: false
-      - key: DECANTS_ADMIN_PASSWORD
+      - key: DECANTS_ADMIN_PASSWORD_HASH
         sync: false
       - key: MERCADO_PAGO_PUBLIC_KEY
         sync: false

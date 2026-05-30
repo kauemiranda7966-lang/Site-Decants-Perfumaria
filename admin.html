@@ -2,11 +2,204 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=1180">
-  <meta http-equiv="refresh" content="0; url=index.html">
-  <title>Decant's Perfumaria</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Decant Perfumaria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin-panel.css?v=1">
 </head>
-<body>
-  <script>window.location.replace("index.html");</script>
+<body class="admin-shell">
+  <main id="loginView" class="login-view" hidden>
+    <section class="login-art">
+      <span>Decant Perfumaria</span>
+      <h1>Administração com controle fino da loja.</h1>
+      <p>Painel privado para catálogo, pedidos, clientes, estoque e operação financeira.</p>
+    </section>
+
+    <form id="loginForm" class="login-card">
+      <span>Acesso seguro</span>
+      <h2>Entrar no painel</h2>
+      <label>
+        E-mail
+        <input id="loginEmail" type="email" autocomplete="username" required>
+      </label>
+      <label>
+        Senha
+        <input id="loginPassword" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="loginError" class="form-error" hidden></p>
+      <button class="primary-btn" type="submit">Entrar</button>
+    </form>
+  </main>
+
+  <div id="appView" class="app-view" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="/dashboard">
+        <img src="/img/logo/logo.png" alt="Decant Perfumaria">
+        <strong>Decant Admin</strong>
+      </a>
+
+      <nav class="nav-menu" aria-label="Navegacao administrativa">
+        <a href="/dashboard" data-route="dashboard">Dashboard</a>
+        <a href="/produtos" data-route="produtos">Produtos</a>
+        <a href="/pedidos" data-route="pedidos">Pedidos</a>
+        <a href="/clientes" data-route="clientes">Clientes</a>
+        <a href="/logs" data-route="logs">Logs</a>
+      </nav>
+
+      <button id="logoutButton" class="ghost-btn" type="button">Sair</button>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <span id="sectionEyebrow">Operacao</span>
+          <h1 id="sectionTitle">Dashboard</h1>
+        </div>
+        <div class="session-pill">
+          <span id="sessionUser">Admin</span>
+        </div>
+      </header>
+
+      <section id="dashboardSection" class="section-panel">
+        <div class="metric-grid">
+          <article><span>Total de vendas</span><strong id="metricSales">R$ 0,00</strong></article>
+          <article><span>Total de pedidos</span><strong id="metricOrders">0</strong></article>
+          <article><span>Produtos cadastrados</span><strong id="metricProducts">0</strong></article>
+          <article><span>Clientes cadastrados</span><strong id="metricCustomers">0</strong></article>
+          <article><span>Receita paga</span><strong id="metricPaid">R$ 0,00</strong></article>
+          <article><span>Valor em estoque</span><strong id="metricStock">R$ 0,00</strong></article>
+        </div>
+
+        <div class="split-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <span>Financeiro</span>
+                <h2>Resumo financeiro</h2>
+              </div>
+            </div>
+            <div class="finance-list">
+              <p><span>Vendas registradas</span><strong id="financeSales">R$ 0,00</strong></p>
+              <p><span>Pagamentos aprovados</span><strong id="financePaid">R$ 0,00</strong></p>
+              <p><span>Estoque estimado</span><strong id="financeStock">R$ 0,00</strong></p>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <span>Ultimos pedidos</span>
+                <h2>Movimento recente</h2>
+              </div>
+            </div>
+            <div id="recentOrders" class="compact-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="productsSection" class="section-panel" hidden>
+        <div class="management-grid">
+          <form id="productForm" class="panel form-panel" enctype="multipart/form-data">
+            <input id="productId" type="hidden">
+            <div class="panel-head">
+              <div>
+                <span>Catalogo</span>
+                <h2 id="productFormTitle">Adicionar produto</h2>
+              </div>
+              <button id="newProductButton" class="ghost-btn" type="button">Novo</button>
+            </div>
+
+            <label>Nome<input id="productName" required placeholder="Dior Sauvage"></label>
+            <div class="form-row">
+              <label>Categoria<select id="productCategory"><option value="masculino">Masculino</option><option value="feminino">Feminino</option></select></label>
+              <label>Estoque<input id="productStock" type="number" min="0" value="10"></label>
+            </div>
+            <div class="form-row">
+              <label>Preco 5ml<input id="productPrice5" required placeholder="59,99"></label>
+              <label>Preco 10ml<input id="productPrice10" required placeholder="109,99"></label>
+            </div>
+            <label>Imagem atual<input id="productImage" required placeholder="/img/produtos/masculinos/dior-sauvage.png"></label>
+            <label>Upload de imagem<input id="productImageFile" type="file" accept="image/*"></label>
+            <div class="form-row">
+              <label>Preco promocional 5ml<input id="productPromo5" placeholder="49,99"></label>
+              <label>Preco promocional 10ml<input id="productPromo10" placeholder="89,99"></label>
+            </div>
+            <div class="toggle-row">
+              <label><input id="productPromo" type="checkbox"> Promocao</label>
+              <label><input id="productFeatured" type="checkbox"> Destaque</label>
+            </div>
+            <div class="form-row">
+              <label>Selo<input id="productBadge" placeholder="Mais vendido"></label>
+              <label>Chamada<input id="productCallout" placeholder="Amadeirado intenso"></label>
+            </div>
+            <p id="productMessage" class="form-message" hidden></p>
+            <div class="action-row">
+              <button class="primary-btn" type="submit">Salvar</button>
+              <button id="deleteProductButton" class="danger-btn" type="button" hidden>Excluir</button>
+            </div>
+          </form>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <span>Produtos</span>
+                <h2>Itens cadastrados</h2>
+              </div>
+              <input id="productSearch" class="search-input" type="search" placeholder="Buscar">
+            </div>
+            <div id="productsList" class="product-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="ordersSection" class="section-panel" hidden>
+        <article class="panel">
+          <div class="panel-head">
+            <div><span>Pedidos</span><h2>Gerenciamento de pedidos</h2></div>
+            <select id="orderStatusFilter" class="search-input">
+              <option value="">Todos</option>
+              <option value="awaiting_payment">Aguardando pagamento</option>
+              <option value="approved">Aprovado</option>
+              <option value="preparing">Preparando</option>
+              <option value="shipped">Enviado</option>
+              <option value="delivered">Entregue</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+          </div>
+          <div id="ordersList" class="table-list"></div>
+        </article>
+      </section>
+
+      <section id="customersSection" class="section-panel" hidden>
+        <article class="panel">
+          <div class="panel-head">
+            <div><span>Clientes</span><h2>Cadastro e historico</h2></div>
+            <input id="customerSearch" class="search-input" type="search" placeholder="Buscar cliente">
+          </div>
+          <div id="customersList" class="table-list"></div>
+        </article>
+      </section>
+
+      <section id="logsSection" class="section-panel" hidden>
+        <article class="panel">
+          <div class="panel-head">
+            <div><span>Seguranca</span><h2>Logs administrativos</h2></div>
+          </div>
+          <div id="logsList" class="table-list"></div>
+        </article>
+      </section>
+    </section>
+  </div>
+
+  <dialog id="orderDialog" class="order-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="close" aria-label="Fechar">x</button>
+    </form>
+    <div id="orderDetail"></div>
+  </dialog>
+
+  <script src="/js/admin-panel.js?v=1"></script>
 </body>
 </html>

@@ -196,7 +196,20 @@ const imagensModalPorProduto = {
   "invictus victory": [
     "img/modal/masculinos/Invictus_Victory/Invictus_Victory1.png",
     "img/modal/masculinos/Invictus_Victory/Invictus_Victory2.png",
-    "img/modal/masculinos/Invictus_Victory/Invictus_Victory3.png"
+    "img/modal/masculinos/Invictus_Victory/Invictus_Victory3.png",
+    "img/modal/masculinos/Invictus_Victory/Invictus_Victory4.png"
+  ],
+  "invictus victory elixir": [
+    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir1.png",
+    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir2.png",
+    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir3.png",
+    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir4.png"
+  ],
+  "hugo boss night": [
+    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night1.png",
+    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night2.png",
+    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night3.png",
+    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night4.png"
   ],
   "le male elixir": [
     "img/modal/masculinos/le_male_elixir/le_male_elixir1.png",
@@ -247,7 +260,7 @@ function normalizarProdutoLoja(produto) {
     precoPromocional10: produto.precoPromocional10 || "",
     destaque: Boolean(produto.destaque),
     selo: produto.selo || "",
-    img: produto.img || ""
+    img: normalizarCaminhoImagem(produto.img || "")
   };
 
   if (!("destaque" in produto)) {
@@ -255,6 +268,11 @@ function normalizarProdutoLoja(produto) {
   }
 
   return produtoCompleto;
+}
+
+// #NORMALIZAR_CAMINHO_IMAGEM
+function normalizarCaminhoImagem(caminho) {
+  return String(caminho || "").trim().replace(/^\/+/, "");
 }
 
 // #REPARAR_TEXTO_CATALOGO
@@ -310,6 +328,8 @@ const catalogoTituloCategoria = document.getElementById("catalogoTituloCategoria
 const tabMasculino = document.getElementById("tabMasculino");
 const tabFeminino = document.getElementById("tabFeminino");
 const carouselPremium = document.querySelector(".carousel-premium");
+const clubeOfertasForm = document.getElementById("clubeOfertasForm");
+const clubeTelefone = document.getElementById("clubeTelefone");
 
 if (masculinosContainer && femininosContainer) {
   preencherFiltrosAvancados();
@@ -322,6 +342,14 @@ if (catalogoPagina) {
 
 if (carouselPremium) {
   iniciarCarouselDestaques();
+}
+
+if (clubeTelefone) {
+  clubeTelefone.addEventListener("input", mascararTelefoneLoja);
+}
+
+if (clubeOfertasForm) {
+  clubeOfertasForm.addEventListener("submit", cadastrarClubeOfertas);
 }
 
 carregarProdutosLoja();
@@ -454,7 +482,7 @@ function renderProdutos(lista, container) {
     container.innerHTML += `
       <div class="card ${semEstoque ? "produto-esgotado" : ""}" style="--card-index: ${index};">
         <span class="card-brilho" aria-hidden="true"></span>
-        <img src="${produto.img}" alt="${produto.nome}" loading="lazy">
+        <img src="${obterImagemProduto(produto)}" alt="${produto.nome}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, '${produto.img}')">
         ${produto.promocao ? '<span class="tag-promocao">Promoção</span>' : ""}
         <h3>${produto.nome}</h3>
         ${renderizarPrecoCard(produto, 5)}
@@ -488,7 +516,7 @@ function renderizarPaginaCatalogo() {
   catalogoPagina.innerHTML = produtosCategoria.map((produto, index) => `
     <article class="catalogo-card ${produtoDisponivel(produto) ? "" : "produto-esgotado"}" style="--card-index: ${index};">
       <div class="catalogo-card-imagem">
-        <img src="${produto.img}" alt="${produto.nome}" loading="lazy">
+        <img src="${obterImagemProduto(produto)}" alt="${produto.nome}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, '${produto.img}')">
       </div>
       ${produto.promocao ? '<span class="tag-promocao">Promoção</span>' : ""}
       <h3>${produto.nome}</h3>
@@ -675,6 +703,24 @@ function montarGaleriaModalProduto(produto, imagemDestaque) {
     imagemDestaque || produto.img,
     produto.img
   ].filter((imagem, index, lista) => imagem && lista.indexOf(imagem) === index);
+}
+
+// #OBTER_IMAGEM_PRODUTO
+function obterImagemProduto(produto) {
+  const imagensModal = imagensModalPorProduto[normalizarTexto(produto.nome)] || [];
+  return imagensModal[0] || produto.img;
+}
+
+// #MARCAR_IMAGEM_PRODUTO_INDISPONIVEL
+function marcarImagemProdutoIndisponivel(imagem, fallback) {
+  const caminhoFallback = normalizarCaminhoImagem(fallback);
+  if (caminhoFallback && imagem.getAttribute("src") !== caminhoFallback) {
+    imagem.src = caminhoFallback;
+    return;
+  }
+
+  imagem.alt = `${imagem.alt} - imagem indisponivel`;
+  imagem.classList.add("imagem-indisponivel");
 }
 
 // #RENDERIZAR_GALERIA_MODAL
@@ -1005,6 +1051,72 @@ function comprar(nomeProduto) {
   abrirCheckout(nomeProduto);
 }
 
+// #SCROLL_TO_CLUBE_OFERTAS
+function scrollToClubeOfertas() {
+  document.getElementById("clube-ofertas")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// #CADASTRAR_CLUBE_OFERTAS
+async function cadastrarClubeOfertas(event) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const mensagem = document.getElementById("clubeOfertasMensagem");
+  const botao = form.querySelector("button[type='submit']");
+  const payload = {
+    nome: document.getElementById("clubeNome").value.trim(),
+    email: document.getElementById("clubeEmail").value.trim(),
+    telefone: document.getElementById("clubeTelefone").value.trim()
+  };
+
+  mensagem.hidden = false;
+  mensagem.classList.remove("erro", "sucesso");
+
+  if (!validarLeadClube(payload)) {
+    mensagem.classList.add("erro");
+    mensagem.textContent = "Informe um e-mail valido e um WhatsApp com DDD.";
+    return;
+  }
+
+  botao.disabled = true;
+  mensagem.textContent = "Salvando seu cadastro...";
+
+  try {
+    if (!window.location.protocol.startsWith("http")) {
+      salvarLeadLocalClube(payload);
+    } else {
+      await apiLoja("/api/leads", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    }
+
+    form.reset();
+    mensagem.classList.add("sucesso");
+    mensagem.textContent = "Cadastro realizado com sucesso. Voce entrou para o Clube de Ofertas.";
+  } catch (error) {
+    mensagem.classList.add("erro");
+    mensagem.textContent = error.message || "Nao foi possivel salvar seu cadastro agora.";
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+// #VALIDAR_LEAD_CLUBE
+function validarLeadClube(payload) {
+  const emailValido = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email);
+  const telefoneValido = payload.telefone.replace(/\D/g, "").length >= 10;
+  return emailValido && telefoneValido;
+}
+
+// #SALVAR_LEAD_LOCAL_CLUBE
+function salvarLeadLocalClube(payload) {
+  const chave = "decantsClubeOfertas";
+  const leads = JSON.parse(localStorage.getItem(chave) || "[]");
+  leads.push({ ...payload, telefone: payload.telefone.replace(/\D/g, ""), createdAt: new Date().toISOString() });
+  localStorage.setItem(chave, JSON.stringify(leads));
+}
+
 // #ABRIR_CHECKOUT
 function abrirCheckout(nomeProduto) {
   const produto = produtos.find(item => item.nome === nomeProduto);
@@ -1031,7 +1143,7 @@ function abrirCheckout(nomeProduto) {
         </div>
 
         <div class="checkout-produto">
-          <img src="${produto.img}" alt="${produto.nome}">
+          <img src="${obterImagemProduto(produto)}" alt="${produto.nome}">
           <div>
             <strong>${extrairMarcaProduto(produto.nome)}</strong>
             <p>Estoque disponivel: ${produto.estoque}</p>
@@ -1381,6 +1493,7 @@ if (typeof window !== "undefined") {
     abrirCatalogo,
     pesquisarProdutos,
     scrollToProdutos,
+    scrollToClubeOfertas,
     comprar,
     verMaisProduto,
     fecharDetalhesProduto,
@@ -1390,6 +1503,7 @@ if (typeof window !== "undefined") {
     alterarQuantidadeModal,
     finalizarCarregamentoImagemModal,
     marcarImagemModalIndisponivel,
+    marcarImagemProdutoIndisponivel,
     abrirCheckout,
     fecharCheckout,
     enviarCheckout,
