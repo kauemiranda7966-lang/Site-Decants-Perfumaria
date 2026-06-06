@@ -1,5 +1,5 @@
-﻿const produtosPadrao = [
-  { nome: "Dior Sauvage", categoria: "masculino", img: "img/produtos/masculinos/dior-sauvage.png", preco5: "59,99", preco10: "109,99" },
+const produtosPadrao = [
+  { nome: "Dior Sauvage", categoria: "masculino", img: "img/produtos/masculinos/dior-sauvage-card.png", preco5: "59,99", preco10: "109,99" },
   { nome: "Dior Homme Sport", categoria: "masculino", img: "img/produtos/masculinos/dior_homme_sport.png", preco5: "66,99", preco10: "105,00" },
   { nome: "Bleu de Chanel", categoria: "masculino", img: "img/produtos/masculinos/bleu_de_chanel.png", preco5: "80,99", preco10: "139,99" },
   { nome: "Allure Homme Sport", categoria: "masculino", img: "img/produtos/masculinos/allure_homme_sport.png", preco5: "80,99", preco10: "139,99" },
@@ -168,66 +168,181 @@ const imagensDestaquePorProduto = {
   "idole": "img/highlights/feminine/idole.png"
 };
 
-const imagensModalPorProduto = {
+const imagensContainerPorProduto = {
+  "212 men": [
+    "img/container/masculinos/212_man/212_men1.png",
+    "img/container/masculinos/212_man/212_men2.png",
+    "img/container/masculinos/212_man/212_men3.png",
+    "img/container/masculinos/212_man/212_men4.png"
+  ],
+  "212 vip black": [
+    "img/container/masculinos/212_vip_black/212_vip_black1.png",
+    "img/container/masculinos/212_vip_black/212_vip_black2.png",
+    "img/container/masculinos/212_vip_black/212_vip_black3.png"
+  ],
+  "212 vip rose": [
+    "img/container/femininos/212_vip_rose/212_vip_rose1.png",
+    "img/container/femininos/212_vip_rose/212_vip_rose2.png",
+    "img/container/femininos/212_vip_rose/212_vip_rose3.png",
+    "img/container/femininos/212_vip_rose/212_vip_rose4.png"
+  ],
+  "afeef lattafa": [
+    "img/container/femininos/afeef_lattafa/afeef_lattafa1.png",
+    "img/container/femininos/afeef_lattafa/afeef_lattafa2.png",
+    "img/container/femininos/afeef_lattafa/afeef_lattafa3.png",
+    "img/container/femininos/afeef_lattafa/afeef_lattafa4.png"
+  ],
+  "allure homme sport": [
+    "img/container/masculinos/allure_homme_sport/0b8b5652-e9e8-411d-bd6b-0bff168f8a53.png",
+    "img/container/masculinos/allure_homme_sport/10bc8131-f619-4855-9289-7b2c50f544ef.png",
+    "img/container/masculinos/allure_homme_sport/d0b0e401-b210-4894-a5be-627a796e36c6.png",
+    "img/container/masculinos/allure_homme_sport/fd14d7be-d6f9-4682-b80d-c42297a9ab06.png"
+  ],
+  "asad lattafa": [
+    "img/container/masculinos/asad_lattafa/asad_lattafa1.png",
+    "img/container/masculinos/asad_lattafa/asad_lattafa2.png",
+    "img/container/masculinos/asad_lattafa/asad_lattafa3.png",
+    "img/container/masculinos/asad_lattafa/asad_lattafa4.png"
+  ],
+  "bleu de chanel": [
+    "img/container/masculinos/bleu_de_chanel/bleu_de_chanel1.png",
+    "img/container/masculinos/bleu_de_chanel/bleu_de_chanel2.png",
+    "img/container/masculinos/bleu_de_chanel/bleu_de_chanel3.png",
+    "img/container/masculinos/bleu_de_chanel/bleu_de_chanel4.png"
+  ],
+  "club de nuit intense": [
+    "img/container/masculinos/club_de_nuit_intense/club_de_nuit_intense1.png",
+    "img/container/masculinos/club_de_nuit_intense/club_de_nuit_intense2.png",
+    "img/container/masculinos/club_de_nuit_intense/club_de_nuit_intense3.png",
+    "img/container/masculinos/club_de_nuit_intense/club_de_nuit_intense4.png"
+  ],
+  "dior homme sport": [
+    "img/container/masculinos/dior_homme_sport/dior_homme_sport1.png",
+    "img/container/masculinos/dior_homme_sport/dior_homme_sport2.png",
+    "img/container/masculinos/dior_homme_sport/dior_homme_sport3.png",
+    "img/container/masculinos/dior_homme_sport/dior_homme_sport4.png"
+  ],
   "dior sauvage": [
-    "img/modal/masculinos/dior_sauvage/dior_sauvage1.png",
-    "img/modal/masculinos/dior_sauvage/dior_sauvage2.png",
-    "img/modal/masculinos/dior_sauvage/dior_sauvage3.png",
-    "img/modal/masculinos/dior_sauvage/dior_sauvage4.png"
+    "img/container/masculinos/dior_sauvage/dior_sauvage1.png",
+    "img/container/masculinos/dior_sauvage/dior_sauvage2.png",
+    "img/container/masculinos/dior_sauvage/dior_sauvage3.png",
+    "img/container/masculinos/dior_sauvage/dior_sauvage4.png"
+  ],
+  "encre noire": [
+    "img/container/masculinos/Encre_Noire/Encre_Noire1.png",
+    "img/container/masculinos/Encre_Noire/Encre_Noire2.png",
+    "img/container/masculinos/Encre_Noire/Encre_Noire3.png",
+    "img/container/masculinos/Encre_Noire/Encre_Noire4.png"
   ],
   "ferrari black": [
-    "img/modal/masculinos/ferrari_black/ferrari_black1.png",
-    "img/modal/masculinos/ferrari_black/ferrari_black2.png",
-    "img/modal/masculinos/ferrari_black/ferrari_black3.png",
-    "img/modal/masculinos/ferrari_black/ferrari_black4.png"
+    "img/container/masculinos/ferrari_black/ferrari_black1.png",
+    "img/container/masculinos/ferrari_black/ferrari_black2.png",
+    "img/container/masculinos/ferrari_black/ferrari_black3.png",
+    "img/container/masculinos/ferrari_black/ferrari_black4.png"
   ],
-  "212 men": [
-    "img/modal/masculinos/212_man/212_men1.png",
-    "img/modal/masculinos/212_man/212_men2.png",
-    "img/modal/masculinos/212_man/212_men3.png",
-    "img/modal/masculinos/212_man/212_men4.png"
-  ],
-  "l'eau d'issey miyake": [
-    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake1.png",
-    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake2.png",
-    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake3.png",
-    "img/modal/masculinos/homme_Issey_miyake/homme_Issey_miyake4.png"
-  ],
-  "invictus victory": [
-    "img/modal/masculinos/Invictus_Victory/Invictus_Victory1.png",
-    "img/modal/masculinos/Invictus_Victory/Invictus_Victory2.png",
-    "img/modal/masculinos/Invictus_Victory/Invictus_Victory3.png",
-    "img/modal/masculinos/Invictus_Victory/Invictus_Victory4.png"
-  ],
-  "invictus victory elixir": [
-    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir1.png",
-    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir2.png",
-    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir3.png",
-    "img/modal/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir4.png"
+  "good girl": [
+    "img/container/femininos/Good_Girl/Good_Girl1.png",
+    "img/container/femininos/Good_Girl/Good_Girl2.png",
+    "img/container/femininos/Good_Girl/Good_Girl3.png",
+    "img/container/femininos/Good_Girl/Good_Girl4.png"
   ],
   "hugo boss night": [
-    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night1.png",
-    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night2.png",
-    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night3.png",
-    "img/modal/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night4.png"
+    "img/container/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night1.png",
+    "img/container/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night2.png",
+    "img/container/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night3.png",
+    "img/container/masculinos/Hugo_Boss_Bottled_Night/Hugo_Boss_Bottled_Night4.png"
+  ],
+  "idole": [
+    "img/container/femininos/Idole/Idole1.png",
+    "img/container/femininos/Idole/Idole2.png",
+    "img/container/femininos/Idole/Idole3.png",
+    "img/container/femininos/Idole/Idole4.png"
+  ],
+  "l'eau d'issey miyake": [
+    "img/container/masculinos/homme_Issey_miyake/homme_Issey_miyake1.png",
+    "img/container/masculinos/homme_Issey_miyake/homme_Issey_miyake2.png",
+    "img/container/masculinos/homme_Issey_miyake/homme_Issey_miyake3.png",
+    "img/container/masculinos/homme_Issey_miyake/homme_Issey_miyake4.png"
+  ],
+  "invictus victory elixir": [
+    "img/container/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir1.png",
+    "img/container/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir2.png",
+    "img/container/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir3.png",
+    "img/container/masculinos/Invictus_Victory_Elixir/Invictus_Victory_Elixir4.png"
+  ],
+  "invictus victory": [
+    "img/container/masculinos/Invictus_Victory/Invictus_Victory1.png",
+    "img/container/masculinos/Invictus_Victory/Invictus_Victory2.png",
+    "img/container/masculinos/Invictus_Victory/Invictus_Victory3.png",
+    "img/container/masculinos/Invictus_Victory/Invictus_Victory4.png"
   ],
   "le male elixir": [
-    "img/modal/masculinos/le_male_elixir/le_male_elixir1.png",
-    "img/modal/masculinos/le_male_elixir/le_male_elixir2.png",
-    "img/modal/masculinos/le_male_elixir/le_male_elixir3.png",
-    "img/modal/masculinos/le_male_elixir/le_male_elixir4.png"
+    "img/container/masculinos/le_male_elixir/le_male_elixir1.png",
+    "img/container/masculinos/le_male_elixir/le_male_elixir2.png",
+    "img/container/masculinos/le_male_elixir/le_male_elixir3.png",
+    "img/container/masculinos/le_male_elixir/le_male_elixir4.png"
   ],
   "le male le parfum": [
-    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum1.png",
-    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum2.png",
-    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum3.png",
-    "img/modal/masculinos/le_male_le_parfum/le_male_le_parfum4.png"
+    "img/container/masculinos/le_male_le_parfum/le_male_le_parfum1.png",
+    "img/container/masculinos/le_male_le_parfum/le_male_le_parfum2.png",
+    "img/container/masculinos/le_male_le_parfum/le_male_le_parfum3.png",
+    "img/container/masculinos/le_male_le_parfum/le_male_le_parfum4.png"
   ],
   "one million": [
-    "img/modal/masculinos/one_million/one_million1.png",
-    "img/modal/masculinos/one_million/one_million2.png",
-    "img/modal/masculinos/one_million/one_million3.png",
-    "img/modal/masculinos/one_million/one_million4.png"
+    "img/container/masculinos/one_million/one_million1.png",
+    "img/container/masculinos/one_million/one_million2.png",
+    "img/container/masculinos/one_million/one_million3.png",
+    "img/container/masculinos/one_million/one_million4.png"
+  ],
+  "la vie est belle": [
+    "img/container/femininos/la_vie_est_belle/la_vie_est_belle1.png",
+    "img/container/femininos/la_vie_est_belle/la_vie_est_belle2.png",
+    "img/container/femininos/la_vie_est_belle/la_vie_est_belle3.png",
+    "img/container/femininos/la_vie_est_belle/la_vie_est_belle4.png"
+  ],
+  "lady million": [
+    "img/container/femininos/lady_million/lady_million1.png",
+    "img/container/femininos/lady_million/lady_million2.png",
+    "img/container/femininos/lady_million/lady_million3.png",
+    "img/container/femininos/lady_million/lady_million4.png"
+  ],
+  "libre yves saint": [
+    "img/container/femininos/libre_yves_saint_laurent/libre_yves_saint_laurent1.png",
+    "img/container/femininos/libre_yves_saint_laurent/libre_yves_saint_laurent2.png",
+    "img/container/femininos/libre_yves_saint_laurent/libre_yves_saint_laurent3.png",
+    "img/container/femininos/libre_yves_saint_laurent/libre_yves_saint_laurent4.png"
+  ],
+  "my way": [
+    "img/container/femininos/my_way/my_way.png"
+  ],
+  "phantom": [
+    "img/container/masculinos/Phantom_Paco_Rabanne/Phantom_Paco_Rabanne1.png",
+    "img/container/masculinos/Phantom_Paco_Rabanne/Phantom_Paco_Rabanne2.png",
+    "img/container/masculinos/Phantom_Paco_Rabanne/Phantom_Paco_Rabanne3.png",
+    "img/container/masculinos/Phantom_Paco_Rabanne/Phantom_Paco_Rabanne4.png"
+  ],
+  "scandal masculino edt": [
+    "img/container/masculinos/scandal_pour homme/scandal_pour homme1.png",
+    "img/container/masculinos/scandal_pour homme/scandal_pour homme2.png",
+    "img/container/masculinos/scandal_pour homme/scandal_pour homme3.png"
+  ],
+  "silver scent": [
+    "img/container/masculinos/Silver_Scence/Silver_Scence1.png",
+    "img/container/masculinos/Silver_Scence/Silver_Scence2.png",
+    "img/container/masculinos/Silver_Scence/Silver_Scence3.png",
+    "img/container/masculinos/Silver_Scence/Silver_Scence4.png"
+  ],
+  "issey miyake fem": [
+    "img/container/femininos/issey_miyake_fem/issey_miyake_fem1.png",
+    "img/container/femininos/issey_miyake_fem/issey_miyake_fem2.png",
+    "img/container/femininos/issey_miyake_fem/issey_miyake_fem3.png",
+    "img/container/femininos/issey_miyake_fem/issey_miyake_fem4.png"
+  ],
+  "versace eros": [
+    "img/container/masculinos/versace_eros/versace_eros1.png",
+    "img/container/masculinos/versace_eros/versace_eros2.png",
+    "img/container/masculinos/versace_eros/versace_eros3.png",
+    "img/container/masculinos/versace_eros/versace_eros4.png"
   ]
 };
 
@@ -334,6 +449,7 @@ const clubeTelefone = document.getElementById("clubeTelefone");
 if (masculinosContainer && femininosContainer) {
   preencherFiltrosAvancados();
   mostrarTodos();
+  iniciarNavegacaoCatalogo();
 }
 
 if (catalogoPagina) {
@@ -410,6 +526,45 @@ function obterOpcoesDetalhes(campo) {
 function mostrarTodos() {
   renderProdutos(produtos.filter(produto => produto.categoria === "masculino"), masculinosContainer);
   renderProdutos(produtos.filter(produto => produto.categoria === "feminino"), femininosContainer);
+}
+
+// #INICIAR_NAVEGACAO_CATALOGO
+function iniciarNavegacaoCatalogo() {
+  document.querySelectorAll(".catalogo-seta").forEach(botao => {
+    const container = document.getElementById(botao.dataset.catalogo);
+    if (!container) return;
+
+    botao.addEventListener("click", () => {
+      const direcao = Number(botao.dataset.direcao || 1);
+      container.scrollBy({
+        left: direcao * Math.max(260, container.clientWidth * 0.82),
+        behavior: "smooth"
+      });
+    });
+
+    container.addEventListener("scroll", () => atualizarSetasCatalogo(container), { passive: true });
+  });
+
+  window.addEventListener("resize", atualizarTodasSetasCatalogo);
+  window.requestAnimationFrame(atualizarTodasSetasCatalogo);
+}
+
+// #ATUALIZAR_TODAS_SETAS_CATALOGO
+function atualizarTodasSetasCatalogo() {
+  document.querySelectorAll(".produtos-scroll").forEach(atualizarSetasCatalogo);
+}
+
+// #ATUALIZAR_SETAS_CATALOGO
+function atualizarSetasCatalogo(container) {
+  const trilho = container.closest(".catalogo-trilho");
+  if (!trilho) return;
+
+  const anterior = trilho.querySelector(".catalogo-seta-anterior");
+  const proxima = trilho.querySelector(".catalogo-seta-proxima");
+  const limite = Math.max(0, container.scrollWidth - container.clientWidth);
+
+  if (anterior) anterior.disabled = container.scrollLeft <= 2;
+  if (proxima) proxima.disabled = container.scrollLeft >= limite - 2;
 }
 
 // #ATUALIZAR_VITRINE
@@ -496,6 +651,8 @@ function renderProdutos(lista, container) {
       </div>
     `;
   });
+
+  window.requestAnimationFrame(() => atualizarSetasCatalogo(container));
 }
 
 // #RENDERIZAR_PAGINA_CATALOGO
@@ -627,8 +784,7 @@ function verMaisProduto(nomeProduto) {
 
   const detalhes = montarDetalhesProduto(produto);
   const acordes = montarAcordesProduto(detalhes.notas, detalhes.familia);
-  const imagemDestaque = obterImagemDestaqueProduto(produto);
-  const imagensGaleria = montarGaleriaModalProduto(produto, imagemDestaque);
+  const imagensGaleria = montarGaleriaModalProduto(produto);
   const marcaProduto = extrairMarcaProduto(produto.nome);
   const logoMarca = obterLogoMarca(marcaProduto);
   const modalExistente = document.querySelector(".modal-produto");
@@ -648,36 +804,10 @@ function verMaisProduto(nomeProduto) {
 
         <div class="modal-layout-premium">
           ${renderizarGaleriaModal(produto, imagensGaleria)}
-          ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10)}
-        </div>
-
-        <div class="modal-compra-premium">
-          <div class="modal-preco-final">
-            <span>A partir de</span>
-            <strong id="modalPrecoSelecionado">R$ ${preco5}</strong>
+          <div class="modal-detalhes-compra">
+            ${renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10)}
+            ${renderizarCompraModal(produto, semEstoque, preco5)}
           </div>
-
-          <div class="modal-quantidade" aria-label="Quantidade">
-            <button type="button" aria-label="Diminuir quantidade" onclick="alterarQuantidadeModal(-1)">-</button>
-            <strong id="modalQuantidade">1</strong>
-            <button type="button" aria-label="Aumentar quantidade" onclick="alterarQuantidadeModal(1)">+</button>
-          </div>
-
-          <button class="modal-btn-whatsapp" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
-            <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
-            Comprar via WhatsApp
-          </button>
-
-          <button class="modal-btn-principal" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
-            <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
-            ${semEstoque ? "Produto esgotado" : "Adicionar ao carrinho"}
-          </button>
-        </div>
-
-        <div class="modal-beneficios-premium" aria-label="Benefícios da compra">
-          <span><i class="fa-solid fa-lock" aria-hidden="true"></i> Compra segura</span>
-          <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Envio rápido para todo o Brasil</span>
-          <span><i class="fa-regular fa-circle-check" aria-hidden="true"></i> Satisfação garantida</span>
         </div>
       </div>
     </div>
@@ -690,25 +820,17 @@ function verMaisProduto(nomeProduto) {
 }
 
 // #MONTAR_GALERIA_MODAL_PRODUTO
-function montarGaleriaModalProduto(produto, imagemDestaque) {
-  const imagensModal = imagensModalPorProduto[normalizarTexto(produto.nome)] || [];
-
-  if (imagensModal.length) {
-    return [
-      ...imagensModal
-    ].filter((imagem, index, lista) => imagem && lista.indexOf(imagem) === index);
-  }
-
-  return [
-    imagemDestaque || produto.img,
-    produto.img
-  ].filter((imagem, index, lista) => imagem && lista.indexOf(imagem) === index);
+function montarGaleriaModalProduto(produto) {
+  const imagensContainer = imagensContainerPorProduto[normalizarTexto(produto.nome)] || [];
+  return imagensContainer.filter((imagem, index, lista) =>
+    imagem && imagem.includes("img/container/") && lista.indexOf(imagem) === index
+  );
 }
 
 // #OBTER_IMAGEM_PRODUTO
 function obterImagemProduto(produto) {
-  const imagensModal = imagensModalPorProduto[normalizarTexto(produto.nome)] || [];
-  return imagensModal[0] || produto.img;
+  const imagensContainer = imagensContainerPorProduto[normalizarTexto(produto.nome)] || [];
+  return produto.img || imagensContainer[0] || "";
 }
 
 // #MARCAR_IMAGEM_PRODUTO_INDISPONIVEL
@@ -726,11 +848,10 @@ function marcarImagemProdutoIndisponivel(imagem, fallback) {
 // #RENDERIZAR_GALERIA_MODAL
 function renderizarGaleriaModal(produto, imagens) {
   const categoria = produto.categoria === "masculino" ? "Masculino" : "Feminino";
-  const imagemPrincipal = imagens[0] || produto.img;
-  const temImagemCinematica = imagemPrincipal.includes("img/modal/");
+  const imagemPrincipal = imagens[0] || "";
 
   return `
-    <section class="modal-galeria-premium ${temImagemCinematica ? "modal-galeria-cinematica" : ""}" aria-label="Galeria do produto">
+    <section class="modal-galeria-premium modal-galeria-cinematica" aria-label="Galeria do produto">
       <div class="modal-galeria-imagem modal-imagem-carregando">
         <span class="modal-skeleton" aria-hidden="true"></span>
         <span class="modal-selo-categoria">${categoria}</span>
@@ -745,17 +866,53 @@ function renderizarGaleriaModal(produto, imagens) {
             <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </button>
         ` : ""}
-        <img src="${imagemPrincipal}" alt="${produto.nome}" onload="finalizarCarregamentoImagemModal(this)" onerror="marcarImagemModalIndisponivel(this)">
+        ${imagemPrincipal
+          ? `<img src="${imagemPrincipal}" alt="${produto.nome}" onload="finalizarCarregamentoImagemModal(this)" onerror="marcarImagemModalIndisponivel(this)">`
+          : `<div class="modal-sem-imagem">Imagem indisponivel</div>`}
       </div>
 
-      <div class="modal-thumbs" aria-label="Miniaturas">
+      ${imagens.length ? `<div class="modal-thumbs" aria-label="Miniaturas">
         ${imagens.map((imagem, index) => `
-          <button class="modal-thumb ${index === 0 ? "ativo" : ""} ${imagem.includes("img/modal/") ? "modal-thumb-cinematica" : ""}" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-src="${imagem}">
+          <button class="modal-thumb ${index === 0 ? "ativo" : ""} modal-thumb-cinematica" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-src="${imagem}">
             <img src="${imagem}" alt="${produto.nome} miniatura ${index + 1}" loading="lazy">
           </button>
         `).join("")}
-      </div>
+      </div>` : ""}
     </section>
+  `;
+}
+
+// #RENDERIZAR_COMPRA_MODAL
+function renderizarCompraModal(produto, semEstoque, preco5) {
+  return `
+    <aside class="modal-compra-premium">
+      <div class="modal-beneficios-premium" aria-label="Beneficios da compra">
+        <span><i class="fa-solid fa-lock" aria-hidden="true"></i><strong>Compra segura</strong><small>Seus dados protegidos e compra 100% segura.</small></span>
+        <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><strong>Frete gratis</strong><small>Para compras acima de R$ 199.</small></span>
+        <span><i class="fa-regular fa-clock" aria-hidden="true"></i><strong>Envio rapido</strong><small>Seu pedido postado em ate 24h.</small></span>
+        <span><i class="fa-regular fa-circle-check" aria-hidden="true"></i><strong>Garantia de satisfacao</strong><small>7 dias para trocar ou devolver.</small></span>
+      </div>
+
+      <div class="modal-preco-final">
+        <span>A partir de</span>
+        <strong id="modalPrecoSelecionado">R$ ${preco5}</strong>
+      </div>
+
+      <div class="modal-quantidade" aria-label="Quantidade">
+        <button type="button" aria-label="Diminuir quantidade" onclick="alterarQuantidadeModal(-1)">-</button>
+        <strong id="modalQuantidade">1</strong>
+        <button type="button" aria-label="Aumentar quantidade" onclick="alterarQuantidadeModal(1)">+</button>
+      </div>
+
+      <button class="modal-btn-principal" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+        ${semEstoque ? "Produto esgotado" : "Adicionar ao carrinho"}
+      </button>
+
+      <button class="modal-btn-whatsapp" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+        <i class="fa-regular fa-heart" aria-hidden="true"></i>
+        Adicionar aos favoritos
+      </button>
+    </aside>
   `;
 }
 
@@ -864,7 +1021,6 @@ function selecionarVolumeModal(elemento) {
 // #SELECIONAR_IMAGEM_MODAL
 function selecionarImagemModal(botao) {
   const modal = botao.closest(".modal-conteudo-premium");
-  const galeria = botao.closest(".modal-galeria-premium");
   const imagemPrincipal = modal?.querySelector(".modal-galeria-imagem img");
   const imagemArea = modal?.querySelector(".modal-galeria-imagem");
   const novaImagem = botao.dataset.src;
@@ -873,7 +1029,6 @@ function selecionarImagemModal(botao) {
 
   modal.querySelectorAll(".modal-thumb").forEach(thumb => thumb.classList.remove("ativo"));
   botao.classList.add("ativo");
-  galeria?.classList.toggle("modal-galeria-cinematica", novaImagem.includes("img/modal/"));
   imagemArea.classList.add("modal-imagem-carregando");
   imagemPrincipal.setAttribute("src", novaImagem);
 }

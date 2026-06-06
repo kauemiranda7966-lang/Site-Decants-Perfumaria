@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <link rel="stylesheet" href="css/style.css?v=20">
 
   <link
     rel="stylesheet"
@@ -183,7 +183,15 @@
     </div>
     <button onclick="abrirCatalogo('masculino')">VER TODOS</button>
   </div>
-  <div id="masculinosContainer" class="produtos-scroll"></div>
+  <div class="catalogo-trilho">
+    <button class="catalogo-seta catalogo-seta-anterior" type="button" aria-label="Perfumes masculinos anteriores" data-catalogo="masculinosContainer" data-direcao="-1" disabled>
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+    </button>
+    <div id="masculinosContainer" class="produtos-scroll"></div>
+    <button class="catalogo-seta catalogo-seta-proxima" type="button" aria-label="Próximos perfumes masculinos" data-catalogo="masculinosContainer" data-direcao="1">
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
 
   <div class="catalogo-header">
     <div class="titulo-categoria">
@@ -193,7 +201,15 @@
     </div>
     <button onclick="abrirCatalogo('feminino')">VER TODOS</button>
   </div>
-  <div id="femininosContainer" class="produtos-scroll"></div>
+  <div class="catalogo-trilho">
+    <button class="catalogo-seta catalogo-seta-anterior" type="button" aria-label="Perfumes femininos anteriores" data-catalogo="femininosContainer" data-direcao="-1" disabled>
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+    </button>
+    <div id="femininosContainer" class="produtos-scroll"></div>
+    <button class="catalogo-seta catalogo-seta-proxima" type="button" aria-label="Próximos perfumes femininos" data-catalogo="femininosContainer" data-direcao="1">
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
 </section>
 
 <section id="clube-ofertas" class="clube-ofertas" aria-labelledby="clubeOfertasTitulo">
@@ -270,6 +286,6 @@
   </div>
 </footer>
 
-<script src="js/script.js?v=19"></script>
+<script src="js/script.js?v=20"></script>
 </body>
 </html>
