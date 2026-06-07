@@ -47,7 +47,7 @@ decantsperfumaria1@gmail.com
 Senha padrao de desenvolvimento:
 
 ```text
-Wellida123 senha
+Wellida123
 ```
 
 Rotas principais:

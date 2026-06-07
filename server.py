@@ -54,7 +54,7 @@ def load_env_file():
 load_env_file()
 
 ADMIN_USER = os.environ.get("DECANTS_ADMIN_USER", "decantsperfumaria1@gmail.com")
-ADMIN_PASSWORD = os.environ.get("DECANTS_ADMIN_PASSWORD", "Wellida123 senha")
+ADMIN_PASSWORD = os.environ.get("DECANTS_ADMIN_PASSWORD", "Wellida123")
 ADMIN_PASSWORD_HASH = os.environ.get("DECANTS_ADMIN_PASSWORD_HASH", "")
 SECRET_KEY = os.environ.get("DECANTS_SECRET_KEY", "troque-esta-chave-em-producao")
 STORE_WHATSAPP_NUMBER = re.sub(r"\D+", "", os.environ.get("DECANTS_WHATSAPP_NUMBER", "558899641605"))
@@ -1473,7 +1473,7 @@ def main():
     port = int(os.environ.get("PORT", "8000"))
     server = http.server.ThreadingHTTPServer(("0.0.0.0", port), DecantsHandler)
     print(f"Decant's Perfumaria rodando em http://localhost:{port}")
-    print("Login padrao do admin: decantsperfumaria1@gmail.com / Wellida123 senha")
+    print("Login padrao do admin: decantsperfumaria1@gmail.com / Wellida123")
     print("Em producao, defina DECANTS_ADMIN_USER, DECANTS_ADMIN_PASSWORD e DECANTS_SECRET_KEY.")
     server.serve_forever()
 
