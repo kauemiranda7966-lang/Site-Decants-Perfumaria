@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/admin-panel.css?v=1">
+  <link rel="stylesheet" href="/css/admin-panel.css?v=2">
 </head>
 <body class="admin-shell">
   <main id="loginView" class="login-view" hidden>
@@ -158,15 +158,15 @@
         <article class="panel">
           <div class="panel-head">
             <div><span>Pedidos</span><h2>Gerenciamento de pedidos</h2></div>
-            <select id="orderStatusFilter" class="search-input">
-              <option value="">Todos</option>
-              <option value="awaiting_payment">Aguardando pagamento</option>
-              <option value="approved">Aprovado</option>
-              <option value="preparing">Preparando</option>
-              <option value="shipped">Enviado</option>
-              <option value="delivered">Entregue</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
+            <input id="orderSearch" class="search-input" type="search" placeholder="Buscar numero do pedido">
+          </div>
+          <div id="orderSearchResult" class="order-search-result" hidden></div>
+          <div id="orderTabs" class="order-tabs" role="tablist" aria-label="Status dos pedidos">
+            <button class="active" type="button" data-status="to_separate">Para separar</button>
+            <button type="button" data-status="separated">Separados</button>
+            <button type="button" data-status="delivered">Entregues</button>
+            <button type="button" data-status="refunded">Extorno</button>
+            <button type="button" data-status="cancelled">Cancelados</button>
           </div>
           <div id="ordersList" class="table-list"></div>
         </article>
@@ -200,6 +200,6 @@
     <div id="orderDetail"></div>
   </dialog>
 
-  <script src="/js/admin-panel.js?v=1"></script>
+  <script src="/js/admin-panel.js?v=2"></script>
 </body>
 </html>

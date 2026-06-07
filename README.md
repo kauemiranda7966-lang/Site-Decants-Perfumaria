@@ -59,6 +59,20 @@ Rotas principais:
 - `/clientes`: clientes de pedidos e leads do Clube de Ofertas.
 - `/logs`: historico de acoes administrativas.
 
+Na tela `/pedidos`, pedidos pagos entram em `Para separar`. O painel tambem tem as abas `Separados`, `Entregues`, `Extorno` e `Cancelados`, alem da busca pelo numero do pedido.
+
+## WhatsApp automatico de pedidos pagos
+
+Quando o Mercado Pago confirma um pagamento aprovado pelo webhook, o pedido muda para `Para separar` e o servidor tenta enviar o numero do pedido para o WhatsApp administrativo via WhatsApp Cloud API. Configure:
+
+```bash
+WHATSAPP_ADMIN_NUMBER=558899641605
+WHATSAPP_CLOUD_PHONE_NUMBER_ID=seu_phone_number_id
+WHATSAPP_CLOUD_TOKEN=seu_token_da_meta
+```
+
+Sem essas credenciais, o painel continua funcionando e o link manual do WhatsApp continua sendo gerado.
+
 ## Como alterar credenciais
 
 Em producao, use variaveis de ambiente e evite senha em texto puro:

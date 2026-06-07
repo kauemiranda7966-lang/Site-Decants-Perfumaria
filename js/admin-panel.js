@@ -4,7 +4,8 @@ const state = {
   products: [],
   orders: [],
   customers: [],
-  logs: []
+  logs: [],
+  activeOrderStatus: "to_separate"
 };
 
 const routes = {
@@ -45,7 +46,9 @@ const els = {
   newProductButton: document.getElementById("newProductButton"),
   deleteProductButton: document.getElementById("deleteProductButton"),
   ordersList: document.getElementById("ordersList"),
-  orderStatusFilter: document.getElementById("orderStatusFilter"),
+  orderTabs: document.getElementById("orderTabs"),
+  orderSearch: document.getElementById("orderSearch"),
+  orderSearchResult: document.getElementById("orderSearchResult"),
   customersList: document.getElementById("customersList"),
   customerSearch: document.getElementById("customerSearch"),
   logsList: document.getElementById("logsList"),
@@ -61,7 +64,8 @@ els.productForm.addEventListener("submit", saveProduct);
 els.newProductButton.addEventListener("click", resetProductForm);
 els.deleteProductButton.addEventListener("click", deleteProduct);
 els.productSearch.addEventListener("input", renderProducts);
-els.orderStatusFilter.addEventListener("change", renderOrders);
+els.orderTabs.addEventListener("click", handleOrderTabClick);
+els.orderSearch.addEventListener("input", renderOrders);
 els.customerSearch.addEventListener("input", renderCustomers);
 
 init();
@@ -283,8 +287,20 @@ function resetProductForm(clearMessage = true) {
 }
 
 function renderOrders() {
-  const status = els.orderStatusFilter.value;
-  const orders = state.orders.filter(order => !status || order.status === status);
+  const search = normalize(els.orderSearch.value);
+  const matchedOrder = search
+    ? state.orders.find(order => normalize(order.reference).includes(search))
+    : null;
+
+  renderOrderSearchResult(matchedOrder, search);
+  renderOrderTabs();
+
+  const orders = state.orders.filter(order => {
+    const operationalStatus = orderOperationalStatus(order.status);
+    const matchesStatus = operationalStatus === state.activeOrderStatus;
+    const matchesSearch = !search || normalize(order.reference).includes(search);
+    return matchesStatus && matchesSearch;
+  });
   els.ordersList.innerHTML = orders.map(order => `
     <article class="table-row">
       <div>
@@ -298,6 +314,50 @@ function renderOrders() {
       <button class="ghost-btn" type="button" onclick="openOrder(${order.id})">Detalhes</button>
     </article>
   `).join("") || empty("Nenhum pedido encontrado.");
+}
+
+function handleOrderTabClick(event) {
+  const tab = event.target.closest("button[data-status]");
+  if (!tab) return;
+  state.activeOrderStatus = tab.dataset.status;
+  renderOrders();
+}
+
+function renderOrderTabs() {
+  const totals = state.orders.reduce((acc, order) => {
+    const status = orderOperationalStatus(order.status);
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+
+  els.orderTabs.querySelectorAll("button[data-status]").forEach(button => {
+    const baseLabel = button.dataset.label || button.textContent.replace(/\s+\d+$/, "");
+    button.dataset.label = baseLabel;
+    button.textContent = `${baseLabel} ${totals[button.dataset.status] || 0}`;
+    button.classList.toggle("active", button.dataset.status === state.activeOrderStatus);
+  });
+}
+
+function renderOrderSearchResult(order, search) {
+  if (!search) {
+    els.orderSearchResult.hidden = true;
+    els.orderSearchResult.innerHTML = "";
+    return;
+  }
+
+  if (!order) {
+    els.orderSearchResult.hidden = false;
+    els.orderSearchResult.innerHTML = "Pedido nao encontrado.";
+    return;
+  }
+
+  const status = orderOperationalStatus(order.status);
+  els.orderSearchResult.hidden = false;
+  els.orderSearchResult.innerHTML = `
+    <strong>${escapeHtml(order.reference)}</strong>
+    <span>${escapeHtml(order.customer_name)} esta em <b>${labelStatus(status)}</b>.</span>
+    <button class="ghost-btn" type="button" onclick="openOrder(${order.id})">Detalhes</button>
+  `;
 }
 
 window.openOrder = async function openOrder(id) {
@@ -398,7 +458,8 @@ async function api(url, options = {}) {
 function statusOptions(selected) {
   return [
     "whatsapp_pending", "awaiting_payment", "pending", "approved",
-    "preparing", "shipped", "delivered", "cancelled", "refunded"
+    "to_separate", "separated", "preparing", "shipped", "delivered",
+    "refunded", "cancelled"
   ].map(status => `<option value="${status}" ${status === selected ? "selected" : ""}>${labelStatus(status)}</option>`).join("");
 }
 
@@ -408,15 +469,33 @@ function labelStatus(status) {
     awaiting_payment: "Aguardando pagamento",
     pending: "Pendente",
     approved: "Aprovado",
+    to_separate: "Para separar",
+    separated: "Separado",
     preparing: "Preparando",
     shipped: "Enviado",
     delivered: "Entregue",
     cancelled: "Cancelado",
-    refunded: "Reembolsado",
+    refunded: "Extorno",
     paid: "Pago",
     completed: "Concluido"
   };
   return labels[status] || status || "Sem status";
+}
+
+function orderOperationalStatus(status) {
+  const map = {
+    approved: "to_separate",
+    paid: "to_separate",
+    preparing: "to_separate",
+    to_separate: "to_separate",
+    separated: "separated",
+    shipped: "separated",
+    delivered: "delivered",
+    completed: "delivered",
+    refunded: "refunded",
+    cancelled: "cancelled"
+  };
+  return map[status] || status;
 }
 
 function priceOf(product, volume) {

@@ -62,6 +62,9 @@ ADMIN_DOMAIN = os.environ.get("DECANTS_ADMIN_DOMAIN", "admin.decantperfumaria.co
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
 MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
 MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
+WHATSAPP_CLOUD_TOKEN = os.environ.get("WHATSAPP_CLOUD_TOKEN", "")
+WHATSAPP_CLOUD_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_CLOUD_PHONE_NUMBER_ID", "")
+WHATSAPP_ADMIN_NUMBER = re.sub(r"\D+", "", os.environ.get("WHATSAPP_ADMIN_NUMBER", STORE_WHATSAPP_NUMBER))
 PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
 ADMIN_ALLOWED_ORIGINS = {
     origin.strip().rstrip("/")
@@ -146,6 +149,9 @@ def init_db():
             )
             """
         )
+        order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)").fetchall()}
+        if "admin_whatsapp_sent_at" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN admin_whatsapp_sent_at TEXT NOT NULL DEFAULT ''")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS order_history (
@@ -327,6 +333,7 @@ def normalize_checkout(payload):
     phone = re.sub(r"\D+", "", str(customer.get("phone", "")))
     address = str(customer.get("address", "")).strip()
     items = payload.get("items") or []
+    coupon = str(payload.get("coupon", "")).strip().upper()
 
     if len(name) < 3:
         raise ValueError("Informe o nome completo.")
@@ -352,6 +359,7 @@ def normalize_checkout(payload):
     return {
         "customer": {"name": name, "email": email, "phone": phone, "address": address},
         "items": normalized_items,
+        "coupon": coupon if coupon == "DECANTS5" else "",
     }
 
 
@@ -387,6 +395,21 @@ def build_order_items(conn, checkout_items):
     return order_items
 
 
+#APPLY_CHECKOUT_COUPON
+def apply_checkout_coupon(order_items, coupon):
+    if coupon != "DECANTS5":
+        return 0.0
+
+    discount = 0.0
+    for item in order_items:
+        original_subtotal = item["subtotal"]
+        item["unit_price"] = round(item["unit_price"] * 0.95, 2)
+        item["subtotal"] = round(item["unit_price"] * item["quantity"], 2)
+        discount += original_subtotal - item["subtotal"]
+
+    return round(discount, 2)
+
+
 #BUILD_WHATSAPP_URL
 def build_whatsapp_url(reference, customer, items, total, payment_url=""):
     lines = [
@@ -408,6 +431,52 @@ def build_whatsapp_url(reference, customer, items, total, payment_url=""):
 
     message = parse.quote("\n".join(lines))
     return f"https://wa.me/{STORE_WHATSAPP_NUMBER}?text={message}"
+
+
+#BUILD_ADMIN_ORDER_MESSAGE
+def build_admin_order_message(reference, customer_name="", total=0):
+    lines = [
+        "Pagamento aprovado na Decant's Perfumaria.",
+        f"Pedido: {reference}",
+    ]
+    if customer_name:
+        lines.append(f"Cliente: {customer_name}")
+    if total:
+        lines.append(f"Total: R$ {money_to_brl(total)}")
+    lines.append("Status: para separar")
+    return "\n".join(lines)
+
+
+#SEND_ADMIN_WHATSAPP_NOTIFICATION
+def send_admin_whatsapp_notification(reference, customer_name="", total=0):
+    if not WHATSAPP_CLOUD_TOKEN or not WHATSAPP_CLOUD_PHONE_NUMBER_ID or not WHATSAPP_ADMIN_NUMBER:
+        return False
+
+    body = json.dumps(
+        {
+            "messaging_product": "whatsapp",
+            "to": WHATSAPP_ADMIN_NUMBER,
+            "type": "text",
+            "text": {"preview_url": False, "body": build_admin_order_message(reference, customer_name, total)},
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+    req = request.Request(
+        f"https://graph.facebook.com/v19.0/{WHATSAPP_CLOUD_PHONE_NUMBER_ID}/messages",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {WHATSAPP_CLOUD_TOKEN}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(req, timeout=12):
+            return True
+    except Exception as exc:
+        print(f"Falha ao enviar WhatsApp administrativo do pedido {reference}: {exc}")
+        return False
 
 
 #CREATE_MERCADO_PAGO_PREFERENCE
@@ -889,7 +958,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 SELECT
                     COALESCE(SUM(total), 0) AS total_sales,
                     COUNT(*) AS total_orders,
-                    SUM(CASE WHEN status IN ('approved', 'paid', 'delivered', 'completed') THEN total ELSE 0 END) AS paid_sales
+                    SUM(CASE WHEN status IN ('approved', 'paid', 'to_separate', 'separated', 'delivered', 'completed') THEN total ELSE 0 END) AS paid_sales
                 FROM orders
                 """
             ).fetchone()
@@ -956,7 +1025,8 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         note = str(payload.get("note", "")).strip()
         allowed = {
             "whatsapp_pending", "awaiting_payment", "pending", "approved",
-            "preparing", "shipped", "delivered", "cancelled", "refunded",
+            "to_separate", "separated", "preparing", "shipped", "delivered",
+            "cancelled", "refunded",
         }
         if new_status not in allowed:
             self.send_json({"error": "Status invalido."}, status=400)
@@ -1123,6 +1193,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
             with connect_db() as conn:
                 order_items = build_order_items(conn, checkout["items"])
+                discount = apply_checkout_coupon(order_items, checkout["coupon"])
                 total = round(sum(item["subtotal"] for item in order_items), 2)
                 payment_error = ""
                 try:
@@ -1180,6 +1251,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                     "paymentUrl": payment_url,
                     "whatsappUrl": whatsapp_url,
                     "paymentError": payment_error,
+                    "discount": discount,
                     "message": "Pedido criado com sucesso.",
                 },
                 status=201,
@@ -1232,18 +1304,32 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             status = str(payment.get("status") or "pending").strip() or "pending"
 
             if reference:
+                notify_admin = None
                 with connect_db() as conn:
-                    current_order = conn.execute("SELECT id, status FROM orders WHERE reference = ?", (reference,)).fetchone()
-                    if current_order and status == "approved" and current_order["status"] != "approved":
-                        items = conn.execute(
-                            "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
-                            (current_order["id"],),
-                        ).fetchall()
-                        for item in items:
-                            conn.execute(
-                                "UPDATE products SET estoque = MAX(0, estoque - ?) WHERE id = ?",
-                                (item["quantity"], item["product_id"]),
-                            )
+                    current_order = conn.execute(
+                        "SELECT id, status, customer_name, total, admin_whatsapp_sent_at FROM orders WHERE reference = ?",
+                        (reference,),
+                    ).fetchone()
+                    paid_statuses = {"approved", "paid", "to_separate", "separated", "delivered", "completed"}
+                    next_status = "to_separate" if status == "approved" else status
+
+                    if current_order and status == "approved":
+                        if current_order["status"] not in paid_statuses:
+                            items = conn.execute(
+                                "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
+                                (current_order["id"],),
+                            ).fetchall()
+                            for item in items:
+                                conn.execute(
+                                    "UPDATE products SET estoque = MAX(0, estoque - ?) WHERE id = ?",
+                                    (item["quantity"], item["product_id"]),
+                                )
+                        if not current_order["admin_whatsapp_sent_at"]:
+                            notify_admin = {
+                                "reference": reference,
+                                "customer_name": current_order["customer_name"],
+                                "total": current_order["total"],
+                            }
 
                     conn.execute(
                         """
@@ -1251,8 +1337,15 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                         SET status = ?, payment_id = ?, updated_at = CURRENT_TIMESTAMP
                         WHERE reference = ?
                         """,
-                        (status, payment_id, reference),
+                        (next_status, payment_id, reference),
                     )
+
+                if notify_admin and send_admin_whatsapp_notification(**notify_admin):
+                    with connect_db() as conn:
+                        conn.execute(
+                            "UPDATE orders SET admin_whatsapp_sent_at = CURRENT_TIMESTAMP WHERE reference = ?",
+                            (reference,),
+                        )
 
             self.send_json({"ok": True})
         except Exception as exc:

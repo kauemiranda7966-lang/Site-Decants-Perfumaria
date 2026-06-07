@@ -39,6 +39,7 @@ const produtos = produtosPadrao.map(normalizarProdutoLoja);
 window.decantsProdutos = produtos;
 window.decantsProdutosPadrao = produtosPadrao.map(normalizarProdutoLoja);
 let checkoutProdutoAtual = null;
+const CHAVE_CARRINHO = "decantsCarrinho";
 
 const notasPorProduto = {
   "Dior Sauvage": "bergamota, pimenta, lavanda, ambroxan e madeiras",
@@ -468,8 +469,22 @@ if (clubeOfertasForm) {
   clubeOfertasForm.addEventListener("submit", cadastrarClubeOfertas);
 }
 
+document.querySelectorAll("#menuPrincipal a").forEach(link => {
+  link.addEventListener("click", () => {
+    const menu = document.getElementById("menuPrincipal");
+    const botao = document.querySelector(".menu-mobile-botao");
+    if (!menu || !botao) return;
+
+    menu.classList.remove("menu-aberto");
+    botao.setAttribute("aria-expanded", "false");
+    botao.setAttribute("aria-label", "Abrir menu");
+    botao.querySelector("i")?.classList.replace("fa-xmark", "fa-bars");
+  });
+});
+
 carregarProdutosLoja();
 exibirRetornoPagamento();
+atualizarContadoresCarrinho();
 
 if (searchInput) {
   searchInput.addEventListener("input", () => pesquisarProdutos(false));
@@ -791,16 +806,19 @@ function verMaisProduto(nomeProduto) {
   const semEstoque = !produtoDisponivel(produto);
   const preco5 = obterPrecoProduto(produto, 5);
   const preco10 = obterPrecoProduto(produto, 10);
+  const temaProduto = obterTemaVisualProduto(produto.nome);
 
   if (modalExistente) modalExistente.remove();
   document.body.classList.add("modal-aberto");
 
   document.body.insertAdjacentHTML("beforeend", `
     <div class="modal-produto modal-produto-premium" role="dialog" aria-modal="true" aria-labelledby="modalProdutoTitulo" onclick="fecharDetalhesProduto(event)">
-      <div class="modal-conteudo modal-conteudo-premium">
+      <div class="modal-conteudo modal-conteudo-premium" style="--produto-cor:${temaProduto.cor};--produto-cor-suave:${temaProduto.suave};">
         <button class="modal-fechar modal-fechar-premium" type="button" aria-label="Fechar" onclick="fecharDetalhesProduto()">
           <span aria-hidden="true">&times;</span>
         </button>
+
+        ${renderizarHeaderProdutoMobile(produto)}
 
         <div class="modal-layout-premium">
           ${renderizarGaleriaModal(produto, imagensGaleria)}
@@ -809,6 +827,8 @@ function verMaisProduto(nomeProduto) {
             ${renderizarCompraModal(produto, semEstoque, preco5)}
           </div>
         </div>
+
+        ${renderizarNavegacaoProdutoMobile(produto.categoria)}
       </div>
     </div>
   `);
@@ -819,12 +839,80 @@ function verMaisProduto(nomeProduto) {
   if (imagem && imagem.complete && imagem.naturalWidth) finalizarCarregamentoImagemModal(imagem);
 }
 
+// #OBTER_TEMA_VISUAL_PRODUTO
+function obterTemaVisualProduto(nomeProduto) {
+  const nome = normalizarTexto(nomeProduto);
+  const temas = [
+    { termos: ["bleu de chanel", "dior sauvage", "hugo boss night"], cor: "#173654", suave: "#e8eef3" },
+    { termos: ["scandal masculino", "asad lattafa", "one million", "lady million"], cor: "#b7761f", suave: "#f5e8d2" },
+    { termos: ["idole", "la vie est belle", "yara rosa", "212 vip rose"], cor: "#c98591", suave: "#f7e7e9" },
+    { termos: ["ferrari black"], cor: "#711f25", suave: "#f0e5e5" },
+    { termos: ["versace eros"], cor: "#176a5b", suave: "#e3f0ec" },
+    { termos: ["good girl", "212 vip black", "encre noire"], cor: "#252830", suave: "#e8e8e9" }
+  ];
+  return temas.find(tema => tema.termos.some(termo => nome.includes(termo))) || {
+    cor: "#b8862b",
+    suave: "#f4ecdc"
+  };
+}
+
+// #RENDERIZAR_HEADER_PRODUTO_MOBILE
+function renderizarHeaderProdutoMobile(produto) {
+  return `
+    <header class="modal-mobile-header">
+      <button class="modal-mobile-voltar" type="button" aria-label="Voltar ao catalogo" onclick="fecharDetalhesProduto()">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+      <a class="modal-mobile-logo" href="index.html" aria-label="Ir para o in&iacute;cio">
+        <span class="modal-mobile-logo-simbolo"><img src="img/logo/logo.png" alt=""></span>
+        <span class="modal-mobile-logo-texto"><strong>DECANT'S</strong><small>PERFUMARIA</small></span>
+      </a>
+      <div class="modal-mobile-acoes">
+        <button type="button" aria-label="Buscar perfumes" onclick="abrirBuscaProdutoMobile()">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        </button>
+        <button type="button" aria-label="Abrir compra de ${produto.nome}" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)">
+          <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+        </button>
+      </div>
+    </header>
+  `;
+}
+
+// #RENDERIZAR_NAVEGACAO_PRODUTO_MOBILE
+function renderizarNavegacaoProdutoMobile(categoria) {
+  return `
+    <nav class="modal-mobile-nav" aria-label="Navega&ccedil;&atilde;o principal">
+      <a href="index.html"><i class="fa-solid fa-house" aria-hidden="true"></i><span>In&iacute;cio</span></a>
+      <a class="${categoria === "masculino" ? "ativo" : ""}" href="produtos.html?categoria=masculino"><i class="fa-solid fa-bottle-droplet" aria-hidden="true"></i><span>Masculinos</span></a>
+      <a class="${categoria === "feminino" ? "ativo" : ""}" href="produtos.html?categoria=feminino"><i class="fa-solid fa-bottle-droplet" aria-hidden="true"></i><span>Femininos</span></a>
+      <a href="index.html#clube-ofertas"><i class="fa-solid fa-tag" aria-hidden="true"></i><span>Clube</span></a>
+      <a href="contatos.html"><i class="fa-regular fa-user" aria-hidden="true"></i><span>Conta</span></a>
+    </nav>
+  `;
+}
+
+// #ABRIR_BUSCA_PRODUTO_MOBILE
+function abrirBuscaProdutoMobile() {
+  fecharDetalhesProduto();
+  window.setTimeout(() => {
+    const campo = document.querySelector(".campo-busca input");
+    campo?.scrollIntoView({ behavior: "smooth", block: "center" });
+    campo?.focus();
+  }, 240);
+}
+
 // #MONTAR_GALERIA_MODAL_PRODUTO
 function montarGaleriaModalProduto(produto) {
   const imagensContainer = imagensContainerPorProduto[normalizarTexto(produto.nome)] || [];
-  return imagensContainer.filter((imagem, index, lista) =>
+  const imagensValidas = imagensContainer.filter((imagem, index, lista) =>
     imagem && imagem.includes("img/container/") && lista.indexOf(imagem) === index
   );
+
+  if (imagensValidas.length) return imagensValidas;
+
+  const imagemFallback = obterImagemDestaqueProduto(produto) || produto.img;
+  return imagemFallback ? [normalizarCaminhoImagem(imagemFallback)] : [];
 }
 
 // #OBTER_IMAGEM_PRODUTO
@@ -871,9 +959,15 @@ function renderizarGaleriaModal(produto, imagens) {
           : `<div class="modal-sem-imagem">Imagem indisponivel</div>`}
       </div>
 
+      ${imagens.length > 1 ? `<div class="modal-galeria-pontos" aria-label="Selecionar imagem">
+        ${imagens.map((imagem, index) => `
+          <button class="${index === 0 ? "ativo" : ""}" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-modal-imagem data-src="${imagem}"></button>
+        `).join("")}
+      </div>` : ""}
+
       ${imagens.length ? `<div class="modal-thumbs" aria-label="Miniaturas">
         ${imagens.map((imagem, index) => `
-          <button class="modal-thumb ${index === 0 ? "ativo" : ""} modal-thumb-cinematica" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-src="${imagem}">
+          <button class="modal-thumb ${index === 0 ? "ativo" : ""} modal-thumb-cinematica" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-modal-imagem data-src="${imagem}">
             <img src="${imagem}" alt="${produto.nome} miniatura ${index + 1}" loading="lazy">
           </button>
         `).join("")}
@@ -886,11 +980,10 @@ function renderizarGaleriaModal(produto, imagens) {
 function renderizarCompraModal(produto, semEstoque, preco5) {
   return `
     <aside class="modal-compra-premium">
-      <div class="modal-beneficios-premium" aria-label="Beneficios da compra">
-        <span><i class="fa-solid fa-lock" aria-hidden="true"></i><strong>Compra segura</strong><small>Seus dados protegidos e compra 100% segura.</small></span>
-        <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><strong>Frete gratis</strong><small>Para compras acima de R$ 199.</small></span>
-        <span><i class="fa-regular fa-clock" aria-hidden="true"></i><strong>Envio rapido</strong><small>Seu pedido postado em ate 24h.</small></span>
-        <span><i class="fa-regular fa-circle-check" aria-hidden="true"></i><strong>Garantia de satisfacao</strong><small>7 dias para trocar ou devolver.</small></span>
+      <div class="modal-beneficios-premium" aria-label="Benef&iacute;cios da compra">
+        <span><i class="fa-solid fa-truck-fast" aria-hidden="true"></i><strong>Frete gr&aacute;tis</strong><small>Todo o Brasil acima de R$ 199.</small></span>
+        <span><i class="fa-solid fa-lock" aria-hidden="true"></i><strong>Pagamento seguro</strong><small>Seus dados 100% protegidos.</small></span>
+        <span><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><strong>Produtos originais</strong><small>Qualidade garantida.</small></span>
       </div>
 
       <div class="modal-preco-final">
@@ -905,25 +998,57 @@ function renderizarCompraModal(produto, semEstoque, preco5) {
       </div>
 
       <button class="modal-btn-principal" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+        <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
         ${semEstoque ? "Produto esgotado" : "Adicionar ao carrinho"}
       </button>
 
-      <button class="modal-btn-whatsapp" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
-        <i class="fa-regular fa-heart" aria-hidden="true"></i>
-        Adicionar aos favoritos
+      <button class="modal-btn-whatsapp" type="button" data-produto="${produto.nome}" onclick="comprarViaWhatsAppProduto(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+        Comprar via WhatsApp
       </button>
     </aside>
   `;
 }
 
+function comprarViaWhatsAppProduto(nomeProduto) {
+  const produto = produtos[nomeProduto];
+  const modal = document.querySelector(".modal-produto-premium");
+
+  if (!produto || !modal) return;
+
+  const volumeAtivo = Number(modal.querySelector(".modal-volume-card.ativo")?.dataset.volume || 5);
+  const quantidade = Math.max(
+    1,
+    Number.parseInt(modal.querySelector("#modalQuantidade")?.textContent || "1", 10)
+  );
+  const precoUnitario = precoTextoParaNumero(obterPrecoProduto(produto, volumeAtivo));
+  const total = precoUnitario * quantidade;
+  const mensagem = [
+    "Olá! Quero comprar este perfume:",
+    `${produto.nome} - ${volumeAtivo}ml`,
+    `Quantidade: ${quantidade}`,
+    `Total: ${formatarMoedaLoja(total)}`
+  ].join("\n");
+
+  window.open(
+    `https://wa.me/558899641605?text=${encodeURIComponent(mensagem)}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
+
 // #RENDERIZAR_INFO_MODAL
 function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca, preco5, preco10) {
   const semEstoque = !produtoDisponivel(produto);
+  const categoria = produto.categoria === "masculino" ? "Masculino" : "Feminino";
+  const descricao = criarDescricaoCurtaProduto(detalhes);
+  const concentracao = normalizarTexto(produto.nome).includes("edt") ? "Eau de Toilette" : "Eau de Parfum";
 
   return `
     <section class="modal-info-premium">
       <div class="modal-marca-linha">
-        <span>${marcaProduto}</span>
+        <span class="modal-categoria-texto">${categoria}</span>
+        <span class="modal-marca-texto">${marcaProduto}</span>
         <div class="modal-logo-mini">
           <img src="${logoMarca}" alt="Logo ${marcaProduto}" loading="lazy" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
           <strong hidden>${marcaProduto}</strong>
@@ -932,11 +1057,11 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
 
       <h2 id="modalProdutoTitulo">${produto.nome}</h2>
 
-      <p class="modal-descricao">Uma leitura elegante da fragrancia, pensada para quem quer experimentar antes de escolher o frasco ideal.</p>
+      <p class="modal-descricao">${descricao}</p>
 
       <div class="modal-divisor"></div>
 
-      <div class="modal-secao">
+      <div class="modal-secao modal-secao-tamanhos">
         <h3>Escolha o tamanho</h3>
         <div class="modal-opcoes-volume" role="radiogroup" aria-label="Tamanhos disponíveis">
           ${renderizarVolumeModal(5, preco5, true, semEstoque)}
@@ -944,7 +1069,7 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
         </div>
       </div>
 
-      <div class="modal-secao">
+      <div class="modal-secao modal-secao-acordes">
         <h3>Principais acordes</h3>
         <div class="modal-acordes-premium">
           ${acordes.map(acorde => `<span style="--cor-chip: ${acorde.cor};">${acorde.nome}</span>`).join("")}
@@ -964,8 +1089,13 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
         </article>
         <article>
           <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-          <span>Familia</span>
+          <span>Fam&iacute;lia olfativa</span>
           <strong>${detalhes.familia}</strong>
+        </article>
+        <article>
+          <i class="fa-solid fa-bottle-droplet" aria-hidden="true"></i>
+          <span>Concentra&ccedil;&atilde;o</span>
+          <strong>${concentracao}</strong>
         </article>
       </div>
 
@@ -974,12 +1104,20 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
   `;
 }
 
+// #CRIAR_DESCRICAO_CURTA_PRODUTO
+function criarDescricaoCurtaProduto(detalhes) {
+  const notas = repararTextoCatalogo(detalhes.notas).split(",").map(nota => nota.trim()).filter(Boolean);
+  const destaqueNotas = notas.slice(0, 2).join(" e ");
+  return `${repararTextoCatalogo(detalhes.familia)}, elegante e marcante${destaqueNotas ? `, com ${destaqueNotas}` : ""}.`;
+}
+
 // #RENDERIZAR_VOLUME_MODAL
 function renderizarVolumeModal(volume, preco, ativo, semEstoque) {
   const valorMl = precoTextoParaNumero(preco) / volume;
 
   return `
     <button class="modal-volume-card ${ativo ? "ativo" : ""}" type="button" role="radio" aria-checked="${ativo}" data-volume="${volume}" data-preco="${preco}" onclick="selecionarVolumeModal(this)" ${semEstoque ? "disabled" : ""}>
+      <i class="modal-volume-icone fa-solid fa-bottle-droplet" aria-hidden="true"></i>
       <span>${volume} ml</span>
       <strong>R$ ${preco}</strong>
       <small>R$ ${formatarMoedaLoja(valorMl)} / ml</small>
@@ -993,6 +1131,7 @@ function finalizarCarregamentoImagemModal(imagem) {
   if (!wrapper) return;
 
   wrapper.classList.remove("modal-imagem-carregando", "modal-imagem-falhou");
+  aplicarFormatoImagemModal(imagem);
 }
 
 // #MARCAR_IMAGEM_MODAL_INDISPONIVEL
@@ -1027,8 +1166,9 @@ function selecionarImagemModal(botao) {
 
   if (!imagemPrincipal || !imagemArea || !novaImagem || imagemPrincipal.getAttribute("src") === novaImagem) return;
 
-  modal.querySelectorAll(".modal-thumb").forEach(thumb => thumb.classList.remove("ativo"));
-  botao.classList.add("ativo");
+  modal.querySelectorAll("[data-modal-imagem]").forEach(controle => {
+    controle.classList.toggle("ativo", controle.dataset.src === novaImagem);
+  });
   imagemArea.classList.add("modal-imagem-carregando");
   imagemPrincipal.setAttribute("src", novaImagem);
 }
@@ -1079,20 +1219,24 @@ function ajustarFormatoImagemModal() {
 
   if (!modal || !imagem) return;
 
-  const aplicarFormato = () => {
-    const proporcao = imagem.naturalWidth / imagem.naturalHeight;
-    const formato = proporcao > 1.18 ? "paisagem" : proporcao < 0.86 ? "retrato" : "quadrada";
-
-    modal.classList.remove("modal-imagem-paisagem", "modal-imagem-retrato", "modal-imagem-quadrada");
-    modal.classList.add(`modal-imagem-${formato}`);
-    modal.style.setProperty("--imagem-proporcao", proporcao.toFixed(3));
-  };
-
   if (imagem.complete && imagem.naturalWidth) {
-    aplicarFormato();
+    aplicarFormatoImagemModal(imagem);
   } else {
-    imagem.addEventListener("load", aplicarFormato, { once: true });
+    imagem.addEventListener("load", () => aplicarFormatoImagemModal(imagem), { once: true });
   }
+}
+
+// #APLICAR_FORMATO_IMAGEM_MODAL
+function aplicarFormatoImagemModal(imagem) {
+  const modal = imagem?.closest(".modal-conteudo");
+  if (!modal || !imagem.naturalWidth || !imagem.naturalHeight) return;
+
+  const proporcao = imagem.naturalWidth / imagem.naturalHeight;
+  const formato = proporcao > 1.18 ? "paisagem" : proporcao < 0.86 ? "retrato" : "quadrada";
+
+  modal.classList.remove("modal-imagem-paisagem", "modal-imagem-retrato", "modal-imagem-quadrada");
+  modal.classList.add(`modal-imagem-${formato}`);
+  modal.style.setProperty("--imagem-proporcao", proporcao.toFixed(3));
 }
 
 // #MONTAR_DETALHES_PRODUTO
@@ -1203,7 +1347,66 @@ function fecharDetalhesProduto(event) {
 
 // #COMPRAR
 function comprar(nomeProduto) {
-  abrirCheckout(nomeProduto);
+  const produto = produtos.find(item => item.nome === nomeProduto);
+  if (!produto || !produtoDisponivel(produto)) return;
+
+  const volumeSelecionado = Number(document.querySelector(".modal-volume-card.ativo")?.dataset.volume || 5);
+  const quantidadeSelecionada = Math.max(1, Number(document.getElementById("modalQuantidade")?.textContent || 1));
+  adicionarAoCarrinho(produto, volumeSelecionado, quantidadeSelecionada);
+  window.location.href = "carrinho.html";
+}
+
+// #LER_CARRINHO
+function lerCarrinho() {
+  try {
+    const itens = JSON.parse(localStorage.getItem(CHAVE_CARRINHO) || "[]");
+    return Array.isArray(itens) ? itens : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+// #SALVAR_CARRINHO
+function salvarCarrinho(itens) {
+  localStorage.setItem(CHAVE_CARRINHO, JSON.stringify(itens));
+  atualizarContadoresCarrinho();
+}
+
+// #ADICIONAR_AO_CARRINHO
+function adicionarAoCarrinho(produto, volume = 5, quantidade = 1) {
+  const itens = lerCarrinho();
+  const chave = `${produto.nome}-${volume}`;
+  const existente = itens.find(item => item.chave === chave);
+  const estoque = Math.max(1, Number(produto.estoque) || 1);
+
+  if (existente) {
+    existente.quantidade = Math.min(estoque, existente.quantidade + quantidade);
+    existente.selecionado = true;
+  } else {
+    itens.push({
+      chave,
+      produtoId: produto.id || 0,
+      nome: produto.nome,
+      categoria: produto.categoria,
+      imagem: obterImagemProduto(produto),
+      volume,
+      preco: obterPrecoProduto(produto, volume),
+      quantidade: Math.min(estoque, quantidade),
+      estoque,
+      selecionado: true
+    });
+  }
+
+  salvarCarrinho(itens);
+}
+
+// #ATUALIZAR_CONTADORES_CARRINHO
+function atualizarContadoresCarrinho() {
+  const total = lerCarrinho().reduce((soma, item) => soma + Number(item.quantidade || 0), 0);
+  document.querySelectorAll("[data-carrinho-contador]").forEach(contador => {
+    contador.textContent = total > 99 ? "99+" : String(total);
+    contador.hidden = total === 0;
+  });
 }
 
 // #SCROLL_TO_CLUBE_OFERTAS
@@ -1642,6 +1845,22 @@ function scrollToProdutos() {
   }
 }
 
+// #ALTERNAR_MENU_MOBILE
+function alternarMenuMobile(botao) {
+  const menu = document.getElementById("menuPrincipal");
+  if (!menu) return;
+
+  const aberto = menu.classList.toggle("menu-aberto");
+  botao.setAttribute("aria-expanded", String(aberto));
+  botao.setAttribute("aria-label", aberto ? "Fechar menu" : "Abrir menu");
+
+  const icone = botao.querySelector("i");
+  if (icone) {
+    icone.classList.toggle("fa-bars", !aberto);
+    icone.classList.toggle("fa-xmark", aberto);
+  }
+}
+
 if (typeof window !== "undefined") {
   Object.assign(window, {
     mostrarCategoria,
@@ -1656,6 +1875,7 @@ if (typeof window !== "undefined") {
     navegarImagemModal,
     selecionarVolumeModal,
     alterarQuantidadeModal,
+    comprarViaWhatsAppProduto,
     finalizarCarregamentoImagemModal,
     marcarImagemModalIndisponivel,
     marcarImagemProdutoIndisponivel,
@@ -1664,6 +1884,11 @@ if (typeof window !== "undefined") {
     enviarCheckout,
     atualizarVolumeCheckout,
     atualizarTotalCheckout,
-    mascararTelefoneLoja
+    mascararTelefoneLoja,
+    alternarMenuMobile,
+    lerCarrinho,
+    salvarCarrinho,
+    adicionarAoCarrinho,
+    atualizarContadoresCarrinho
   });
 }

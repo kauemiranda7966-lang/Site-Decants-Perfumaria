@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrinho | Decant's Perfumaria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=34">
+  <link rel="stylesheet" href="css/carrinho.css?v=2">
+</head>
+<body class="pagina-carrinho">
+  <header class="carrinho-header">
+    <a class="carrinho-voltar" href="index.html" aria-label="Continuar comprando">
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    <a class="carrinho-marca" href="index.html">
+      <img src="img/logo/logo.png" alt="">
+      <span><strong>DECANT'S</strong><small>PERFUMARIA</small></span>
+    </a>
+    <a class="carrinho-sacola" href="carrinho.html" aria-label="Carrinho">
+      <i class="fa-solid fa-bag-shopping"></i>
+      <span data-carrinho-contador hidden>0</span>
+    </a>
+  </header>
+
+  <main class="carrinho-pagina">
+    <section class="carrinho-titulo">
+      <div>
+        <span>Compra segura</span>
+        <h1>Meu carrinho</h1>
+      </div>
+      <a href="index.html">Continuar comprando</a>
+    </section>
+
+    <div id="carrinhoVazio" class="carrinho-vazio" hidden>
+      <i class="fa-solid fa-bag-shopping"></i>
+      <h2>Seu carrinho está vazio</h2>
+      <p>Escolha seus perfumes favoritos e volte aqui para finalizar.</p>
+      <a href="index.html">Explorar perfumes</a>
+    </div>
+
+    <div id="carrinhoConteudo" class="carrinho-layout">
+      <section class="carrinho-lista-area">
+        <div class="carrinho-selecao-topo">
+          <label>
+            <input id="selecionarTodos" type="checkbox" checked>
+            <span>Selecionar todos</span>
+          </label>
+          <button id="excluirSelecionados" type="button">Excluir selecionados</button>
+        </div>
+
+        <div class="carrinho-loja">
+          <div class="carrinho-loja-nome">
+            <i class="fa-solid fa-store"></i>
+            <strong>Decant's Perfumaria</strong>
+            <span>Loja oficial</span>
+          </div>
+          <div id="carrinhoItens" class="carrinho-itens"></div>
+        </div>
+
+        <section class="carrinho-vantagens">
+          <article><i class="fa-solid fa-shield-halved"></i><div><strong>Compra protegida</strong><span>Pagamento processado com segurança</span></div></article>
+          <article><i class="fa-solid fa-truck-fast"></i><div><strong>Frete grátis acima de R$199</strong><span>Enviamos para todo o Brasil</span></div></article>
+          <article><i class="fa-solid fa-certificate"></i><div><strong>Produtos originais</strong><span>Decants selecionados e preparados com cuidado</span></div></article>
+        </section>
+      </section>
+
+      <aside class="carrinho-resumo">
+        <h2>Resumo do pedido</h2>
+
+        <div class="carrinho-cupom">
+          <label for="carrinhoCupom"><i class="fa-solid fa-ticket"></i> Cupom da loja</label>
+          <div>
+            <input id="carrinhoCupom" placeholder="Digite seu cupom">
+            <button id="aplicarCupom" type="button">Aplicar</button>
+          </div>
+          <small id="mensagemCupom"></small>
+        </div>
+
+        <dl class="carrinho-valores">
+          <div><dt>Subtotal</dt><dd id="carrinhoSubtotal">R$ 0,00</dd></div>
+          <div><dt>Desconto</dt><dd id="carrinhoDesconto">R$ 0,00</dd></div>
+          <div><dt>Frete</dt><dd id="carrinhoFrete">Calculado depois</dd></div>
+          <div class="carrinho-total"><dt>Total</dt><dd id="carrinhoTotal">R$ 0,00</dd></div>
+        </dl>
+
+        <form id="carrinhoCheckout" class="carrinho-checkout">
+          <h3>Dados para entrega</h3>
+          <label>Nome completo<input id="carrinhoNome" autocomplete="name" required></label>
+          <div class="carrinho-campos-duplos">
+            <label>WhatsApp<input id="carrinhoTelefone" autocomplete="tel" inputmode="tel" placeholder="(88) 99999-9999" required></label>
+            <label>E-mail<input id="carrinhoEmail" type="email" autocomplete="email" required></label>
+          </div>
+          <label>Endereço<input id="carrinhoEndereco" autocomplete="street-address" placeholder="Rua, número, bairro e cidade" required></label>
+
+          <p id="carrinhoMensagem" class="carrinho-mensagem" hidden></p>
+
+          <button class="carrinho-finalizar" type="submit">
+            <i class="fa-regular fa-credit-card"></i>
+            Finalizar compra
+          </button>
+          <button id="finalizarWhatsApp" class="carrinho-whatsapp" type="button">
+            <i class="fa-brands fa-whatsapp"></i>
+            Finalizar pelo WhatsApp
+          </button>
+        </form>
+      </aside>
+    </div>
+  </main>
+
+  <div id="carrinhoBarraMobile" class="carrinho-barra-mobile">
+    <label><input id="selecionarTodosMobile" type="checkbox" checked><span>Todos</span></label>
+    <div><small>Total</small><strong id="carrinhoTotalMobile">R$ 0,00</strong></div>
+    <button id="finalizarMobile" type="button">Finalizar</button>
+  </div>
+
+  <script src="js/script.js?v=34"></script>
+  <script src="js/carrinho.js?v=2"></script>
+</body>
+</html>

@@ -401,6 +401,50 @@ input:focus, select:focus {
   max-width: 260px;
 }
 
+.order-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.order-tabs button {
+  min-height: 40px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.order-tabs button.active,
+.order-tabs button:hover {
+  color: #0b0b0c;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.order-search-result {
+  min-height: 50px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: -4px 0 14px;
+  padding: 12px;
+  border: 1px solid rgba(215,184,106,0.22);
+  border-radius: 8px;
+  background: rgba(215,184,106,0.08);
+  color: #e8ddca;
+  font-weight: 700;
+}
+
+.order-search-result[hidden] {
+  display: none;
+}
+
 .table-row {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(120px, .7fr) auto;
@@ -420,6 +464,8 @@ input:focus, select:focus {
 }
 
 .status-pill.approved,
+.status-pill.to_separate,
+.status-pill.separated,
 .status-pill.delivered {
   color: var(--ok);
   background: rgba(89,180,122,0.14);
@@ -540,5 +586,9 @@ input:focus, select:focus {
 
   .search-input {
     max-width: none;
+  }
+
+  .order-search-result {
+    grid-template-columns: 1fr;
   }
 }
