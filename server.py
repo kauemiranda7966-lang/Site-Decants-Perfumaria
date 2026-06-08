@@ -1082,9 +1082,6 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         if not self.is_admin_host():
             return False
         path = parse.urlparse(self.path).path
-        host = self.headers.get("Host", "").split(":", 1)[0].lower()
-        if host == host_from_setting(ADMIN_DOMAIN) and host != PUBLIC_HOST and path == "/":
-            return True
         return path in {"/login", "/dashboard", "/produtos", "/pedidos", "/clientes", "/logs"}
 
     #SERVE_ADMIN_APP
