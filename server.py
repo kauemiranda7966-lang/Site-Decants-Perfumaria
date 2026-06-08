@@ -62,10 +62,30 @@ ADMIN_DOMAIN = os.environ.get("DECANTS_ADMIN_DOMAIN", "admin.decantperfumaria.co
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
 MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
 MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
+MERCADO_PAGO_COLLECTOR_ID = os.environ.get("MERCADO_PAGO_COLLECTOR_ID", "").strip()
 WHATSAPP_CLOUD_TOKEN = os.environ.get("WHATSAPP_CLOUD_TOKEN", "")
 WHATSAPP_CLOUD_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_CLOUD_PHONE_NUMBER_ID", "")
 WHATSAPP_ADMIN_NUMBER = re.sub(r"\D+", "", os.environ.get("WHATSAPP_ADMIN_NUMBER", STORE_WHATSAPP_NUMBER))
 PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
+
+
+def host_from_setting(value):
+    if not value:
+        return ""
+    parsed = parse.urlparse(value if "://" in value else f"https://{value}")
+    return (parsed.hostname or "").lower()
+
+
+PUBLIC_HOST = host_from_setting(PUBLIC_BASE_URL)
+ADMIN_HOSTS = {
+    host
+    for host in {
+        host_from_setting(ADMIN_DOMAIN),
+        PUBLIC_HOST,
+        host_from_setting(os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")),
+    }
+    if host
+}
 ADMIN_ALLOWED_ORIGINS = {
     origin.strip().rstrip("/")
     for origin in os.environ.get(
@@ -74,7 +94,8 @@ ADMIN_ALLOWED_ORIGINS = {
     ).split(",")
     if origin.strip()
 }
-ADMIN_ALLOWED_ORIGINS.add(f"https://{ADMIN_DOMAIN}")
+for admin_host in ADMIN_HOSTS:
+    ADMIN_ALLOWED_ORIGINS.add(f"https://{admin_host}")
 SESSIONS = {}
 
 
@@ -142,8 +163,10 @@ def init_db():
                 total REAL NOT NULL,
                 status TEXT NOT NULL DEFAULT 'pending',
                 payment_id TEXT NOT NULL DEFAULT '',
+                payment_preference_id TEXT NOT NULL DEFAULT '',
                 payment_url TEXT NOT NULL DEFAULT '',
                 whatsapp_url TEXT NOT NULL DEFAULT '',
+                stock_reserved INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
@@ -152,6 +175,10 @@ def init_db():
         order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)").fetchall()}
         if "admin_whatsapp_sent_at" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN admin_whatsapp_sent_at TEXT NOT NULL DEFAULT ''")
+        if "payment_preference_id" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN payment_preference_id TEXT NOT NULL DEFAULT ''")
+        if "stock_reserved" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN stock_reserved INTEGER NOT NULL DEFAULT 0")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS order_history (
@@ -317,6 +344,70 @@ def is_public_base_url(base_url):
     return host not in {"localhost", "127.0.0.1", "::1"}
 
 
+#MERCADO_PAGO_CONFIGURED
+def mercado_pago_configured():
+    token = MERCADO_PAGO_ACCESS_TOKEN.strip()
+    if not token or "SEU_ACCESS_TOKEN" in token or "SUA_" in token:
+        return False
+    return token.startswith(("APP_USR-", "TEST-"))
+
+
+#MERCADO_PAGO_CHECKOUT_READY
+def mercado_pago_checkout_ready(base_url):
+    return mercado_pago_configured() and is_public_base_url(base_url)
+
+
+#VALIDATE_MERCADO_PAGO_OWNER
+def validate_mercado_pago_owner(mp_payload):
+    if MERCADO_PAGO_COLLECTOR_ID:
+        collector_id = str(mp_payload.get("collector_id") or "").strip()
+        if collector_id != MERCADO_PAGO_COLLECTOR_ID:
+            raise ValueError("Credencial Mercado Pago nao pertence ao collector_id configurado.")
+
+
+#PAYMENT_STATUS_GROUPS
+PAID_ORDER_STATUSES = {"approved", "paid", "to_separate", "separated", "delivered", "completed"}
+FAILED_PAYMENT_STATUSES = {"cancelled", "canceled", "refunded", "charged_back", "rejected", "expired"}
+
+
+#NORMALIZE_MERCADO_PAGO_STATUS
+def normalize_mercado_pago_status(status):
+    if status == "canceled":
+        return "cancelled"
+    if status == "rejected":
+        return "cancelled"
+    return status or "pending"
+
+
+#PAYMENT_AMOUNT
+def payment_amount(payment):
+    for key in ("transaction_amount", "total_paid_amount"):
+        try:
+            amount = float(payment.get(key) or 0)
+        except (TypeError, ValueError):
+            amount = 0
+        if amount > 0:
+            return round(amount, 2)
+    return 0.0
+
+
+#VALIDATE_PAYMENT_FOR_ORDER
+def validate_payment_for_order(payment, order):
+    validate_mercado_pago_owner(payment)
+    reference = str(payment.get("external_reference") or "").strip()
+    if reference != order["reference"]:
+        raise ValueError("Referencia do pagamento nao corresponde ao pedido.")
+
+    payer = payment.get("payer") if isinstance(payment, dict) else {}
+    payer_email = str((payer or {}).get("email") or "").strip().lower()
+    if payer_email and payer_email != str(order["customer_email"]).strip().lower():
+        raise ValueError("E-mail do pagador nao corresponde ao pedido.")
+
+    amount = payment_amount(payment)
+    if amount and abs(amount - float(order["total"])) > 0.01:
+        raise ValueError("Valor pago nao corresponde ao total do pedido.")
+
+
 #PRODUCT_PRICE
 def product_price(product, volume):
     promo_key = "precoPromocional10" if volume == 10 else "precoPromocional5"
@@ -334,6 +425,7 @@ def normalize_checkout(payload):
     address = str(customer.get("address", "")).strip()
     items = payload.get("items") or []
     coupon = str(payload.get("coupon", "")).strip().upper()
+    payment_method = str(payload.get("paymentMethod", "mercado_pago")).strip()
 
     if len(name) < 3:
         raise ValueError("Informe o nome completo.")
@@ -360,6 +452,7 @@ def normalize_checkout(payload):
         "customer": {"name": name, "email": email, "phone": phone, "address": address},
         "items": normalized_items,
         "coupon": coupon if coupon == "DECANTS5" else "",
+        "payment_method": payment_method if payment_method in {"mercado_pago", "whatsapp"} else "mercado_pago",
     }
 
 
@@ -393,6 +486,51 @@ def build_order_items(conn, checkout_items):
         )
 
     return order_items
+
+
+#RESERVE_ORDER_STOCK
+def reserve_order_stock(conn, order_id):
+    order = conn.execute("SELECT id, stock_reserved FROM orders WHERE id = ?", (order_id,)).fetchone()
+    if not order or order["stock_reserved"]:
+        return
+
+    items = conn.execute(
+        "SELECT product_id, product_name, quantity FROM order_items WHERE order_id = ?",
+        (order_id,),
+    ).fetchall()
+    for item in items:
+        result = conn.execute(
+            """
+            UPDATE products
+            SET estoque = estoque - ?
+            WHERE id = ? AND estoque >= ?
+            """,
+            (item["quantity"], item["product_id"], item["quantity"]),
+        )
+        if result.rowcount == 0:
+            raise ValueError(f"Estoque insuficiente para {item['product_name']}.")
+
+    conn.execute("UPDATE orders SET stock_reserved = 1 WHERE id = ?", (order_id,))
+
+
+#RELEASE_ORDER_STOCK
+def release_order_stock(conn, order_id):
+    order = conn.execute("SELECT id, stock_reserved FROM orders WHERE id = ?", (order_id,)).fetchone()
+    if not order or not order["stock_reserved"]:
+        return False
+
+    items = conn.execute(
+        "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
+        (order_id,),
+    ).fetchall()
+    for item in items:
+        conn.execute(
+            "UPDATE products SET estoque = estoque + ? WHERE id = ?",
+            (item["quantity"], item["product_id"]),
+        )
+
+    conn.execute("UPDATE orders SET stock_reserved = 0 WHERE id = ?", (order_id,))
+    return True
 
 
 #APPLY_CHECKOUT_COUPON
@@ -481,8 +619,10 @@ def send_admin_whatsapp_notification(reference, customer_name="", total=0):
 
 #CREATE_MERCADO_PAGO_PREFERENCE
 def create_mercado_pago_preference(reference, customer, items, total, base_url):
-    if not MERCADO_PAGO_ACCESS_TOKEN:
-        return ""
+    if not mercado_pago_configured():
+        raise ValueError("Mercado Pago nao configurado com Access Token de producao/teste.")
+    if not is_public_base_url(base_url):
+        raise ValueError("Configure DECANTS_PUBLIC_BASE_URL com o dominio publico da loja para pagar pelo Mercado Pago.")
 
     preference = {
         "external_reference": reference,
@@ -503,18 +643,17 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
         },
         "statement_descriptor": "DECANTS PERF",
         "metadata": {"order_reference": reference, "total": total},
-    }
-
-    if is_public_base_url(base_url):
-        preference["back_urls"] = {
+        "back_urls": {
             "success": f"{base_url}/index.html?pedido={reference}&pagamento=aprovado",
             "failure": f"{base_url}/index.html?pedido={reference}&pagamento=recusado",
             "pending": f"{base_url}/index.html?pedido={reference}&pagamento=pendente",
-        }
-        preference["auto_return"] = "approved"
-
-    if is_public_base_url(base_url):
-        preference["notification_url"] = f"{base_url}/api/payments/webhook"
+        },
+        "auto_return": "approved",
+        "notification_url": f"{base_url}/api/payments/webhook",
+        "payment_methods": {
+            "installments": 6
+        },
+    }
 
     body = json.dumps(preference, ensure_ascii=False).encode("utf-8")
     req = request.Request(
@@ -530,7 +669,12 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
     try:
         with request.urlopen(req, timeout=12) as response:
             data = json.loads(response.read().decode("utf-8"))
-            return data.get("init_point") or data.get("sandbox_init_point") or ""
+            validate_mercado_pago_owner(data)
+            payment_url = data.get("init_point") or data.get("sandbox_init_point") or ""
+            preference_id = str(data.get("id") or "")
+            if not payment_url or not preference_id:
+                raise ValueError("Mercado Pago criou uma preferencia sem link de pagamento.")
+            return {"id": preference_id, "url": payment_url}
     except error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
         raise ValueError(f"Mercado Pago recusou a preferencia: {detail[:180]}")
@@ -571,7 +715,7 @@ def extract_mercado_pago_payment_id(payload, query):
 #VERIFY_MERCADO_PAGO_WEBHOOK_SIGNATURE
 def verify_mercado_pago_webhook_signature(headers, payment_id, query):
     if not MERCADO_PAGO_WEBHOOK_SECRET:
-        return True
+        return False
 
     signature_header = headers.get("x-signature", "")
     request_id = headers.get("x-request-id", "")
@@ -802,6 +946,9 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith("/api/products"):
             self.handle_get_products()
             return
+        if self.path.startswith("/api/customer/orders"):
+            self.handle_customer_orders()
+            return
         if self.path.startswith("/api/orders/"):
             self.handle_get_order()
             return
@@ -928,7 +1075,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     #IS_ADMIN_HOST
     def is_admin_host(self):
         host = self.headers.get("Host", "").split(":", 1)[0].lower()
-        return host == ADMIN_DOMAIN.lower() or host.startswith("localhost") or host.startswith("127.0.0.1")
+        return host in ADMIN_HOSTS or host.startswith("localhost") or host.startswith("127.0.0.1")
 
     #IS_ADMIN_PAGE_REQUEST
     def is_admin_page_request(self):
@@ -936,7 +1083,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             return False
         path = parse.urlparse(self.path).path
         host = self.headers.get("Host", "").split(":", 1)[0].lower()
-        if host == ADMIN_DOMAIN.lower() and path == "/":
+        if host == host_from_setting(ADMIN_DOMAIN) and host != PUBLIC_HOST and path == "/":
             return True
         return path in {"/login", "/dashboard", "/produtos", "/pedidos", "/clientes", "/logs"}
 
@@ -956,7 +1103,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             metrics = conn.execute(
                 """
                 SELECT
-                    COALESCE(SUM(total), 0) AS total_sales,
+                    SUM(CASE WHEN status IN ('approved', 'paid', 'to_separate', 'separated', 'delivered', 'completed') THEN total ELSE 0 END) AS total_sales,
                     COUNT(*) AS total_orders,
                     SUM(CASE WHEN status IN ('approved', 'paid', 'to_separate', 'separated', 'delivered', 'completed') THEN total ELSE 0 END) AS paid_sales
                 FROM orders
@@ -996,6 +1143,61 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             ).fetchall()
         self.send_json([dict(row) for row in rows])
 
+    #HANDLE_CUSTOMER_ORDERS
+    def handle_customer_orders(self):
+        query = parse.parse_qs(parse.urlparse(self.path).query)
+        contact = str(query.get("contact", [""])[0]).strip()
+        email = contact.lower()
+        phone = re.sub(r"\D+", "", contact)
+
+        if not contact or (not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email) and len(phone) < 10):
+            self.send_json({"error": "Informe o e-mail ou WhatsApp usado no pedido."}, status=400)
+            return
+
+        where = "LOWER(customer_email) = ?"
+        params = [email]
+        if len(phone) >= 10:
+            where = "customer_phone = ?"
+            params = [phone]
+
+        with connect_db() as conn:
+            orders = conn.execute(
+                f"""
+                SELECT id, reference, total, status, payment_url, whatsapp_url, created_at, updated_at
+                FROM orders
+                WHERE {where}
+                ORDER BY created_at DESC
+                LIMIT 50
+                """,
+                params,
+            ).fetchall()
+            order_ids = [row["id"] for row in orders]
+            items_by_order = {order_id: [] for order_id in order_ids}
+            if order_ids:
+                placeholders = ",".join("?" for _ in order_ids)
+                items = conn.execute(
+                    f"""
+                    SELECT order_id, product_name, volume, quantity, unit_price, subtotal
+                    FROM order_items
+                    WHERE order_id IN ({placeholders})
+                    ORDER BY id
+                    """,
+                    order_ids,
+                ).fetchall()
+                for item in items:
+                    item_data = dict(item)
+                    items_by_order[item["order_id"]].append(
+                        {key: value for key, value in item_data.items() if key != "order_id"}
+                    )
+
+        payload = []
+        for order in orders:
+            data = dict(order)
+            data.pop("id", None)
+            data["items"] = items_by_order.get(order["id"], [])
+            payload.append(data)
+        self.send_json({"orders": payload})
+
     #HANDLE_ADMIN_ORDER_DETAIL
     def handle_admin_order_detail(self):
         match = re.match(r"/api/admin/orders/(\d+)", self.path)
@@ -1024,31 +1226,43 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         new_status = str(payload.get("status", "")).strip()
         note = str(payload.get("note", "")).strip()
         allowed = {
-            "whatsapp_pending", "awaiting_payment", "pending", "approved",
+            "creating_payment", "whatsapp_pending", "awaiting_payment", "pending", "approved",
             "to_separate", "separated", "preparing", "shipped", "delivered",
-            "cancelled", "refunded",
+            "cancelled", "refunded", "charged_back", "rejected", "expired",
         }
         if new_status not in allowed:
             self.send_json({"error": "Status invalido."}, status=400)
             return
 
-        with connect_db() as conn:
-            order = conn.execute("SELECT id, status FROM orders WHERE id = ?", (order_id,)).fetchone()
-            if not order:
-                self.send_error(404)
-                return
-            old_status = order["status"]
-            conn.execute(
-                "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                (new_status, order_id),
-            )
-            conn.execute(
-                """
-                INSERT INTO order_history (order_id, old_status, new_status, note, admin_user)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (order_id, old_status, new_status, note, ADMIN_USER),
-            )
+        try:
+            with connect_db() as conn:
+                order = conn.execute("SELECT id, status FROM orders WHERE id = ?", (order_id,)).fetchone()
+                if not order:
+                    self.send_error(404)
+                    return
+                old_status = order["status"]
+                if new_status in {"cancelled", "refunded", "charged_back", "rejected", "expired"}:
+                    release_order_stock(conn, order_id)
+                elif (
+                    old_status not in PAID_ORDER_STATUSES
+                    and new_status in PAID_ORDER_STATUSES | {"whatsapp_pending", "awaiting_payment", "pending"}
+                ):
+                    reserve_order_stock(conn, order_id)
+
+                conn.execute(
+                    "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (new_status, order_id),
+                )
+                conn.execute(
+                    """
+                    INSERT INTO order_history (order_id, old_status, new_status, note, admin_user)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (order_id, old_status, new_status, note, ADMIN_USER),
+                )
+        except ValueError as error:
+            self.send_json({"error": str(error)}, status=400)
+            return
         self.log_admin_action("order_status_update", "orders", str(order_id), f"{old_status} -> {new_status}")
         self.send_json({"ok": True})
 
@@ -1188,6 +1402,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         try:
             checkout = normalize_checkout(self.read_json())
             customer = checkout["customer"]
+            payment_method = checkout["payment_method"]
             reference = "DEC" + secrets.token_hex(4).upper()
             base_url = get_public_base_url(self)
 
@@ -1195,20 +1410,15 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 order_items = build_order_items(conn, checkout["items"])
                 discount = apply_checkout_coupon(order_items, checkout["coupon"])
                 total = round(sum(item["subtotal"] for item in order_items), 2)
-                payment_error = ""
-                try:
-                    payment_url = create_mercado_pago_preference(reference, customer, order_items, total, base_url)
-                except ValueError as error:
-                    payment_url = ""
-                    payment_error = str(error)
-                whatsapp_url = build_whatsapp_url(reference, customer, order_items, total, payment_url)
+                payment_url = ""
+                payment_preference_id = ""
 
                 cursor = conn.execute(
                     """
                     INSERT INTO orders (
                         reference, customer_name, customer_email, customer_phone, customer_address,
-                        total, status, payment_url, whatsapp_url
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        total, status, payment_preference_id, payment_url, whatsapp_url
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         reference,
@@ -1217,9 +1427,10 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                         customer["phone"],
                         customer["address"],
                         total,
-                        "awaiting_payment" if payment_url else "whatsapp_pending",
+                        "creating_payment" if payment_method == "mercado_pago" else "whatsapp_pending",
+                        payment_preference_id,
                         payment_url,
-                        whatsapp_url,
+                        "",
                     ),
                 )
                 order_id = cursor.lastrowid
@@ -1242,15 +1453,37 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                         ),
                     )
 
+                reserve_order_stock(conn, order_id)
+
+                if payment_method == "mercado_pago":
+                    preference = create_mercado_pago_preference(reference, customer, order_items, total, base_url)
+                    payment_url = preference["url"]
+                    payment_preference_id = preference["id"]
+
+                whatsapp_url = build_whatsapp_url(reference, customer, order_items, total, payment_url)
+                conn.execute(
+                    """
+                    UPDATE orders
+                    SET status = ?, payment_preference_id = ?, payment_url = ?, whatsapp_url = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (
+                        "awaiting_payment" if payment_method == "mercado_pago" else "whatsapp_pending",
+                        payment_preference_id,
+                        payment_url,
+                        whatsapp_url,
+                        order_id,
+                    ),
+                )
+
             self.send_json(
                 {
                     "ok": True,
                     "reference": reference,
-                    "status": "awaiting_payment" if payment_url else "whatsapp_pending",
+                    "status": "awaiting_payment" if payment_method == "mercado_pago" else "whatsapp_pending",
                     "total": total,
                     "paymentUrl": payment_url,
                     "whatsappUrl": whatsapp_url,
-                    "paymentError": payment_error,
                     "discount": discount,
                     "message": "Pedido criado com sucesso.",
                 },
@@ -1301,35 +1534,37 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
             payment = fetch_mercado_pago_payment(payment_id)
             reference = str(payment.get("external_reference") or "").strip()
-            status = str(payment.get("status") or "pending").strip() or "pending"
+            status = normalize_mercado_pago_status(str(payment.get("status") or "pending").strip())
 
             if reference:
                 notify_admin = None
                 with connect_db() as conn:
                     current_order = conn.execute(
-                        "SELECT id, status, customer_name, total, admin_whatsapp_sent_at FROM orders WHERE reference = ?",
+                        """
+                        SELECT id, reference, status, customer_name, customer_email, total, stock_reserved,
+                               admin_whatsapp_sent_at
+                        FROM orders WHERE reference = ?
+                        """,
                         (reference,),
                     ).fetchone()
-                    paid_statuses = {"approved", "paid", "to_separate", "separated", "delivered", "completed"}
+                    if not current_order:
+                        self.send_json({"ok": True})
+                        return
+
+                    validate_payment_for_order(payment, current_order)
                     next_status = "to_separate" if status == "approved" else status
 
-                    if current_order and status == "approved":
-                        if current_order["status"] not in paid_statuses:
-                            items = conn.execute(
-                                "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
-                                (current_order["id"],),
-                            ).fetchall()
-                            for item in items:
-                                conn.execute(
-                                    "UPDATE products SET estoque = MAX(0, estoque - ?) WHERE id = ?",
-                                    (item["quantity"], item["product_id"]),
-                                )
+                    if status == "approved":
+                        if not current_order["stock_reserved"] and current_order["status"] not in PAID_ORDER_STATUSES:
+                            reserve_order_stock(conn, current_order["id"])
                         if not current_order["admin_whatsapp_sent_at"]:
                             notify_admin = {
                                 "reference": reference,
                                 "customer_name": current_order["customer_name"],
                                 "total": current_order["total"],
                             }
+                    elif status in FAILED_PAYMENT_STATUSES:
+                        release_order_stock(conn, current_order["id"])
 
                     conn.execute(
                         """
@@ -1348,8 +1583,10 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                         )
 
             self.send_json({"ok": True})
-        except Exception as exc:
+        except ValueError as exc:
             self.send_json({"ok": False, "error": str(exc)}, status=200)
+        except Exception as exc:
+            self.send_json({"ok": False, "error": str(exc)}, status=500)
 
     #HANDLE_LOGIN
     def handle_login(self):
@@ -1399,7 +1636,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         host = self.headers.get("Host", "")
         same_origin = not origin or origin.endswith(host)
         host_name = host.split(":", 1)[0].lower()
-        secure = "; Secure" if self.headers.get("X-Forwarded-Proto") == "https" or host_name == ADMIN_DOMAIN.lower() else ""
+        secure = "; Secure" if self.headers.get("X-Forwarded-Proto") == "https" or host_name in ADMIN_HOSTS else ""
 
         if same_origin:
             return f"SameSite=Lax{secure}"

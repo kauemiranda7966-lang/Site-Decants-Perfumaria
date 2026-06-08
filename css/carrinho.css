@@ -163,6 +163,14 @@
   font-weight: 700;
 }
 
+.carrinho-links-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .carrinho-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
@@ -623,7 +631,7 @@
     font-size: 31px;
   }
 
-  .carrinho-titulo a {
+  .carrinho-links-topo {
     display: none;
   }
 

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Pedidos | Decant's Perfumaria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css?v=34">
+  <link rel="stylesheet" href="css/carrinho.css?v=2">
+  <link rel="stylesheet" href="css/meus-pedidos.css?v=1">
+</head>
+<body class="pagina-carrinho pagina-meus-pedidos">
+  <header class="carrinho-header">
+    <a class="carrinho-voltar" href="index.html" aria-label="Voltar para o inicio">
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    <a class="carrinho-marca" href="index.html">
+      <img src="img/logo/logo.png" alt="">
+      <span><strong>DECANT'S</strong><small>PERFUMARIA</small></span>
+    </a>
+    <a class="carrinho-sacola" href="carrinho.html" aria-label="Carrinho">
+      <i class="fa-solid fa-bag-shopping"></i>
+      <span data-carrinho-contador hidden>0</span>
+    </a>
+  </header>
+
+  <main class="meus-pedidos-pagina">
+    <section class="meus-pedidos-titulo">
+      <div>
+        <span>Acompanhamento</span>
+        <h1>Meus pedidos</h1>
+      </div>
+      <a href="index.html">Continuar comprando</a>
+    </section>
+
+    <section class="pedidos-consulta">
+      <form id="pedidosForm" class="pedidos-form">
+        <label for="pedidosContato">E-mail ou WhatsApp usado na compra</label>
+        <div>
+          <input id="pedidosContato" autocomplete="email tel" placeholder="seuemail@gmail.com ou (88) 99999-9999" required>
+          <button type="submit">Buscar</button>
+        </div>
+        <p id="pedidosMensagem" aria-live="polite" hidden></p>
+      </form>
+    </section>
+
+    <section id="pedidosConteudo" class="pedidos-conteudo" hidden>
+      <div id="pedidosTabs" class="pedidos-tabs" role="tablist" aria-label="Status dos meus pedidos">
+        <button class="active" type="button" data-status="to_separate">Em separacao <span>0</span></button>
+        <button type="button" data-status="separated">Separados <span>0</span></button>
+        <button type="button" data-status="cancelled">Cancelados <span>0</span></button>
+      </div>
+
+      <div id="pedidosLista" class="pedidos-lista"></div>
+    </section>
+  </main>
+
+  <script src="js/script.js?v=34"></script>
+  <script src="js/meus-pedidos.js?v=1"></script>
+</body>
+</html>

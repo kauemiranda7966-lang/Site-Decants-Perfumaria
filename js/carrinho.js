@@ -217,7 +217,8 @@ async function finalizarCarrinho(event, preferirWhatsApp) {
       volume: Number(item.volume),
       quantity: Number(item.quantidade)
     })),
-    coupon: estadoCarrinho.cupom
+    coupon: estadoCarrinho.cupom,
+    paymentMethod: preferirWhatsApp ? "whatsapp" : "mercado_pago"
   };
 
   try {
@@ -231,20 +232,13 @@ async function finalizarCarrinho(event, preferirWhatsApp) {
     }
 
     if (!resposta.paymentUrl) {
-      mensagem.textContent = resposta.paymentError
-        ? `${resposta.paymentError}. Finalize pelo WhatsApp.`
-        : "Mercado Pago ainda não configurado. Finalize pelo WhatsApp.";
+      mensagem.textContent = "Nao foi possivel gerar o link de pagamento. Confira os dados e tente novamente.";
       return;
     }
 
     removerItensFinalizados(selecionados);
     window.location.href = resposta.paymentUrl;
   } catch (error) {
-    if (preferirWhatsApp) {
-      window.open(montarWhatsAppCarrinho(payload, selecionados), "_blank", "noopener");
-      mensagem.textContent = "Abrimos seu pedido no WhatsApp.";
-      return;
-    }
     mensagem.textContent = error.message || "Não foi possível criar o pedido.";
   } finally {
     botoes.forEach(botao => botao.disabled = false);
@@ -261,22 +255,6 @@ async function enviarPedidoCarrinho(payload) {
   const dados = await resposta.json().catch(() => ({}));
   if (!resposta.ok) throw new Error(dados.error || "Não foi possível criar o pedido.");
   return dados;
-}
-
-function montarWhatsAppCarrinho(payload, itens) {
-  const subtotal = itens.reduce((soma, item) => soma + precoItem(item) * item.quantidade, 0);
-  const desconto = calcularDesconto(subtotal);
-  const linhas = [
-    "Olá! Quero finalizar este pedido na Decant's Perfumaria.",
-    `Cliente: ${payload.customer.name}`,
-    `WhatsApp: ${payload.customer.phone}`,
-    "Itens:",
-    ...itens.map(item => `- ${item.quantidade}x ${item.nome} ${item.volume}ml - ${moeda(precoItem(item) * item.quantidade)}`),
-    ...(desconto ? [`Cupom ${estadoCarrinho.cupom}: -${moeda(desconto)}`] : []),
-    `Total dos produtos: ${moeda(subtotal - desconto)}`,
-    `Endereço: ${payload.customer.address}`
-  ];
-  return `https://wa.me/558899641605?text=${encodeURIComponent(linhas.join("\n"))}`;
 }
 
 function removerItensFinalizados(finalizados) {

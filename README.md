@@ -73,6 +73,22 @@ WHATSAPP_CLOUD_TOKEN=seu_token_da_meta
 
 Sem essas credenciais, o painel continua funcionando e o link manual do WhatsApp continua sendo gerado.
 
+## Mercado Pago e estoque
+
+Para pagamentos reais, use as credenciais de producao da conta do dono da loja:
+
+```bash
+MERCADO_PAGO_PUBLIC_KEY=APP_USR_...
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR_...
+MERCADO_PAGO_WEBHOOK_SECRET=chave_secreta_do_webhook
+MERCADO_PAGO_COLLECTOR_ID=id_da_conta_dona
+DECANTS_PUBLIC_BASE_URL=https://seudominio.com.br
+```
+
+O `DECANTS_PUBLIC_BASE_URL` precisa ser um dominio publico com HTTPS. O Mercado Pago nao aceita `localhost`/`127.0.0.1` para retorno do comprador e webhook em producao.
+
+O checkout reserva estoque no momento em que o pedido e criado. Se o pagamento for recusado, cancelado, expirado ou extornado, a reserva volta automaticamente para o produto. Se o webhook nao tiver assinatura valida, o pedido nao e marcado como pago.
+
 ## Como alterar credenciais
 
 Em producao, use variaveis de ambiente e evite senha em texto puro:

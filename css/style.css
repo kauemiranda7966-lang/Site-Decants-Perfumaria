@@ -833,6 +833,16 @@ body {
   gap: 14px;
 }
 
+.catalogo-pedidos-link {
+  color: #17130e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .8px;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .catalogo-carrinho {
   position: relative;
   width: 42px;
@@ -2457,6 +2467,11 @@ button:hover {
   .catalogo-voltar,
   .catalogo-acoes-topo {
     justify-self: center;
+  }
+
+  .catalogo-acoes-topo {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .catalogo-identidade p {

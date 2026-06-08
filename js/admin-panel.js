@@ -457,14 +457,15 @@ async function api(url, options = {}) {
 
 function statusOptions(selected) {
   return [
-    "whatsapp_pending", "awaiting_payment", "pending", "approved",
+    "creating_payment", "whatsapp_pending", "awaiting_payment", "pending", "approved",
     "to_separate", "separated", "preparing", "shipped", "delivered",
-    "refunded", "cancelled"
+    "refunded", "charged_back", "cancelled", "rejected", "expired"
   ].map(status => `<option value="${status}" ${status === selected ? "selected" : ""}>${labelStatus(status)}</option>`).join("");
 }
 
 function labelStatus(status) {
   const labels = {
+    creating_payment: "Criando pagamento",
     whatsapp_pending: "WhatsApp pendente",
     awaiting_payment: "Aguardando pagamento",
     pending: "Pendente",
@@ -475,6 +476,9 @@ function labelStatus(status) {
     shipped: "Enviado",
     delivered: "Entregue",
     cancelled: "Cancelado",
+    rejected: "Recusado",
+    expired: "Expirado",
+    charged_back: "Chargeback",
     refunded: "Extorno",
     paid: "Pago",
     completed: "Concluido"
@@ -484,6 +488,10 @@ function labelStatus(status) {
 
 function orderOperationalStatus(status) {
   const map = {
+    creating_payment: "to_separate",
+    awaiting_payment: "to_separate",
+    whatsapp_pending: "to_separate",
+    pending: "to_separate",
     approved: "to_separate",
     paid: "to_separate",
     preparing: "to_separate",
@@ -493,6 +501,9 @@ function orderOperationalStatus(status) {
     delivered: "delivered",
     completed: "delivered",
     refunded: "refunded",
+    charged_back: "refunded",
+    rejected: "cancelled",
+    expired: "cancelled",
     cancelled: "cancelled"
   };
   return map[status] || status;

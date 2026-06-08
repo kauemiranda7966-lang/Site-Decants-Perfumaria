@@ -1620,7 +1620,8 @@ async function enviarCheckout(event, preferirWhatsApp = false) {
           productName: checkoutProdutoAtual.nome,
           volume,
           quantity: quantidade
-        }]
+        }],
+        paymentMethod: preferirWhatsApp ? "whatsapp" : "mercado_pago"
       })
     });
 
@@ -1636,21 +1637,12 @@ async function enviarCheckout(event, preferirWhatsApp = false) {
     if (!resposta.paymentUrl) {
       mensagem.classList.remove("sucesso");
       mensagem.classList.add("erro");
-      mensagem.textContent = resposta.paymentError
-        ? `${resposta.paymentError}. Use o botao Enviar no WhatsApp para finalizar.`
-        : "Mercado Pago ainda nao configurado. Use o botao Enviar no WhatsApp ou configure o token de pagamento.";
+      mensagem.textContent = "Nao foi possivel gerar o link de pagamento. Confira os dados e tente novamente.";
       return;
     }
 
     window.location.href = resposta.paymentUrl;
   } catch (error) {
-    if (preferirWhatsApp) {
-      window.open(montarWhatsAppLocalCheckout(volume, quantidade), "_blank", "noopener");
-      mensagem.classList.add("sucesso");
-      mensagem.textContent = "Nao consegui registrar no servidor, mas abri a mensagem do pedido no WhatsApp.";
-      return;
-    }
-
     mensagem.classList.add("erro");
     mensagem.textContent = error.message || "Nao foi possivel criar o pedido.";
   } finally {
@@ -1664,23 +1656,6 @@ function fecharCheckout(event) {
 
   const modal = document.querySelector(".modal-checkout");
   if (modal) modal.remove();
-}
-
-// #MONTAR_WHATS_APP_LOCAL_CHECKOUT
-function montarWhatsAppLocalCheckout(volume, quantidade) {
-  const numeroLoja = "558899641605";
-  const preco = precoTextoParaNumero(obterPrecoProduto(checkoutProdutoAtual, volume));
-  const total = formatarMoedaLoja(preco * quantidade);
-  const linhas = [
-    "Ola! Quero finalizar este pedido na Decant's Perfumaria.",
-    `Cliente: ${document.getElementById("checkoutNome").value}`,
-    `WhatsApp: ${document.getElementById("checkoutTelefone").value}`,
-    `Item: ${quantidade}x ${checkoutProdutoAtual.nome} ${volume}ml`,
-    `Total: R$ ${total}`,
-    `Endereco: ${document.getElementById("checkoutEndereco").value || "A combinar"}`
-  ];
-
-  return `https://wa.me/${numeroLoja}?text=${encodeURIComponent(linhas.join("\n"))}`;
 }
 
 // #EXIBIR_AVISO_CHECKOUT_INDISPONIVEL

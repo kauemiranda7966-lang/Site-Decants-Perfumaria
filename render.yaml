@@ -21,7 +21,9 @@ services:
       - key: DECANTS_SECRET_KEY
         generateValue: true
       - key: DECANTS_ADMIN_DOMAIN
-        value: admin.decantperfumaria.com.br
+        value: site-decants-perfumaria.onrender.com
+      - key: DECANTS_PUBLIC_BASE_URL
+        value: https://site-decants-perfumaria.onrender.com
       - key: DECANTS_ADMIN_USER
         sync: false
       - key: DECANTS_ADMIN_PASSWORD_HASH
@@ -31,4 +33,6 @@ services:
       - key: MERCADO_PAGO_ACCESS_TOKEN
         sync: false
       - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false
+      - key: MERCADO_PAGO_COLLECTOR_ID
         sync: false
