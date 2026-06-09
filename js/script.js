@@ -179,7 +179,8 @@ const imagensContainerPorProduto = {
   "212 vip black": [
     "img/container/masculinos/212_vip_black/212_vip_black1.png",
     "img/container/masculinos/212_vip_black/212_vip_black2.png",
-    "img/container/masculinos/212_vip_black/212_vip_black3.png"
+    "img/container/masculinos/212_vip_black/212_vip_black3.png",
+    "img/container/masculinos/212_vip_black/212_vip_black4.png"
   ],
   "212 vip rose": [
     "img/container/femininos/212_vip_rose/212_vip_rose1.png",
@@ -314,7 +315,10 @@ const imagensContainerPorProduto = {
     "img/container/femininos/libre_yves_saint_laurent/libre_yves_saint_laurent4.png"
   ],
   "my way": [
-    "img/container/femininos/my_way/my_way.png"
+    "img/container/femininos/my_way/my_way1.png",
+    "img/container/femininos/my_way/my_way2.png",
+    "img/container/femininos/my_way/my_way3.png",
+    "img/container/femininos/my_way/my_way4.png"
   ],
   "phantom": [
     "img/container/masculinos/Phantom_Paco_Rabanne/Phantom_Paco_Rabanne1.png",
@@ -325,7 +329,26 @@ const imagensContainerPorProduto = {
   "scandal masculino edt": [
     "img/container/masculinos/scandal_pour homme/scandal_pour homme1.png",
     "img/container/masculinos/scandal_pour homme/scandal_pour homme2.png",
-    "img/container/masculinos/scandal_pour homme/scandal_pour homme3.png"
+    "img/container/masculinos/scandal_pour homme/scandal_pour homme3.png",
+    "img/container/masculinos/scandal_pour homme/scandal_pour homme4.png"
+  ],
+  "scandal feminino": [
+    "img/container/femininos/scandal/scandal1.png",
+    "img/container/femininos/scandal/scandal2.png",
+    "img/container/femininos/scandal/scandal3.png",
+    "img/container/femininos/scandal/scandal4.png"
+  ],
+  "yara rosa": [
+    "img/container/femininos/yara_rosa/yara_rosa1.png",
+    "img/container/femininos/yara_rosa/yara_rosa2.png",
+    "img/container/femininos/yara_rosa/yara_rosa3.png",
+    "img/container/femininos/yara_rosa/yara_rosa4.png"
+  ],
+  "royal amber rouge": [
+    "img/container/femininos/royal_amber_rougue/royal_amber_rougue1.png",
+    "img/container/femininos/royal_amber_rougue/royal_amber_rougue2.png",
+    "img/container/femininos/royal_amber_rougue/royal_amber_rougue3.png",
+    "img/container/femininos/royal_amber_rougue/royal_amber_rougue4.png"
   ],
   "silver scent": [
     "img/container/masculinos/Silver_Scence/Silver_Scence1.png",
