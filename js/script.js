@@ -1376,7 +1376,40 @@ function comprar(nomeProduto) {
   const volumeSelecionado = Number(document.querySelector(".modal-volume-card.ativo")?.dataset.volume || 5);
   const quantidadeSelecionada = Math.max(1, Number(document.getElementById("modalQuantidade")?.textContent || 1));
   adicionarAoCarrinho(produto, volumeSelecionado, quantidadeSelecionada);
-  window.location.href = "carrinho.html";
+  mostrarConfirmacaoCarrinho(produto.nome, volumeSelecionado, quantidadeSelecionada);
+}
+
+// #MOSTRAR_CONFIRMACAO_CARRINHO
+function mostrarConfirmacaoCarrinho(nomeProduto, volume, quantidade) {
+  document.querySelector(".carrinho-confirmacao")?.remove();
+
+  const confirmacao = document.createElement("aside");
+  confirmacao.className = "carrinho-confirmacao";
+  confirmacao.setAttribute("role", "status");
+  confirmacao.setAttribute("aria-live", "polite");
+  confirmacao.innerHTML = `
+    <span class="carrinho-confirmacao-icone" aria-hidden="true">
+      <i class="fa-solid fa-check"></i>
+    </span>
+    <div>
+      <strong>Adicionado ao carrinho</strong>
+      <p></p>
+    </div>
+    <a href="carrinho.html">Ver carrinho</a>
+    <button type="button" aria-label="Fechar aviso">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  `;
+
+  confirmacao.querySelector("p").textContent = `${quantidade}x ${nomeProduto} - ${volume}ml`;
+  confirmacao.querySelector("button").addEventListener("click", () => confirmacao.remove());
+  document.body.appendChild(confirmacao);
+
+  window.requestAnimationFrame(() => confirmacao.classList.add("visivel"));
+  window.setTimeout(() => {
+    confirmacao.classList.remove("visivel");
+    window.setTimeout(() => confirmacao.remove(), 240);
+  }, 4200);
 }
 
 // #LER_CARRINHO
