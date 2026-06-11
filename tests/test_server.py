@@ -150,8 +150,18 @@ class ServerTestCase(unittest.TestCase):
 
         self.assertEqual(self.request_status("/index.html"), 200)
         self.assertEqual(self.request_status("/css/style.css"), 200)
+        for page in (
+            "/politica-de-privacidade.html",
+            "/trocas-e-devolucoes.html",
+            "/termos-de-compra.html",
+            "/prazos-de-entrega.html",
+        ):
+            with self.subTest(page=page):
+                self.assertEqual(self.request_status(page), 200)
+
         for asset in (
             "/css/base.css",
+            "/css/legal.css",
             "/css/store.css",
             "/css/store-layout.css",
             "/css/catalog.css",

@@ -1,0 +1,150 @@
+.pagina-legal {
+  min-height: 100vh;
+  background: #f7f4ee;
+}
+
+.legal-topo {
+  padding: 56px 20px;
+  background: linear-gradient(135deg, #17130e, #050505);
+  color: #fff;
+  text-align: center;
+}
+
+.legal-topo a {
+  color: #e0bd62;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.legal-topo h1 {
+  margin: 18px 0 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(34px, 6vw, 58px);
+  font-weight: 400;
+}
+
+.legal-topo p {
+  margin: 0;
+  color: #d8d0c4;
+}
+
+.legal-conteudo {
+  width: min(900px, calc(100% - 36px));
+  margin: 42px auto 70px;
+  padding: clamp(26px, 5vw, 58px);
+  box-sizing: border-box;
+  border: 1px solid #e4d4b2;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(48, 37, 19, .09);
+}
+
+.legal-conteudo section + section {
+  margin-top: 34px;
+  padding-top: 28px;
+  border-top: 1px solid #eee4d2;
+}
+
+.legal-conteudo h2 {
+  margin: 0 0 12px;
+  color: #7b551c;
+  font-size: 21px;
+}
+
+.legal-conteudo p,
+.legal-conteudo li {
+  color: #4f4a43;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.legal-conteudo ul {
+  padding-left: 22px;
+}
+
+.legal-destaque,
+.aviso-cadastro {
+  padding: 16px 18px;
+  border-left: 4px solid #b8862b;
+  border-radius: 6px;
+  background: #faf4e6;
+}
+
+.legal-atualizacao {
+  color: #786f64;
+  font-size: 12px;
+  text-align: right;
+}
+
+.footer-coluna {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+
+.footer-coluna h4 {
+  margin: 0 0 5px;
+}
+
+.footer-coluna a {
+  color: #d7d2ca;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.footer-coluna a:hover {
+  color: #e0bd62;
+}
+
+.footer-legal {
+  gap: 36px;
+}
+
+.contato-dados-legais {
+  width: min(1120px, 90%);
+  margin: -48px auto 80px;
+}
+
+.contato-dados-legais > div {
+  padding: 30px;
+  border: 1px solid #e6d4ac;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(55, 42, 21, .1);
+}
+
+.contato-dados-legais span {
+  color: #a8731f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.contato-dados-legais h2 {
+  margin: 8px 0 20px;
+}
+
+.contato-dados-legais p {
+  color: #59534c;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .legal-conteudo {
+    margin-top: 24px;
+  }
+
+  .footer,
+  .footer-legal {
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .contato-dados-legais {
+    margin-top: -24px;
+  }
+}

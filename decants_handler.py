@@ -8,6 +8,10 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         "/carrinho.html",
         "/contatos.html",
         "/meus-pedidos.html",
+        "/politica-de-privacidade.html",
+        "/trocas-e-devolucoes.html",
+        "/termos-de-compra.html",
+        "/prazos-de-entrega.html",
     }
     PUBLIC_EXTENSIONS = {
         "/css/": {".css"},
