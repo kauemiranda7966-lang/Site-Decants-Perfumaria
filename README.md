@@ -23,6 +23,24 @@ http://localhost:8000/index.html
 ```
 
 O banco SQLite local fica em `data/decants.sqlite3`, salvo quando `DECANTS_DB_PATH` aponta para outro caminho.
+Uploads ficam em `img/uploads` localmente ou no caminho configurado por
+`DECANTS_UPLOAD_DIR`. No Render, banco e uploads usam o disco persistente
+montado em `/var/data`.
+
+## Organizacao do codigo
+
+O backend usa `server.py` apenas como ponto de entrada compativel:
+
+- `decants_app.py`: configuracao, banco e regras de negocio.
+- `decants_handler.py`: rotas HTTP e respostas da API.
+- `decants_auth.py`: senhas e sessoes administrativas.
+
+A loja foi separada por responsabilidade em `js/store-*.js`: base do catalogo,
+vitrine, detalhes do produto, carrinho, checkout, navegacao e inicializacao.
+
+O `css/style.css` preserva um unico ponto de entrada e importa as folhas
+tematicas `base.css`, `store.css`, `effects.css`, `product-modal.css` e
+`responsive.css` na ordem original da cascata.
 
 ## Painel administrativo
 
@@ -38,17 +56,8 @@ URL de producao configurada:
 https://admin.decantperfumaria.com.br/login
 ```
 
-Usuario padrao de desenvolvimento:
-
-```text
-decantsperfumaria1@gmail.com
-```
-
-Senha padrao de desenvolvimento:
-
-```text
-Wellida123
-```
+O projeto nao possui usuario ou senha padrao. Configure as credenciais no
+arquivo `.env` local ou nas variaveis de ambiente da hospedagem antes de iniciar.
 
 Rotas principais:
 
@@ -94,6 +103,7 @@ O checkout reserva estoque no momento em que o pedido e criado. Se o pagamento f
 Em producao, use variaveis de ambiente e evite senha em texto puro:
 
 ```bash
+DECANTS_ENV=production
 DECANTS_ADMIN_USER=admin@decantperfumaria.com.br
 DECANTS_ADMIN_PASSWORD_HASH=$2b$12$...
 DECANTS_SECRET_KEY=uma-chave-longa-aleatoria
@@ -105,7 +115,21 @@ Para gerar o hash bcrypt:
 python -c "import bcrypt, getpass; print(bcrypt.hashpw(getpass.getpass('Senha: ').encode(), bcrypt.gensalt()).decode())"
 ```
 
-O fallback `DECANTS_ADMIN_PASSWORD` existe apenas para desenvolvimento local. Em producao, use sempre `DECANTS_ADMIN_PASSWORD_HASH`.
+O fallback `DECANTS_ADMIN_PASSWORD` existe apenas para desenvolvimento local.
+Em producao, o servidor recusa a inicializacao sem hash bcrypt e uma chave
+secreta com pelo menos 32 caracteres.
+
+As sessoes administrativas ficam armazenadas no SQLite e continuam validas
+apos reinicios do processo, ate expirarem ou o usuario sair.
+
+## Como executar os testes
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Os testes cobrem autenticacao persistente, configuracao segura, validacao de
+leads e privacidade da consulta de pedidos.
 
 ## Como cadastrar produtos
 
@@ -139,6 +163,8 @@ A exclusao remove o produto do catalogo carregado pela API. As imagens antigas n
 
 - Produtos cadastrados pelo painel podem usar caminhos existentes, como `img/produtos/masculinos/dior-sauvage.png`.
 - Uploads feitos no painel sao salvos em `img/uploads`.
+- Em producao, configure `DECANTS_UPLOAD_DIR=/var/data/uploads` para que as
+  imagens sobrevivam a novos deploys.
 - A loja tambem detecta imagens disponiveis em `img/modal` e usa essas imagens nos cards e modais quando o nome do produto corresponde ao mapeamento do catalogo.
 - Para evitar imagem quebrada, confirme que o caminho nao comeca com barra e que o arquivo existe dentro do projeto.
 
@@ -151,6 +177,16 @@ A secao `Clube de Ofertas` fica na pagina inicial. Ela coleta:
 - Telefone/WhatsApp obrigatorio.
 
 Os cadastros sao enviados para `/api/leads` e armazenados na tabela `leads` com nome, e-mail, telefone e data. No painel, esses contatos aparecem em `/clientes` quando ainda nao possuem pedidos.
+
+## Consulta de pedidos
+
+Para consultar um pedido, o cliente precisa informar simultaneamente:
+
+- Numero do pedido no formato `DEC1234ABCD`.
+- E-mail ou WhatsApp usado na compra.
+
+Essa verificacao evita que apenas o conhecimento de um telefone ou e-mail
+exponha o historico de compras.
 
 ## Como publicar alteracoes
 
@@ -169,6 +205,7 @@ DECANTS_ADMIN_USER=admin@decantperfumaria.com.br
 DECANTS_ADMIN_PASSWORD_HASH=$2b$12$...
 DECANTS_SECRET_KEY=uma-chave-longa-aleatoria
 DECANTS_DB_PATH=/var/data/decants.sqlite3
+DECANTS_UPLOAD_DIR=/var/data/uploads
 DECANTS_WHATSAPP_NUMBER=558899641605
 DECANTS_PUBLIC_BASE_URL=https://decantperfumaria.com.br
 ```

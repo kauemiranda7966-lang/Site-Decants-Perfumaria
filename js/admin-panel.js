@@ -197,7 +197,7 @@ function renderProducts() {
   const products = state.products.filter(product => !search || normalize(product.nome).includes(search));
   els.productsList.innerHTML = products.map(product => `
     <article class="product-card">
-      <img src="${escapeAttr(product.img)}" alt="${escapeAttr(product.nome)}">
+      <img src="${escapeAttr(product.img)}" alt="${escapeAttr(product.nome)}" loading="lazy">
       <div>
         <h3>${escapeHtml(product.nome)}</h3>
         <p>${escapeHtml(product.categoria)} · Estoque ${product.estoque} · 5ml R$ ${priceOf(product, 5)} · 10ml R$ ${priceOf(product, 10)}</p>
@@ -364,10 +364,22 @@ window.openOrder = async function openOrder(id) {
   const order = await api(`/api/admin/orders/${id}`);
   els.orderDetail.innerHTML = `
     <h2>Pedido ${escapeHtml(order.reference)}</h2>
-    <p>${escapeHtml(order.customer_name)} · ${escapeHtml(order.customer_email)} · ${escapeHtml(order.customer_phone)}</p>
-    <div class="detail-block">
-      <article><strong>Total</strong><p>${brl(order.total)} · <span class="status-pill ${order.status}">${labelStatus(order.status)}</span></p></article>
-      <article><strong>Endereco</strong><p>${escapeHtml(order.customer_address || "Nao informado")}</p></article>
+    <div class="order-detail-actions">
+      <a class="primary-btn" href="/api/admin/orders/${order.id}/label.pdf" download>Baixar etiqueta PDF</a>
+      <button class="ghost-btn" type="button" onclick="printShippingLabel(${order.id})">Imprimir etiqueta</button>
+    </div>
+    <div class="detail-block order-detail-vertical">
+      <article><strong>Número do pedido</strong><p>${escapeHtml(order.reference)}</p></article>
+      <article><strong>Valor dos produtos</strong><p>${brl(order.product_amount)}</p></article>
+      <article><strong>Valor do frete</strong><p>${brl(order.shipping_amount)}</p></article>
+      <article><strong>Valor total</strong><p>${brl(order.total)}</p></article>
+      <article><strong>Forma de pagamento</strong><p>${escapeHtml(paymentMethodLabel(order.payment_method))}</p></article>
+      <article><strong>Status</strong><p><span class="status-pill ${order.status}">${labelStatus(order.status)}</span></p></article>
+      <article><strong>Nome completo</strong><p>${escapeHtml(order.customer_name)}</p></article>
+      <article><strong>WhatsApp</strong><p>${escapeHtml(order.customer_phone)}</p></article>
+      <article><strong>E-mail</strong><p>${escapeHtml(order.customer_email)}</p></article>
+      <article><strong>CEP</strong><p>${formatPostalCode(order.customer_postal_code)}</p></article>
+      <article><strong>Endereço</strong><p>${escapeHtml(order.customer_address || "Não informado")}</p></article>
       <article>
         <strong>Itens</strong>
         ${(order.items || []).map(item => `<p>${item.quantity}x ${escapeHtml(item.product_name)} ${item.volume}ml · ${brl(item.subtotal)}</p>`).join("")}
@@ -389,6 +401,11 @@ window.openOrder = async function openOrder(id) {
     </div>
   `;
   if (!els.orderDialog.open) els.orderDialog.showModal();
+};
+
+window.printShippingLabel = function printShippingLabel(id) {
+  const popup = window.open(`/api/admin/orders/${id}/label.pdf?print=1`, "_blank", "noopener");
+  if (!popup) window.alert("Permita pop-ups para imprimir a etiqueta.");
 };
 
 window.updateOrderStatus = async function updateOrderStatus(id) {
@@ -516,6 +533,23 @@ function priceOf(product, volume) {
 
 function brl(value) {
   return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function paymentMethodLabel(value) {
+  const labels = {
+    credit_card: "Cartão de crédito",
+    debit_card: "Cartão de débito",
+    bank_transfer: "Pix / transferência",
+    ticket: "Boleto",
+    pix: "Pix",
+    mercado_pago: "Mercado Pago"
+  };
+  return labels[String(value || "").toLowerCase()] || value || "Mercado Pago";
+}
+
+function formatPostalCode(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return escapeHtml(digits.length === 8 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits || "Não informado");
 }
 
 function dateTime(value) {

@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Revise seus decants, calcule o frete e finalize sua compra com seguranca.">
   <title>Carrinho | Decant's Perfumaria</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css?v=35">
-  <link rel="stylesheet" href="css/carrinho.css?v=2">
+  <link rel="stylesheet" href="css/style.css?v=37">
+  <link rel="stylesheet" href="css/carrinho.css?v=3">
 </head>
 <body class="pagina-carrinho">
   <header class="carrinho-header">
@@ -66,7 +67,7 @@
 
         <section class="carrinho-vantagens">
           <article><i class="fa-solid fa-shield-halved"></i><div><strong>Compra protegida</strong><span>Pagamento processado com segurança</span></div></article>
-          <article><i class="fa-solid fa-truck-fast"></i><div><strong>Frete grátis acima de R$199</strong><span>Enviamos para todo o Brasil</span></div></article>
+          <article><i class="fa-solid fa-truck-fast"></i><div><strong>Frete grátis acima de R$299</strong><span>Enviamos para todo o Brasil</span></div></article>
           <article><i class="fa-solid fa-certificate"></i><div><strong>Produtos originais</strong><span>Decants selecionados e preparados com cuidado</span></div></article>
         </section>
       </section>
@@ -92,12 +93,15 @@
 
         <form id="carrinhoCheckout" class="carrinho-checkout">
           <h3>Dados para entrega</h3>
-          <label>Nome completo<input id="carrinhoNome" autocomplete="name" required></label>
+          <label>Nome completo<input id="carrinhoNome" autocomplete="name" minlength="5" maxlength="80" required></label>
           <div class="carrinho-campos-duplos">
             <label>WhatsApp<input id="carrinhoTelefone" autocomplete="tel" inputmode="tel" placeholder="(88) 99999-9999" required></label>
             <label>E-mail<input id="carrinhoEmail" type="email" autocomplete="email" required></label>
           </div>
-          <label>Endereço<input id="carrinhoEndereco" autocomplete="street-address" placeholder="Rua, número, bairro e cidade" required></label>
+          <div class="carrinho-campos-endereco">
+            <label>CEP<input id="carrinhoCep" autocomplete="postal-code" inputmode="numeric" placeholder="00000-000" maxlength="9" required></label>
+            <label>Endereço completo<input id="carrinhoEndereco" autocomplete="street-address" minlength="10" maxlength="160" placeholder="Rua, número, bairro e cidade" required></label>
+          </div>
 
           <p id="carrinhoMensagem" class="carrinho-mensagem" hidden></p>
 
@@ -120,7 +124,14 @@
     <button id="finalizarMobile" type="button">Finalizar</button>
   </div>
 
-  <script src="js/script.js?v=35"></script>
-  <script src="js/carrinho.js?v=2"></script>
+  <script src="js/catalog-data.js?v=1"></script>
+  <script src="js/store-core.js?v=1"></script>
+  <script src="js/store-catalog.js?v=1"></script>
+  <script src="js/store-product.js?v=1"></script>
+  <script src="js/store-cart.js?v=1"></script>
+  <script src="js/store-checkout.js?v=1"></script>
+  <script src="js/store-navigation.js?v=1"></script>
+  <script src="js/store-init.js?v=1"></script>
+  <script src="js/carrinho.js?v=3"></script>
 </body>
 </html>

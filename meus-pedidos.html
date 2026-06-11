@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Consulte com seguranca o andamento de um pedido da Decant's Perfumaria.">
   <title>Meus Pedidos | Decant's Perfumaria</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css?v=35">
+  <link rel="stylesheet" href="css/style.css?v=37">
   <link rel="stylesheet" href="css/carrinho.css?v=2">
   <link rel="stylesheet" href="css/meus-pedidos.css?v=1">
 </head>
@@ -38,9 +39,15 @@
 
     <section class="pedidos-consulta">
       <form id="pedidosForm" class="pedidos-form">
-        <label for="pedidosContato">E-mail ou WhatsApp usado na compra</label>
-        <div>
-          <input id="pedidosContato" autocomplete="email tel" placeholder="seuemail@gmail.com ou (88) 99999-9999" required>
+        <div class="pedidos-form-campos">
+          <label>
+            Numero do pedido
+            <input id="pedidosReferencia" autocomplete="off" placeholder="DEC1234ABCD" maxlength="11" required>
+          </label>
+          <label>
+            E-mail ou WhatsApp usado na compra
+            <input id="pedidosContato" autocomplete="email tel" placeholder="seuemail@gmail.com ou (88) 99999-9999" required>
+          </label>
           <button type="submit">Buscar</button>
         </div>
         <p id="pedidosMensagem" aria-live="polite" hidden></p>
@@ -58,7 +65,14 @@
     </section>
   </main>
 
-  <script src="js/script.js?v=35"></script>
-  <script src="js/meus-pedidos.js?v=1"></script>
+  <script src="js/catalog-data.js?v=1"></script>
+  <script src="js/store-core.js?v=1"></script>
+  <script src="js/store-catalog.js?v=1"></script>
+  <script src="js/store-product.js?v=1"></script>
+  <script src="js/store-cart.js?v=1"></script>
+  <script src="js/store-checkout.js?v=1"></script>
+  <script src="js/store-navigation.js?v=1"></script>
+  <script src="js/store-init.js?v=1"></script>
+  <script src="js/meus-pedidos.js?v=2"></script>
 </body>
 </html>

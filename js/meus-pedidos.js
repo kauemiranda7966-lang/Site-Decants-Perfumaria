@@ -5,6 +5,7 @@ const estadoMeusPedidos = {
 
 const meusPedidosEls = {
   form: document.getElementById("pedidosForm"),
+  referencia: document.getElementById("pedidosReferencia"),
   contato: document.getElementById("pedidosContato"),
   mensagem: document.getElementById("pedidosMensagem"),
   conteudo: document.getElementById("pedidosConteudo"),
@@ -17,10 +18,11 @@ meusPedidosEls.tabs.addEventListener("click", trocarAbaPedidos);
 
 async function buscarMeusPedidos(event) {
   event.preventDefault();
+  const referencia = meusPedidosEls.referencia.value.trim().toUpperCase();
   const contato = meusPedidosEls.contato.value.trim();
   const botao = meusPedidosEls.form.querySelector("button");
 
-  if (!contato) return;
+  if (!referencia || !contato) return;
 
   meusPedidosEls.mensagem.hidden = false;
   meusPedidosEls.mensagem.textContent = "Buscando seus pedidos...";
@@ -28,7 +30,8 @@ async function buscarMeusPedidos(event) {
   botao.disabled = true;
 
   try {
-    const resposta = await fetch(`/api/customer/orders?contact=${encodeURIComponent(contato)}`, {
+    const params = new URLSearchParams({ reference: referencia, contact: contato });
+    const resposta = await fetch(`/api/customer/orders?${params}`, {
       credentials: "same-origin"
     });
     const dados = await resposta.json().catch(() => ({}));

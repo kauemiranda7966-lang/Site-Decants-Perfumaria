@@ -1,0 +1,191 @@
+.clube-ofertas {
+  padding: 64px 0;
+  background:
+    linear-gradient(135deg, rgba(17,17,17,0.94), rgba(34,25,13,0.92)),
+    #111;
+  color: #fff;
+}
+
+.clube-ofertas-conteudo {
+  width: min(1180px, 86%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(280px, .9fr) minmax(420px, 1fr);
+  gap: 34px;
+  align-items: center;
+}
+
+.clube-ofertas-texto span {
+  color: #d4af37;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+}
+
+.clube-ofertas-texto h2 {
+  max-width: 560px;
+  margin: 12px 0 14px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(36px, 5vw, 62px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.clube-ofertas-texto p {
+  max-width: 520px;
+  margin: 0;
+  color: #e8ddc7;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.clube-ofertas-form {
+  padding: 26px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  border: 1px solid rgba(212,175,55,0.42);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 28px 74px rgba(0,0,0,0.28);
+  backdrop-filter: blur(10px);
+}
+
+.clube-ofertas-form label {
+  display: grid;
+  gap: 8px;
+  color: #f5ead4;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.clube-ofertas-form label:first-child,
+.clube-ofertas-form button,
+.clube-ofertas-mensagem {
+  grid-column: 1 / -1;
+}
+
+.clube-ofertas-form small {
+  color: #c8b692;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.clube-ofertas-form input {
+  height: 50px;
+  min-width: 0;
+  padding: 0 14px;
+  border: 1px solid rgba(212,175,55,0.42);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.96);
+  color: #111;
+  font-family: 'Montserrat', sans-serif;
+  outline: none;
+}
+
+.clube-ofertas-form input:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.18);
+}
+
+.clube-ofertas-form button {
+  min-height: 52px;
+  background: linear-gradient(135deg, #d4af37, #b8862b);
+  color: #111;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.clube-ofertas-form button:disabled {
+  opacity: .66;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.clube-ofertas-mensagem {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.clube-ofertas-mensagem.sucesso {
+  background: rgba(31,143,77,0.2);
+  color: #dff7e6;
+}
+
+.clube-ofertas-mensagem.erro {
+  background: rgba(160,32,32,0.22);
+  color: #ffe0e0;
+}
+
+.beneficios {
+  width: 86%;
+  margin: 0 auto 18px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 18px;
+  background: white;
+  border: 1px solid #eadab6;
+  border-radius: 8px;
+}
+
+.beneficios div {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+}
+
+.beneficios i {
+  grid-row: span 2;
+  color: #c79a3b;
+  font-size: 28px;
+}
+
+.beneficios strong {
+  font-size: 12px;
+  font-weight: 800;
+  color: #111;
+}
+
+.beneficios span {
+  font-size: 12px;
+  color: #555;
+}
+
+.footer {
+  background: black;
+  color: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 40px;
+}
+
+button {
+  padding: 12px 24px;
+  border: none;
+  background: #c79a3b;
+  color: white;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  background: #b88a2f;
+}

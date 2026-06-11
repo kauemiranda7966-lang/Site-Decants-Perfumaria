@@ -1,6 +1,8 @@
 const estadoCarrinho = {
   itens: [],
-  cupom: ""
+  cupom: "",
+  frete: null,
+  cotacaoId: 0
 };
 
 const elementosCarrinho = {
@@ -44,6 +46,9 @@ function vincularEventosCarrinho() {
     document.getElementById("carrinhoNome").focus();
   });
   document.getElementById("carrinhoTelefone").addEventListener("input", mascararTelefoneCarrinho);
+  document.getElementById("carrinhoCep").addEventListener("input", mascararECalcularCep);
+  document.getElementById("carrinhoNome").addEventListener("input", limparNomeCarrinho);
+  document.getElementById("carrinhoEndereco").addEventListener("input", limparEnderecoCarrinho);
 }
 
 function renderizarCarrinho() {
@@ -153,16 +158,20 @@ function atualizarResumoCarrinho() {
   const selecionados = itensSelecionados();
   const subtotal = selecionados.reduce((soma, item) => soma + precoItem(item) * Number(item.quantidade || 1), 0);
   const desconto = calcularDesconto(subtotal);
-  const total = Math.max(0, subtotal - desconto);
+  const valorProdutos = Math.max(0, subtotal - desconto);
+  const total = valorProdutos + (estadoCarrinho.frete || 0);
   const todosMarcados = estadoCarrinho.itens.length > 0 && estadoCarrinho.itens.every(item => item.selecionado !== false);
 
   elementosCarrinho.selecionarTodos.checked = todosMarcados;
   elementosCarrinho.selecionarTodosMobile.checked = todosMarcados;
   elementosCarrinho.subtotal.textContent = moeda(subtotal);
   elementosCarrinho.desconto.textContent = desconto ? `-${moeda(desconto)}` : moeda(0);
-  elementosCarrinho.frete.textContent = subtotal >= 199 ? "Grátis" : "Calculado depois";
+  elementosCarrinho.frete.textContent = estadoCarrinho.frete === null
+    ? "Informe o CEP"
+    : estadoCarrinho.frete === 0 ? "Grátis" : moeda(estadoCarrinho.frete);
   elementosCarrinho.total.textContent = moeda(total);
   elementosCarrinho.totalMobile.textContent = moeda(total);
+  if (document.getElementById("carrinhoCep").value.replace(/\D/g, "").length === 8) calcularFreteCarrinho();
 }
 
 function aplicarCupomCarrinho() {
@@ -198,6 +207,16 @@ async function finalizarCarrinho(event, preferirWhatsApp) {
     return;
   }
 
+  const validationError = validarDadosEntrega();
+  if (validationError) {
+    mensagem.textContent = validationError;
+    return;
+  }
+  if (estadoCarrinho.frete === null) {
+    mensagem.textContent = "Aguarde o cálculo do frete pelo CEP.";
+    return;
+  }
+
   if (!elementosCarrinho.checkout.reportValidity()) return;
 
   const botoes = elementosCarrinho.checkout.querySelectorAll("button");
@@ -209,6 +228,7 @@ async function finalizarCarrinho(event, preferirWhatsApp) {
       name: document.getElementById("carrinhoNome").value.trim(),
       phone: document.getElementById("carrinhoTelefone").value.trim(),
       email: document.getElementById("carrinhoEmail").value.trim(),
+      postalCode: document.getElementById("carrinhoCep").value.trim(),
       address: document.getElementById("carrinhoEndereco").value.trim()
     },
     items: selecionados.map(item => ({
@@ -296,6 +316,76 @@ function mascararTelefoneCarrinho(event) {
   event.target.value = digitos.length <= 10
     ? digitos.replace(/^(\d{0,2})(\d{0,4})(\d{0,4}).*/, (_, ddd, parte1, parte2) => `${ddd ? `(${ddd}` : ""}${ddd.length === 2 ? ") " : ""}${parte1}${parte2 ? `-${parte2}` : ""}`)
     : digitos.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+}
+
+function mascararECalcularCep(event) {
+  const digitos = event.target.value.replace(/\D/g, "").slice(0, 8);
+  event.target.value = digitos.replace(/^(\d{5})(\d)/, "$1-$2");
+  estadoCarrinho.frete = null;
+  atualizarResumoCarrinho();
+}
+
+async function calcularFreteCarrinho() {
+  const cep = document.getElementById("carrinhoCep").value.replace(/\D/g, "");
+  if (cep.length !== 8 || new Set(cep).size === 1) return;
+  const subtotal = itensSelecionados().reduce((soma, item) => soma + precoItem(item) * Number(item.quantidade || 1), 0);
+  const valorProdutos = Math.max(0, subtotal - calcularDesconto(subtotal));
+  const cotacaoId = ++estadoCarrinho.cotacaoId;
+  elementosCarrinho.frete.textContent = "Calculando...";
+
+  try {
+    const resposta = await fetch(
+      `/api/shipping/quote?postalCode=${encodeURIComponent(cep)}&productAmount=${encodeURIComponent(valorProdutos.toFixed(2))}`
+    );
+    const dados = await resposta.json().catch(() => ({}));
+    if (!resposta.ok) throw new Error(dados.error || "Não foi possível calcular o frete.");
+    if (cotacaoId !== estadoCarrinho.cotacaoId) return;
+    estadoCarrinho.frete = Number(dados.shippingAmount) || 0;
+    const total = valorProdutos + estadoCarrinho.frete;
+    elementosCarrinho.frete.textContent = estadoCarrinho.frete === 0 ? "Grátis" : moeda(estadoCarrinho.frete);
+    elementosCarrinho.total.textContent = moeda(total);
+    elementosCarrinho.totalMobile.textContent = moeda(total);
+  } catch (error) {
+    if (cotacaoId !== estadoCarrinho.cotacaoId) return;
+    estadoCarrinho.frete = null;
+    elementosCarrinho.frete.textContent = "Não calculado";
+    elementosCarrinho.mensagem.hidden = false;
+    elementosCarrinho.mensagem.textContent = error.message;
+  }
+}
+
+function limparNomeCarrinho(event) {
+  event.target.value = event.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ ]/g, "").replace(/\s{2,}/g, " ");
+}
+
+function limparEnderecoCarrinho(event) {
+  event.target.value = event.target.value
+    .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ0-9 ,.\/-]/g, "")
+    .replace(/\s{2,}/g, " ");
+}
+
+function validarDadosEntrega() {
+  const nome = document.getElementById("carrinhoNome").value.trim().replace(/\s+/g, " ");
+  const telefone = document.getElementById("carrinhoTelefone").value.replace(/\D/g, "");
+  const cep = document.getElementById("carrinhoCep").value.replace(/\D/g, "");
+  const endereco = document.getElementById("carrinhoEndereco").value.trim();
+  const partesNome = nome.split(" ").filter(Boolean);
+  const nomesInvalidos = new Set([
+    "admin", "administrador", "teste", "test", "null", "undefined",
+    "palavrao", "xingamento", "porra", "caralho", "merda", "puta", "puto", "foda", "fdp"
+  ]);
+
+  if (
+    partesNome.length < 2
+    || partesNome.some(parte => parte.length < 2 || nomesInvalidos.has(parte.toLowerCase()))
+    || !/^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/.test(nome)
+  ) return "Informe nome e sobrenome válidos, usando apenas letras.";
+  if (![10, 11].includes(telefone.length) || new Set(telefone).size === 1) return "Informe um WhatsApp válido com DDD.";
+  if (cep.length !== 8 || new Set(cep).size === 1) return "Informe um CEP válido com 8 dígitos.";
+  if (endereco.length < 10 || !/[A-Za-zÀ-ÖØ-öø-ÿ]/.test(endereco) || !/\d/.test(endereco)) {
+    return "Informe rua, número, bairro e cidade no endereço.";
+  }
+  return "";
 }
 
 function escaparHtml(valor) {

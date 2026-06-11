@@ -16,10 +16,16 @@ services:
         value: 3.12.7
       - key: DECANTS_DB_PATH
         value: /var/data/decants.sqlite3
+      - key: DECANTS_UPLOAD_DIR
+        value: /var/data/uploads
+      - key: DECANTS_FREE_SHIPPING_THRESHOLD
+        value: 300
       - key: DECANTS_WHATSAPP_NUMBER
         value: 558899641605
       - key: DECANTS_SECRET_KEY
         generateValue: true
+      - key: DECANTS_ENV
+        value: production
       - key: DECANTS_ADMIN_DOMAIN
         value: site-decants-perfumaria.onrender.com
       - key: DECANTS_PUBLIC_BASE_URL

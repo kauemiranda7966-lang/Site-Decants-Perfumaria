@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Decants de perfumes masculinos e femininos selecionados, com compra segura e entrega para todo o Brasil.">
   <title>Decant's Perfumaria</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/style.css?v=35">
+  <link rel="stylesheet" href="css/style.css?v=37">
 
   <link
     rel="stylesheet"
@@ -18,9 +19,10 @@
 </head>
 
 <body>
+<h1 class="sr-only">Decant's Perfumaria - decants de perfumes masculinos e femininos</h1>
 
 <div class="topbar">
-  ✦ FRETE GRÁTIS PARA TODO O BRASIL ACIMA DE R$199 ✦
+  ✦ FRETE GRÁTIS PARA TODO O BRASIL A PARTIR DE R$300 ✦
 </div>
 
 <header class="header">
@@ -50,7 +52,7 @@
 </header>
 
 <section class="banner">
-  <img src="img/banner/banner.png" class="banner-img" alt="Banner Decant's Perfumaria">
+  <img src="img/banner/banner.png" class="banner-img" alt="Decants de perfumes selecionados" fetchpriority="high">
 
   <div class="banner-content">
     <button onclick="scrollToProdutos()">
@@ -113,7 +115,7 @@
 
   <div class="destaques carousel-premium" aria-label="Destaques de perfumes">
     <div class="carousel-slide ativo" data-produto="Dior Sauvage">
-      <img src="img/highlights/masculine/dior_sauvage.png" alt="Dior Sauvage">
+      <img src="img/highlights/masculine/dior_sauvage.png" alt="Dior Sauvage" loading="lazy">
       <div class="carousel-conteudo">
         <span class="selo-destaque">Mais vendidos&#128293;</span>
         <p class="carousel-kicker">Masculino intenso</p>
@@ -127,7 +129,7 @@
     </div>
 
     <div class="carousel-slide" data-produto="La Vie Est Belle">
-      <img src="img/highlights/feminine/la_vie_est_belle.png" alt="La Vie Est Belle">
+      <img src="img/highlights/feminine/la_vie_est_belle.png" alt="La Vie Est Belle" loading="lazy">
       <div class="carousel-conteudo">
         <span class="selo-destaque">Mais vendidos&#128293;</span>
         <p class="carousel-kicker">Feminino assinatura</p>
@@ -141,7 +143,7 @@
     </div>
 
     <div class="carousel-slide" data-produto="Versace Eros">
-      <img src="img/highlights/masculine/versace_eros.png" alt="Versace Eros">
+      <img src="img/highlights/masculine/versace_eros.png" alt="Versace Eros" loading="lazy">
       <div class="carousel-conteudo">
         <span class="selo-destaque">Ofertas</span>
         <strong class="selo-desconto">10% OFF</strong>
@@ -156,7 +158,7 @@
     </div>
 
     <div class="carousel-slide" data-produto="Yara Rosa">
-      <img src="img/highlights/feminine/yara_rosa.png" alt="Yara Rosa">
+      <img src="img/highlights/feminine/yara_rosa.png" alt="Yara Rosa" loading="lazy">
       <div class="carousel-conteudo">
         <span class="selo-destaque">Ofertas</span>
         <strong class="selo-desconto">10% OFF</strong>
@@ -293,6 +295,13 @@
   </div>
 </footer>
 
-<script src="js/script.js?v=35"></script>
+<script src="js/catalog-data.js?v=1"></script>
+<script src="js/store-core.js?v=1"></script>
+<script src="js/store-catalog.js?v=1"></script>
+<script src="js/store-product.js?v=1"></script>
+<script src="js/store-cart.js?v=1"></script>
+<script src="js/store-checkout.js?v=1"></script>
+<script src="js/store-navigation.js?v=1"></script>
+<script src="js/store-init.js?v=1"></script>
 </body>
 </html>

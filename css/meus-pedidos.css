@@ -51,10 +51,16 @@
   gap: 12px;
 }
 
-.pedidos-form > div {
+.pedidos-form-campos {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 160px;
+  grid-template-columns: minmax(180px, .55fr) minmax(260px, 1fr) 160px;
   gap: 10px;
+  align-items: end;
+}
+
+.pedidos-form-campos label {
+  display: grid;
+  gap: 8px;
 }
 
 .pedidos-form input {
@@ -274,7 +280,7 @@
     padding: 16px 12px;
   }
 
-  .pedidos-form > div,
+  .pedidos-form-campos,
   .pedidos-tabs {
     grid-template-columns: 1fr;
   }
