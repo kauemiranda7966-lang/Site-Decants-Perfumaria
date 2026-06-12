@@ -102,6 +102,15 @@
   font-size: 13px;
 }
 
+.pedidos-sair {
+  width: fit-content;
+  min-height: auto !important;
+  padding: 0;
+  background: transparent !important;
+  color: var(--cart-gold-dark) !important;
+  text-decoration: underline;
+}
+
 .pedidos-conteudo {
   margin-top: 18px;
   overflow: hidden;

@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import hmac
+import json
 import secrets
 import time
 
@@ -72,3 +73,38 @@ def revoke_session(connect_db, value, secret_key):
     token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
     with connect_db() as conn:
         conn.execute("DELETE FROM admin_sessions WHERE token_hash = ?", (token_hash,))
+
+
+def create_customer_session(email, phone, secret_key, max_age):
+    payload = {
+        "email": str(email).strip().lower(),
+        "phone": str(phone).strip(),
+        "expires_at": int(time.time()) + int(max_age),
+    }
+    encoded = base64.urlsafe_b64encode(
+        json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    ).decode("ascii").rstrip("=")
+    return sign_session(encoded, secret_key)
+
+
+def verify_customer_session(value, secret_key):
+    if not value or "." not in value or not secret_key:
+        return None
+
+    encoded, signature = value.rsplit(".", 1)
+    expected = sign_session(encoded, secret_key).rsplit(".", 1)[1]
+    if not hmac.compare_digest(signature, expected):
+        return None
+
+    try:
+        padded = encoded + "=" * (-len(encoded) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
+        email = str(payload.get("email", "")).strip().lower()
+        phone = str(payload.get("phone", "")).strip()
+        expires_at = int(payload.get("expires_at", 0))
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+    if expires_at <= int(time.time()) or not email or not phone:
+        return None
+    return {"email": email, "phone": phone}

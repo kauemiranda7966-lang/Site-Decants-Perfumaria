@@ -2,6 +2,7 @@ import json
 import tempfile
 import threading
 import unittest
+from http import cookiejar
 from pathlib import Path
 from urllib import error, parse, request
 
@@ -17,13 +18,17 @@ class ServerTestCase(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.original_db_path = server.DB_PATH
         self.original_upload_dir = server.UPLOAD_DIR
+        self.original_secret_key = server.SECRET_KEY
         server.DB_PATH = Path(self.temp_dir.name) / "test.sqlite3"
         server.UPLOAD_DIR = Path(self.temp_dir.name) / "uploads"
+        server.SECRET_KEY = "test-secret-key-with-at-least-32-characters"
         server.init_db()
         self.httpd = TestHTTPServer(("127.0.0.1", 0), server.DecantsHandler)
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.thread.start()
         self.base_url = f"http://127.0.0.1:{self.httpd.server_port}"
+        self.cookie_jar = cookiejar.CookieJar()
+        self.opener = request.build_opener(request.HTTPCookieProcessor(self.cookie_jar))
 
     def tearDown(self):
         self.httpd.shutdown()
@@ -31,16 +36,17 @@ class ServerTestCase(unittest.TestCase):
         self.thread.join(timeout=2)
         server.DB_PATH = self.original_db_path
         server.UPLOAD_DIR = self.original_upload_dir
+        server.SECRET_KEY = self.original_secret_key
         self.temp_dir.cleanup()
 
-    def request_json(self, path, method="GET", payload=None):
+    def request_json(self, path, method="GET", payload=None, headers=None):
         body = None
-        headers = {}
+        request_headers = dict(headers or {})
         if payload is not None:
             body = json.dumps(payload).encode("utf-8")
-            headers["Content-Type"] = "application/json"
-        with request.urlopen(
-            request.Request(self.base_url + path, data=body, headers=headers, method=method),
+            request_headers["Content-Type"] = "application/json"
+        with self.opener.open(
+            request.Request(self.base_url + path, data=body, headers=request_headers, method=method),
             timeout=5,
         ) as response:
             return response.status, json.loads(response.read().decode("utf-8"))
@@ -128,6 +134,49 @@ class ServerTestCase(unittest.TestCase):
         detail_query = parse.urlencode({"contact": "cliente@example.com"})
         _, detail = self.request_json(f"/api/orders/DEC1234ABCD?{detail_query}")
         self.assertEqual(detail["reference"], "DEC1234ABCD")
+
+    def test_customer_can_login_with_email_and_phone_and_list_orders(self):
+        self.insert_order()
+        _, session = self.request_json("/api/customer/session")
+        self.assertFalse(session["authenticated"])
+
+        _, login = self.request_json(
+            "/api/customer/login",
+            method="POST",
+            headers={"X-CSRF-Token": session["csrfToken"]},
+            payload={"email": "cliente@example.com", "phone": "(88) 99999-9999"},
+        )
+        self.assertTrue(login["ok"])
+
+        _, orders = self.request_json("/api/customer/orders")
+        self.assertEqual(len(orders["orders"]), 1)
+        self.assertEqual(orders["orders"][0]["reference"], "DEC1234ABCD")
+
+    def test_checkout_logs_customer_in_and_keeps_order_available(self):
+        payload = {
+            "customer": {
+                "name": "Cliente Checkout",
+                "email": "checkout@example.com",
+                "phone": "(88) 98765-4321",
+                "address": "Rua Teste, 123",
+                "postalCode": "60000-000",
+            },
+            "items": [
+                {
+                    "productId": 1,
+                    "productName": "Dior Sauvage",
+                    "volume": 5,
+                    "quantity": 1,
+                }
+            ],
+            "paymentMethod": "whatsapp",
+        }
+        status, checkout = self.request_json("/api/checkout", method="POST", payload=payload)
+        self.assertEqual(status, 201)
+
+        _, orders = self.request_json("/api/customer/orders")
+        self.assertEqual(len(orders["orders"]), 1)
+        self.assertEqual(orders["orders"][0]["reference"], checkout["reference"])
 
     def test_admin_session_is_stored_and_can_be_revoked(self):
         secret = "s" * 32

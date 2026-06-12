@@ -118,6 +118,9 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith("/api/shipping/quote"):
             self.handle_shipping_quote()
             return
+        if self.path.startswith("/api/customer/session"):
+            self.handle_customer_session()
+            return
         if self.path.startswith("/api/customer/orders"):
             self.handle_customer_orders()
             return
@@ -146,6 +149,16 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             if not self.require_csrf():
                 return
             self.handle_logout()
+            return
+        if self.path.startswith("/api/customer/login"):
+            if not self.require_csrf():
+                return
+            self.handle_customer_login()
+            return
+        if self.path.startswith("/api/customer/logout"):
+            if not self.require_csrf():
+                return
+            self.handle_customer_logout()
             return
         if self.path.startswith("/api/checkout"):
             self.handle_checkout()
@@ -318,6 +331,14 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #HANDLE_CUSTOMER_ORDERS
     def handle_customer_orders(self):
+        customer = self.get_customer_session()
+        if customer:
+            self.send_customer_orders(
+                "LOWER(customer_email) = ? AND customer_phone = ?",
+                [customer["email"], customer["phone"]],
+            )
+            return
+
         query = parse.parse_qs(parse.urlparse(self.path).query)
         reference = str(query.get("reference", [""])[0]).strip().upper()
         contact = str(query.get("contact", [""])[0]).strip()
@@ -337,6 +358,10 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             where = "reference = ? AND customer_phone = ?"
             params = [reference, phone]
 
+        self.send_customer_orders(where, params, limit=1)
+
+    def send_customer_orders(self, where, params, limit=None):
+        limit_sql = "LIMIT 1" if limit == 1 else ""
         with connect_db() as conn:
             orders = conn.execute(
                 f"""
@@ -344,7 +369,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 FROM orders
                 WHERE {where}
                 ORDER BY created_at DESC
-                LIMIT 1
+                {limit_sql}
                 """,
                 params,
             ).fetchall()
@@ -374,6 +399,70 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             data["items"] = items_by_order.get(order["id"], [])
             payload.append(data)
         self.send_json({"orders": payload})
+
+    def handle_customer_session(self):
+        customer = self.get_customer_session()
+        csrf = self.get_cookie(CSRF_COOKIE) or create_csrf_token()
+        self.send_json(
+            {
+                "authenticated": bool(customer),
+                "email": customer["email"] if customer else "",
+                "phone": customer["phone"] if customer else "",
+                "csrfToken": csrf,
+            },
+            headers=[
+                (
+                    "Set-Cookie",
+                    f"{CSRF_COOKIE}={csrf}; {self.cookie_same_site()}; Path=/; Max-Age={CUSTOMER_SESSION_MAX_AGE}",
+                )
+            ],
+        )
+
+    def handle_customer_login(self):
+        payload = self.read_json()
+        email = str(payload.get("email", "")).strip().lower()
+        phone = re.sub(r"\D+", "", str(payload.get("phone", "")))
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email) or len(phone) < 10:
+            self.send_json({"error": "Informe o e-mail e o WhatsApp usados na compra."}, status=400)
+            return
+
+        with connect_db() as conn:
+            exists = conn.execute(
+                """
+                SELECT 1 FROM orders
+                WHERE LOWER(customer_email) = ? AND customer_phone = ?
+                LIMIT 1
+                """,
+                (email, phone),
+            ).fetchone()
+        if not exists:
+            self.send_json(
+                {"error": "Nao encontramos pedidos com esse e-mail e WhatsApp."},
+                status=401,
+            )
+            return
+
+        signed_session = create_customer_session(
+            email,
+            phone,
+            SECRET_KEY,
+            CUSTOMER_SESSION_MAX_AGE,
+        )
+        self.send_json(
+            {"ok": True},
+            headers=[("Set-Cookie", self.customer_session_cookie(signed_session))],
+        )
+
+    def handle_customer_logout(self):
+        self.send_json(
+            {"ok": True},
+            headers=[
+                (
+                    "Set-Cookie",
+                    f"{CUSTOMER_SESSION_COOKIE}=; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age=0",
+                )
+            ],
+        )
 
     #HANDLE_SHIPPING_QUOTE
     def handle_shipping_quote(self):
@@ -696,12 +785,26 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
                 reserve_order_stock(conn, order_id)
 
-                if payment_method == "mercado_pago":
+            if payment_method == "mercado_pago":
+                try:
                     preference = create_mercado_pago_preference(reference, customer, order_items, total, base_url)
                     payment_url = preference["url"]
                     payment_preference_id = preference["id"]
+                except Exception:
+                    with connect_db() as conn:
+                        release_order_stock(conn, order_id)
+                        conn.execute(
+                            """
+                            UPDATE orders
+                            SET status = 'payment_error', updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                            """,
+                            (order_id,),
+                        )
+                    raise
 
-                whatsapp_url = build_whatsapp_url(reference, customer, order_items, total, payment_url)
+            whatsapp_url = build_whatsapp_url(reference, customer, order_items, total, payment_url)
+            with connect_db() as conn:
                 conn.execute(
                     """
                     UPDATE orders
@@ -717,6 +820,12 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                     ),
                 )
 
+            signed_customer_session = create_customer_session(
+                customer["email"],
+                customer["phone"],
+                SECRET_KEY,
+                CUSTOMER_SESSION_MAX_AGE,
+            )
             self.send_json(
                 {
                     "ok": True,
@@ -731,6 +840,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                     "message": "Pedido criado com sucesso.",
                 },
                 status=201,
+                headers=[("Set-Cookie", self.customer_session_cookie(signed_customer_session))],
             )
         except ValueError as error:
             self.send_json({"error": str(error)}, status=400)
@@ -918,11 +1028,13 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         return json.loads(self.rfile.read(size).decode("utf-8"))
 
     #SEND_JSON
-    def send_json(self, payload, status=200):
+    def send_json(self, payload, status=200, headers=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        for name, value in headers or []:
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 
@@ -931,6 +1043,18 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         raw = self.headers.get("Cookie", "")
         jar = cookies.SimpleCookie(raw)
         return jar[name].value if name in jar else ""
+
+    def get_customer_session(self):
+        return verify_customer_session(
+            self.get_cookie(CUSTOMER_SESSION_COOKIE),
+            SECRET_KEY,
+        )
+
+    def customer_session_cookie(self, value):
+        return (
+            f"{CUSTOMER_SESSION_COOKIE}={value}; HttpOnly; {self.cookie_same_site()}; "
+            f"Path=/; Max-Age={CUSTOMER_SESSION_MAX_AGE}"
+        )
 
     #IS_AUTHENTICATED
     def is_authenticated(self):

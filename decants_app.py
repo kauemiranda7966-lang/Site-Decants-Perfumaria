@@ -17,8 +17,10 @@ from urllib.parse import unquote
 
 from decants_auth import (
     check_password as verify_admin_password,
+    create_customer_session,
     create_session as create_admin_session,
     revoke_session as revoke_admin_session,
+    verify_customer_session,
     verify_session as verify_admin_session,
 )
 
@@ -26,8 +28,10 @@ from decants_auth import (
 ROOT = Path(__file__).resolve().parent
 DEFAULT_DB_PATH = ROOT / "data" / "decants.sqlite3"
 SESSION_COOKIE = "decants_session"
+CUSTOMER_SESSION_COOKIE = "decants_customer_session"
 CSRF_COOKIE = "decants_csrf"
 SESSION_MAX_AGE = 60 * 60 * 8
+CUSTOMER_SESSION_MAX_AGE = 60 * 60 * 24 * 30
 LOGIN_ATTEMPTS = {}
 LOGIN_LIMIT = 5
 LOGIN_WINDOW = 15 * 60

@@ -41,16 +41,17 @@
       <form id="pedidosForm" class="pedidos-form">
         <div class="pedidos-form-campos">
           <label>
-            Numero do pedido
-            <input id="pedidosReferencia" autocomplete="off" placeholder="DEC1234ABCD" maxlength="11" required>
+            E-mail usado na compra
+            <input id="pedidosEmail" type="email" autocomplete="email" placeholder="seuemail@gmail.com" required>
           </label>
           <label>
-            E-mail ou WhatsApp usado na compra
-            <input id="pedidosContato" autocomplete="email tel" placeholder="seuemail@gmail.com ou (88) 99999-9999" required>
+            WhatsApp usado na compra
+            <input id="pedidosTelefone" type="tel" autocomplete="tel" placeholder="(88) 99999-9999" required>
           </label>
-          <button type="submit">Buscar</button>
+          <button type="submit">Entrar</button>
         </div>
         <p id="pedidosMensagem" aria-live="polite" hidden></p>
+        <button id="pedidosSair" class="pedidos-sair" type="button" hidden>Sair da conta</button>
       </form>
     </section>
 
@@ -73,6 +74,6 @@
   <script src="js/store-checkout.js?v=1"></script>
   <script src="js/store-navigation.js?v=1"></script>
   <script src="js/store-init.js?v=1"></script>
-  <script src="js/meus-pedidos.js?v=2"></script>
+  <script src="js/meus-pedidos.js?v=3"></script>
 </body>
 </html>

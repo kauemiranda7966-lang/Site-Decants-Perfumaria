@@ -5,7 +5,7 @@ const state = {
   orders: [],
   customers: [],
   logs: [],
-  activeOrderStatus: "to_separate"
+  activeOrderStatus: "all"
 };
 
 const routes = {
@@ -297,7 +297,7 @@ function renderOrders() {
 
   const orders = state.orders.filter(order => {
     const operationalStatus = orderOperationalStatus(order.status);
-    const matchesStatus = operationalStatus === state.activeOrderStatus;
+    const matchesStatus = state.activeOrderStatus === "all" || operationalStatus === state.activeOrderStatus;
     const matchesSearch = !search || normalize(order.reference).includes(search);
     return matchesStatus && matchesSearch;
   });
@@ -326,6 +326,7 @@ function handleOrderTabClick(event) {
 function renderOrderTabs() {
   const totals = state.orders.reduce((acc, order) => {
     const status = orderOperationalStatus(order.status);
+    acc.all = (acc.all || 0) + 1;
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
@@ -498,7 +499,8 @@ function labelStatus(status) {
     charged_back: "Chargeback",
     refunded: "Extorno",
     paid: "Pago",
-    completed: "Concluido"
+    completed: "Concluido",
+    payment_error: "Erro no pagamento"
   };
   return labels[status] || status || "Sem status";
 }
@@ -521,6 +523,7 @@ function orderOperationalStatus(status) {
     charged_back: "refunded",
     rejected: "cancelled",
     expired: "cancelled",
+    payment_error: "cancelled",
     cancelled: "cancelled"
   };
   return map[status] || status;
