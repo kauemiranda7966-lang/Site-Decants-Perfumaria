@@ -1112,6 +1112,33 @@ body.modal-aberto {
   display: none;
 }
 
+@media (min-width: 1025px) {
+  .catalogo-trilho .produtos-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #c79a3b #eee;
+  }
+
+  .catalogo-trilho .produtos-scroll::-webkit-scrollbar {
+    display: block;
+    height: 13px;
+  }
+
+  .catalogo-trilho .produtos-scroll::-webkit-scrollbar-track {
+    background: #eee;
+    border-radius: 999px;
+  }
+
+  .catalogo-trilho .produtos-scroll::-webkit-scrollbar-thumb {
+    background: #c79a3b;
+    border: 3px solid #eee;
+    border-radius: 999px;
+  }
+
+  .catalogo-trilho .produtos-scroll::-webkit-scrollbar-thumb:hover {
+    background: #b8862b;
+  }
+}
+
 .catalogo-seta {
   position: absolute;
   top: calc(50% - 7px);
