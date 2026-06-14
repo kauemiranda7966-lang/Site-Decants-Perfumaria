@@ -64,6 +64,7 @@ function obterTemaVisualProduto(nomeProduto) {
 
 // #RENDERIZAR_HEADER_PRODUTO_MOBILE
 function renderizarHeaderProdutoMobile(produto) {
+  const nomeAtributo = escaparAtributoLoja(produto.nome);
   return `
     <header class="modal-mobile-header">
       <button class="modal-mobile-voltar" type="button" aria-label="Voltar ao catalogo" onclick="fecharDetalhesProduto()">
@@ -77,7 +78,7 @@ function renderizarHeaderProdutoMobile(produto) {
         <button type="button" aria-label="Buscar perfumes" onclick="abrirBuscaProdutoMobile()">
           <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
         </button>
-        <button type="button" aria-label="Abrir compra de ${produto.nome}" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)">
+        <button type="button" aria-label="Abrir compra de ${nomeAtributo}" data-produto="${nomeAtributo}" onclick="comprar(this.dataset.produto)">
           <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
         </button>
       </div>
@@ -143,6 +144,7 @@ function marcarImagemProdutoIndisponivel(imagem, fallback) {
 function renderizarGaleriaModal(produto, imagens) {
   const categoria = produto.categoria === "masculino" ? "Masculino" : "Feminino";
   const imagemPrincipal = imagens[0] || "";
+  const nomeAtributo = escaparAtributoLoja(produto.nome);
 
   return `
     <section class="modal-galeria-premium modal-galeria-cinematica" aria-label="Galeria do produto">
@@ -161,20 +163,20 @@ function renderizarGaleriaModal(produto, imagens) {
           </button>
         ` : ""}
         ${imagemPrincipal
-          ? `<img src="${imagemPrincipal}" alt="${produto.nome}" onload="finalizarCarregamentoImagemModal(this)" onerror="marcarImagemModalIndisponivel(this)">`
+          ? `<img src="${escaparAtributoLoja(imagemPrincipal)}" alt="${nomeAtributo}" onload="finalizarCarregamentoImagemModal(this)" onerror="marcarImagemModalIndisponivel(this)">`
           : `<div class="modal-sem-imagem">Imagem indisponivel</div>`}
       </div>
 
       ${imagens.length > 1 ? `<div class="modal-galeria-pontos" aria-label="Selecionar imagem">
         ${imagens.map((imagem, index) => `
-          <button class="${index === 0 ? "ativo" : ""}" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-modal-imagem data-src="${imagem}"></button>
+          <button class="${index === 0 ? "ativo" : ""}" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-modal-imagem data-src="${escaparAtributoLoja(imagem)}"></button>
         `).join("")}
       </div>` : ""}
 
       ${imagens.length ? `<div class="modal-thumbs" aria-label="Miniaturas">
         ${imagens.map((imagem, index) => `
-          <button class="modal-thumb ${index === 0 ? "ativo" : ""} modal-thumb-cinematica" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-modal-imagem data-src="${imagem}">
-            <img src="${imagem}" alt="${produto.nome} miniatura ${index + 1}" loading="lazy">
+          <button class="modal-thumb ${index === 0 ? "ativo" : ""} modal-thumb-cinematica" type="button" aria-label="Ver imagem ${index + 1}" onclick="selecionarImagemModal(this)" data-modal-imagem data-src="${escaparAtributoLoja(imagem)}">
+            <img src="${escaparAtributoLoja(imagem)}" alt="${nomeAtributo} miniatura ${index + 1}" loading="lazy">
           </button>
         `).join("")}
       </div>` : ""}
@@ -184,6 +186,7 @@ function renderizarGaleriaModal(produto, imagens) {
 
 // #RENDERIZAR_COMPRA_MODAL
 function renderizarCompraModal(produto, semEstoque, preco5) {
+  const nomeAtributo = escaparAtributoLoja(produto.nome);
   return `
     <aside class="modal-compra-premium">
       <div class="modal-beneficios-premium" aria-label="Benef&iacute;cios da compra">
@@ -194,7 +197,7 @@ function renderizarCompraModal(produto, semEstoque, preco5) {
 
       <div class="modal-preco-final">
         <span>A partir de</span>
-        <strong id="modalPrecoSelecionado">R$ ${preco5}</strong>
+        <strong id="modalPrecoSelecionado">R$ ${escaparHtmlLoja(preco5)}</strong>
       </div>
 
       <div class="modal-quantidade" aria-label="Quantidade">
@@ -203,12 +206,12 @@ function renderizarCompraModal(produto, semEstoque, preco5) {
         <button type="button" aria-label="Aumentar quantidade" onclick="alterarQuantidadeModal(1)">+</button>
       </div>
 
-      <button class="modal-btn-principal" type="button" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+      <button class="modal-btn-principal" type="button" data-produto="${nomeAtributo}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
         <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
         ${semEstoque ? "Produto esgotado" : "Adicionar ao carrinho"}
       </button>
 
-      <button class="modal-btn-whatsapp" type="button" data-produto="${produto.nome}" onclick="comprarViaWhatsAppProduto(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
+      <button class="modal-btn-whatsapp" type="button" data-produto="${nomeAtributo}" onclick="comprarViaWhatsAppProduto(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>
         <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
         Comprar via WhatsApp
       </button>
@@ -249,21 +252,22 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
   const categoria = produto.categoria === "masculino" ? "Masculino" : "Feminino";
   const descricao = criarDescricaoCurtaProduto(detalhes);
   const concentracao = normalizarTexto(produto.nome).includes("edt") ? "Eau de Toilette" : "Eau de Parfum";
+  const marca = escaparHtmlLoja(marcaProduto);
 
   return `
     <section class="modal-info-premium">
       <div class="modal-marca-linha">
         <span class="modal-categoria-texto">${categoria}</span>
-        <span class="modal-marca-texto">${marcaProduto}</span>
+        <span class="modal-marca-texto">${marca}</span>
         <div class="modal-logo-mini">
-          <img src="${logoMarca}" alt="Logo ${marcaProduto}" loading="lazy" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
-          <strong hidden>${marcaProduto}</strong>
+          <img src="${escaparAtributoLoja(logoMarca)}" alt="Logo ${escaparAtributoLoja(marcaProduto)}" loading="lazy" onerror="this.hidden=true; this.nextElementSibling.hidden=false;">
+          <strong hidden>${marca}</strong>
         </div>
       </div>
 
-      <h2 id="modalProdutoTitulo">${produto.nome}</h2>
+      <h2 id="modalProdutoTitulo">${escaparHtmlLoja(produto.nome)}</h2>
 
-      <p class="modal-descricao">${descricao}</p>
+      <p class="modal-descricao">${escaparHtmlLoja(descricao)}</p>
 
       <div class="modal-divisor"></div>
 
@@ -278,7 +282,7 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
       <div class="modal-secao modal-secao-acordes">
         <h3>Principais acordes</h3>
         <div class="modal-acordes-premium">
-          ${acordes.map(acorde => `<span style="--cor-chip: ${acorde.cor};">${acorde.nome}</span>`).join("")}
+          ${acordes.map(acorde => `<span style="--cor-chip: ${escaparAtributoLoja(acorde.cor)};">${escaparHtmlLoja(acorde.nome)}</span>`).join("")}
         </div>
       </div>
 
@@ -286,17 +290,17 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
         <article>
           <i class="fa-regular fa-clock" aria-hidden="true"></i>
           <span>FixaÃ§Ã£o</span>
-          <strong>${detalhes.intensidade}</strong>
+          <strong>${escaparHtmlLoja(detalhes.intensidade)}</strong>
         </article>
         <article>
           <i class="fa-regular fa-sun" aria-hidden="true"></i>
           <span>OcasiÃ£o</span>
-          <strong>${detalhes.ocasiao.split(",")[0]}</strong>
+          <strong>${escaparHtmlLoja(detalhes.ocasiao.split(",")[0])}</strong>
         </article>
         <article>
           <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
           <span>Fam&iacute;lia olfativa</span>
-          <strong>${detalhes.familia}</strong>
+          <strong>${escaparHtmlLoja(detalhes.familia)}</strong>
         </article>
         <article>
           <i class="fa-solid fa-bottle-droplet" aria-hidden="true"></i>
@@ -305,7 +309,7 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
         </article>
       </div>
 
-      <p class="modal-notas"><strong>Notas:</strong> ${detalhes.notas}</p>
+      <p class="modal-notas"><strong>Notas:</strong> ${escaparHtmlLoja(detalhes.notas)}</p>
     </section>
   `;
 }
@@ -320,12 +324,13 @@ function criarDescricaoCurtaProduto(detalhes) {
 // #RENDERIZAR_VOLUME_MODAL
 function renderizarVolumeModal(volume, preco, ativo, semEstoque) {
   const valorMl = precoTextoParaNumero(preco) / volume;
+  const precoSeguro = escaparAtributoLoja(preco);
 
   return `
-    <button class="modal-volume-card ${ativo ? "ativo" : ""}" type="button" role="radio" aria-checked="${ativo}" data-volume="${volume}" data-preco="${preco}" onclick="selecionarVolumeModal(this)" ${semEstoque ? "disabled" : ""}>
+    <button class="modal-volume-card ${ativo ? "ativo" : ""}" type="button" role="radio" aria-checked="${ativo}" data-volume="${volume}" data-preco="${precoSeguro}" onclick="selecionarVolumeModal(this)" ${semEstoque ? "disabled" : ""}>
       <i class="modal-volume-icone fa-solid fa-bottle-droplet" aria-hidden="true"></i>
       <span>${volume} ml</span>
-      <strong>R$ ${preco}</strong>
+      <strong>R$ ${escaparHtmlLoja(preco)}</strong>
       <small>R$ ${formatarMoedaLoja(valorMl)} / ml</small>
     </button>
   `;

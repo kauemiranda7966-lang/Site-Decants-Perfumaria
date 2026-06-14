@@ -285,6 +285,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     #HANDLE_ADMIN_DASHBOARD
     def handle_admin_dashboard(self):
         with connect_db() as conn:
+            release_expired_whatsapp_reservations(conn)
             metrics = conn.execute(
                 """
                 SELECT
@@ -320,6 +321,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     #HANDLE_ADMIN_ORDERS
     def handle_admin_orders(self):
         with connect_db() as conn:
+            release_expired_whatsapp_reservations(conn)
             rows = conn.execute(
                 """
                 SELECT id, reference, customer_name, customer_email, customer_phone,
@@ -363,6 +365,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     def send_customer_orders(self, where, params, limit=None):
         limit_sql = "LIMIT 1" if limit == 1 else ""
         with connect_db() as conn:
+            release_expired_whatsapp_reservations(conn)
             orders = conn.execute(
                 f"""
                 SELECT id, reference, total, status, payment_url, whatsapp_url, created_at, updated_at
@@ -500,6 +503,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             return
         order_id = int(match.group(1))
         with connect_db() as conn:
+            release_expired_whatsapp_reservations(conn)
             order = conn.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
             if not order:
                 self.send_error(404)
@@ -675,6 +679,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     #HANDLE_GET_PRODUCTS
     def handle_get_products(self):
         with connect_db() as conn:
+            release_expired_whatsapp_reservations(conn)
             rows = conn.execute("SELECT * FROM products ORDER BY position, id").fetchall()
         self.send_json([product_from_row(row) for row in rows])
 
@@ -726,6 +731,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             base_url = get_public_base_url(self)
 
             with connect_db() as conn:
+                release_expired_whatsapp_reservations(conn)
                 order_items = build_order_items(conn, checkout["items"])
                 discount = apply_checkout_coupon(order_items, checkout["coupon"])
                 product_amount = round(sum(item["subtotal"] for item in order_items), 2)
@@ -863,6 +869,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         with connect_db() as conn:
+            release_expired_whatsapp_reservations(conn)
             if len(phone) >= 10:
                 order = conn.execute(
                     "SELECT * FROM orders WHERE reference = ? AND customer_phone = ?",

@@ -14,6 +14,12 @@ function abrirCheckout(nomeProduto) {
     return;
   }
 
+  const nome = escaparHtmlLoja(produto.nome);
+  const nomeAtributo = escaparAtributoLoja(produto.nome);
+  const imagem = escaparAtributoLoja(obterImagemProduto(produto));
+  const marca = escaparHtmlLoja(extrairMarcaProduto(produto.nome));
+  const precoInicial = escaparHtmlLoja(obterPrecoProduto(produto, 5));
+
   document.body.insertAdjacentHTML("beforeend", `
     <div class="modal-checkout" onclick="fecharCheckout(event)">
       <form class="checkout-card" id="checkoutForm" onsubmit="enviarCheckout(event)">
@@ -21,14 +27,14 @@ function abrirCheckout(nomeProduto) {
 
         <div class="checkout-topo">
           <span>Pedido seguro</span>
-          <h2>${produto.nome}</h2>
+          <h2>${nome}</h2>
           <p>Escolha o volume e finalize pelo Mercado Pago ou WhatsApp.</p>
         </div>
 
         <div class="checkout-produto">
-          <img src="${obterImagemProduto(produto)}" alt="${produto.nome}" loading="lazy">
+          <img src="${imagem}" alt="${nomeAtributo}" loading="lazy">
           <div>
-            <strong>${extrairMarcaProduto(produto.nome)}</strong>
+            <strong>${marca}</strong>
             <p>Estoque disponivel: ${produto.estoque}</p>
           </div>
         </div>
@@ -67,10 +73,10 @@ function abrirCheckout(nomeProduto) {
         </div>
 
         <div class="checkout-total">
-          <span>Produtos <strong id="checkoutSubtotal">R$ ${obterPrecoProduto(produto, 5)}</strong></span>
+          <span>Produtos <strong id="checkoutSubtotal">R$ ${precoInicial}</strong></span>
           <span>Frete <strong id="checkoutFrete">Informe o CEP</strong></span>
           <span>Total</span>
-          <strong id="checkoutTotal">R$ ${obterPrecoProduto(produto, 5)}</strong>
+          <strong id="checkoutTotal">R$ ${precoInicial}</strong>
         </div>
 
         <p class="checkout-mensagem" id="checkoutMensagem" hidden></p>
@@ -94,11 +100,12 @@ function abrirCheckout(nomeProduto) {
 
 // #MONTAR_OPCAO_CHECKOUT
 function montarOpcaoCheckout(produto, volume, checked) {
+  const preco = escaparHtmlLoja(obterPrecoProduto(produto, volume));
   return `
     <label class="checkout-volume ${checked ? "ativo" : ""}">
       <input name="checkoutVolume" type="radio" value="${volume}" ${checked ? "checked" : ""} onchange="atualizarVolumeCheckout(event)">
       <span>${volume}ml</span>
-      <strong>R$ ${obterPrecoProduto(produto, volume)}</strong>
+      <strong>R$ ${preco}</strong>
     </label>
   `;
 }

@@ -19,9 +19,11 @@ class ServerTestCase(unittest.TestCase):
         self.original_db_path = server.DB_PATH
         self.original_upload_dir = server.UPLOAD_DIR
         self.original_secret_key = server.SECRET_KEY
+        self.original_whatsapp_reservation_minutes = server.WHATSAPP_RESERVATION_MINUTES
         server.DB_PATH = Path(self.temp_dir.name) / "test.sqlite3"
         server.UPLOAD_DIR = Path(self.temp_dir.name) / "uploads"
         server.SECRET_KEY = "test-secret-key-with-at-least-32-characters"
+        server.WHATSAPP_RESERVATION_MINUTES = 30
         server.init_db()
         self.httpd = TestHTTPServer(("127.0.0.1", 0), server.DecantsHandler)
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
@@ -37,6 +39,7 @@ class ServerTestCase(unittest.TestCase):
         server.DB_PATH = self.original_db_path
         server.UPLOAD_DIR = self.original_upload_dir
         server.SECRET_KEY = self.original_secret_key
+        server.WHATSAPP_RESERVATION_MINUTES = self.original_whatsapp_reservation_minutes
         self.temp_dir.cleanup()
 
     def request_json(self, path, method="GET", payload=None, headers=None):
@@ -242,6 +245,78 @@ class ServerTestCase(unittest.TestCase):
         free_query = parse.urlencode({"postalCode": "60000000", "productAmount": "300.00"})
         _, free_quote = self.request_json(f"/api/shipping/quote?{free_query}")
         self.assertEqual(free_quote["shippingAmount"], 0)
+
+    def test_price_parser_accepts_brazilian_and_international_formats(self):
+        cases = {
+            "49,90": 49.90,
+            "49.90": 49.90,
+            "1.234,56": 1234.56,
+            "1,234.56": 1234.56,
+            "R$ 59,99": 59.99,
+            49.90: 49.90,
+        }
+        for value, expected in cases.items():
+            with self.subTest(value=value):
+                self.assertEqual(server.parse_price(value), expected)
+
+    def test_expired_whatsapp_order_releases_reserved_stock(self):
+        payload = {
+            "customer": {
+                "name": "Cliente WhatsApp",
+                "email": "whatsapp@example.com",
+                "phone": "(88) 98765-4321",
+                "address": "Rua Teste, 123",
+                "postalCode": "60000-000",
+            },
+            "items": [
+                {
+                    "productId": 1,
+                    "productName": "Dior Sauvage",
+                    "volume": 5,
+                    "quantity": 2,
+                }
+            ],
+            "paymentMethod": "whatsapp",
+        }
+        with server.connect_db() as conn:
+            initial_stock = conn.execute(
+                "SELECT estoque FROM products WHERE id = 1"
+            ).fetchone()["estoque"]
+
+        _, checkout = self.request_json("/api/checkout", method="POST", payload=payload)
+        with server.connect_db() as conn:
+            reserved_stock = conn.execute(
+                "SELECT estoque FROM products WHERE id = 1"
+            ).fetchone()["estoque"]
+            conn.execute(
+                """
+                UPDATE orders
+                SET updated_at = datetime('now', '-31 minutes')
+                WHERE reference = ?
+                """,
+                (checkout["reference"],),
+            )
+        self.assertEqual(reserved_stock, initial_stock - 2)
+
+        self.request_json("/api/products")
+
+        with server.connect_db() as conn:
+            restored_stock = conn.execute(
+                "SELECT estoque FROM products WHERE id = 1"
+            ).fetchone()["estoque"]
+            order = conn.execute(
+                "SELECT id, status, stock_reserved FROM orders WHERE reference = ?",
+                (checkout["reference"],),
+            ).fetchone()
+            history = conn.execute(
+                "SELECT new_status FROM order_history WHERE order_id = ? ORDER BY id DESC LIMIT 1",
+                (order["id"],),
+            ).fetchone()
+
+        self.assertEqual(restored_stock, initial_stock)
+        self.assertEqual(order["status"], "expired")
+        self.assertEqual(order["stock_reserved"], 0)
+        self.assertEqual(history["new_status"], "expired")
 
     def test_checkout_contract_requires_and_accepts_postal_code(self):
         payload = {

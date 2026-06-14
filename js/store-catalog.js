@@ -134,20 +134,24 @@ function renderProdutos(lista, container) {
 
   lista.forEach((produto, index) => {
     const semEstoque = !produtoDisponivel(produto);
+    const nome = escaparHtmlLoja(produto.nome);
+    const nomeAtributo = escaparAtributoLoja(produto.nome);
+    const imagem = escaparAtributoLoja(obterImagemProduto(produto));
+    const fallback = escaparAtributoLoja(produto.img);
 
     container.innerHTML += `
       <div class="card ${semEstoque ? "produto-esgotado" : ""}" style="--card-index: ${index};">
         <span class="card-brilho" aria-hidden="true"></span>
-        <img src="${obterImagemProduto(produto)}" alt="${produto.nome}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, '${produto.img}')">
+        <img src="${imagem}" alt="${nomeAtributo}" data-fallback-image="${fallback}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, this.dataset.fallbackImage)">
         ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
-        <h3>${produto.nome}</h3>
+        <h3>${nome}</h3>
         ${renderizarPrecoCard(produto, 5)}
         ${renderizarPrecoCard(produto, 10)}
         <p class="estoque-card">${semEstoque ? "Produto esgotado" : `Estoque: ${produto.estoque}`}</p>
 
         <div class="acoes-card">
-          <button class="btn-comprar" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>${semEstoque ? "ESGOTADO" : "COMPRAR"}</button>
-          <button class="btn-ver-mais" data-produto="${produto.nome}" onclick="verMaisProduto(this.dataset.produto)">VER MAIS</button>
+          <button class="btn-comprar" data-produto="${nomeAtributo}" onclick="comprar(this.dataset.produto)" ${semEstoque ? "disabled" : ""}>${semEstoque ? "ESGOTADO" : "COMPRAR"}</button>
+          <button class="btn-ver-mais" data-produto="${nomeAtributo}" onclick="verMaisProduto(this.dataset.produto)">VER MAIS</button>
         </div>
       </div>
     `;
@@ -171,24 +175,31 @@ function renderizarPaginaCatalogo() {
   if (tabMasculino) tabMasculino.classList.toggle("ativo", categoria === "masculino");
   if (tabFeminino) tabFeminino.classList.toggle("ativo", categoria === "feminino");
 
-  catalogoPagina.innerHTML = produtosCategoria.map((produto, index) => `
-    <article class="catalogo-card ${produtoDisponivel(produto) ? "" : "produto-esgotado"}" style="--card-index: ${index};">
-      <div class="catalogo-card-imagem">
-        <img src="${obterImagemProduto(produto)}" alt="${produto.nome}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, '${produto.img}')">
-      </div>
-      ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
-      <h3>${produto.nome}</h3>
-      <div class="catalogo-precos">
-        <span>5ml: R$ ${obterPrecoProduto(produto, 5)}</span>
-        <span>10ml: R$ ${obterPrecoProduto(produto, 10)}</span>
-      </div>
-      <p class="estoque-card">${produtoDisponivel(produto) ? `Estoque: ${produto.estoque}` : "Produto esgotado"}</p>
-      <div class="catalogo-acoes">
-        <button class="btn-comprar" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${produtoDisponivel(produto) ? "" : "disabled"}>${produtoDisponivel(produto) ? "COMPRAR" : "ESGOTADO"}</button>
-        <button class="btn-ver-mais" data-produto="${produto.nome}" onclick="verMaisProduto(this.dataset.produto)">VER MAIS</button>
-      </div>
-    </article>
-  `).join("");
+  catalogoPagina.innerHTML = produtosCategoria.map((produto, index) => {
+    const nome = escaparHtmlLoja(produto.nome);
+    const nomeAtributo = escaparAtributoLoja(produto.nome);
+    const imagem = escaparAtributoLoja(obterImagemProduto(produto));
+    const fallback = escaparAtributoLoja(produto.img);
+
+    return `
+      <article class="catalogo-card ${produtoDisponivel(produto) ? "" : "produto-esgotado"}" style="--card-index: ${index};">
+        <div class="catalogo-card-imagem">
+          <img src="${imagem}" alt="${nomeAtributo}" data-fallback-image="${fallback}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, this.dataset.fallbackImage)">
+        </div>
+        ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
+        <h3>${nome}</h3>
+        <div class="catalogo-precos">
+          <span>5ml: R$ ${escaparHtmlLoja(obterPrecoProduto(produto, 5))}</span>
+          <span>10ml: R$ ${escaparHtmlLoja(obterPrecoProduto(produto, 10))}</span>
+        </div>
+        <p class="estoque-card">${produtoDisponivel(produto) ? `Estoque: ${produto.estoque}` : "Produto esgotado"}</p>
+        <div class="catalogo-acoes">
+          <button class="btn-comprar" data-produto="${nomeAtributo}" onclick="comprar(this.dataset.produto)" ${produtoDisponivel(produto) ? "" : "disabled"}>${produtoDisponivel(produto) ? "COMPRAR" : "ESGOTADO"}</button>
+          <button class="btn-ver-mais" data-produto="${nomeAtributo}" onclick="verMaisProduto(this.dataset.produto)">VER MAIS</button>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 // #INICIAR_CAROUSEL_DESTAQUES
@@ -201,20 +212,22 @@ function iniciarCarouselDestaques() {
     const controles = carouselPremium.querySelector(".carousel-anterior");
     destaques.forEach((produto, index) => {
       const imagem = obterImagemDestaqueProduto(produto) || produto.img;
+      const nome = escaparHtmlLoja(produto.nome);
+      const nomeAtributo = escaparAtributoLoja(produto.nome);
       const slide = document.createElement("div");
       slide.className = `carousel-slide ${index === 0 ? "ativo" : ""}`;
       slide.dataset.produto = produto.nome;
       slide.innerHTML = `
-        <img src="${imagem}" alt="${produto.nome}" loading="lazy">
+        <img src="${escaparAtributoLoja(imagem)}" alt="${nomeAtributo}" loading="lazy">
         <div class="carousel-conteudo">
-          <span class="selo-destaque">${produto.selo || (produto.promocao ? "Oferta" : "Destaque")}</span>
+          <span class="selo-destaque">${escaparHtmlLoja(produto.selo || (produto.promocao ? "Oferta" : "Destaque"))}</span>
           ${produto.promocao ? '<strong class="selo-desconto">PromoÃ§Ã£o</strong>' : ""}
-          <p class="carousel-kicker">${produto.chamada || (produto.categoria === "masculino" ? "Masculino selecionado" : "Feminino selecionado")}</p>
-          <h2>${produto.nome.toUpperCase()}</h2>
-          <p class="carousel-preco">R$ ${obterPrecoProduto(produto, 5)}</p>
+          <p class="carousel-kicker">${escaparHtmlLoja(produto.chamada || (produto.categoria === "masculino" ? "Masculino selecionado" : "Feminino selecionado"))}</p>
+          <h2>${nome.toUpperCase()}</h2>
+          <p class="carousel-preco">R$ ${escaparHtmlLoja(obterPrecoProduto(produto, 5))}</p>
           <div class="acoes-destaque">
-            <button class="btn-comprar" data-produto="${produto.nome}" onclick="comprar(this.dataset.produto)" ${produtoDisponivel(produto) ? "" : "disabled"}>${produtoDisponivel(produto) ? "COMPRAR" : "ESGOTADO"}</button>
-            <button class="btn-ver-mais" data-produto="${produto.nome}" onclick="verMaisProduto(this.dataset.produto)">VER MAIS</button>
+            <button class="btn-comprar" data-produto="${nomeAtributo}" onclick="comprar(this.dataset.produto)" ${produtoDisponivel(produto) ? "" : "disabled"}>${produtoDisponivel(produto) ? "COMPRAR" : "ESGOTADO"}</button>
+            <button class="btn-ver-mais" data-produto="${nomeAtributo}" onclick="verMaisProduto(this.dataset.produto)">VER MAIS</button>
           </div>
         </div>
       `;

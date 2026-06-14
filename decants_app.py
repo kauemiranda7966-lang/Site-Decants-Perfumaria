@@ -8,6 +8,7 @@ import re
 import secrets
 import sqlite3
 import time
+from decimal import Decimal, InvalidOperation
 from email import policy
 from email.parser import BytesParser
 from http import cookies
@@ -78,6 +79,12 @@ try:
     )
 except ValueError:
     FREE_SHIPPING_THRESHOLD = 300.0
+try:
+    WHATSAPP_RESERVATION_MINUTES = max(
+        5, int(os.environ.get("DECANTS_WHATSAPP_RESERVATION_MINUTES", "30"))
+    )
+except ValueError:
+    WHATSAPP_RESERVATION_MINUTES = 30
 WHATSAPP_CLOUD_TOKEN = os.environ.get("WHATSAPP_CLOUD_TOKEN", "")
 WHATSAPP_CLOUD_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_CLOUD_PHONE_NUMBER_ID", "")
 WHATSAPP_ADMIN_NUMBER = re.sub(r"\D+", "", os.environ.get("WHATSAPP_ADMIN_NUMBER", STORE_WHATSAPP_NUMBER))
@@ -351,10 +358,39 @@ def normalize_lead(payload):
 
 #PARSE_PRICE
 def parse_price(value):
-    clean = str(value or "0").strip().replace(".", "").replace(",", ".")
+    if isinstance(value, (int, float, Decimal)):
+        try:
+            return round(float(Decimal(str(value))), 2)
+        except (InvalidOperation, ValueError):
+            return 0.0
+
+    clean = re.sub(r"[^\d,.\-]", "", str(value or "").strip())
+    if not clean or clean in {"-", ".", ",", "-.", "-,"}:
+        return 0.0
+
+    comma = clean.rfind(",")
+    dot = clean.rfind(".")
+    if comma >= 0 and dot >= 0:
+        decimal_separator = "," if comma > dot else "."
+        thousands_separator = "." if decimal_separator == "," else ","
+        clean = clean.replace(thousands_separator, "").replace(decimal_separator, ".")
+    elif comma >= 0:
+        decimal_digits = len(clean) - comma - 1
+        clean = clean.replace(",", ".") if decimal_digits in {1, 2} else clean.replace(",", "")
+    elif dot >= 0:
+        decimal_digits = len(clean) - dot - 1
+        if clean.count(".") > 1:
+            if decimal_digits == 2:
+                parts = clean.split(".")
+                clean = "".join(parts[:-1]) + "." + parts[-1]
+            else:
+                clean = clean.replace(".", "")
+        elif decimal_digits not in {1, 2}:
+            clean = clean.replace(".", "")
+
     try:
-        return round(float(clean), 2)
-    except ValueError:
+        return round(float(Decimal(clean)), 2)
+    except (InvalidOperation, ValueError):
         return 0.0
 
 
@@ -583,8 +619,15 @@ def reserve_order_stock(conn, order_id):
 
 #RELEASE_ORDER_STOCK
 def release_order_stock(conn, order_id):
-    order = conn.execute("SELECT id, stock_reserved FROM orders WHERE id = ?", (order_id,)).fetchone()
-    if not order or not order["stock_reserved"]:
+    result = conn.execute(
+        """
+        UPDATE orders
+        SET stock_reserved = 0
+        WHERE id = ? AND stock_reserved = 1
+        """,
+        (order_id,),
+    )
+    if result.rowcount == 0:
         return False
 
     items = conn.execute(
@@ -597,8 +640,47 @@ def release_order_stock(conn, order_id):
             (item["quantity"], item["product_id"]),
         )
 
-    conn.execute("UPDATE orders SET stock_reserved = 0 WHERE id = ?", (order_id,))
     return True
+
+
+def release_expired_whatsapp_reservations(conn, max_age_minutes=None):
+    max_age = int(max_age_minutes or WHATSAPP_RESERVATION_MINUTES)
+    expired_orders = conn.execute(
+        """
+        SELECT id, status
+        FROM orders
+        WHERE payment_method = 'WhatsApp'
+          AND status = 'whatsapp_pending'
+          AND stock_reserved = 1
+          AND updated_at <= datetime('now', ?)
+        """,
+        (f"-{max_age} minutes",),
+    ).fetchall()
+
+    for order in expired_orders:
+        if not release_order_stock(conn, order["id"]):
+            continue
+        conn.execute(
+            """
+            UPDATE orders
+            SET status = 'expired', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (order["id"],),
+        )
+        conn.execute(
+            """
+            INSERT INTO order_history (order_id, old_status, new_status, note, admin_user)
+            VALUES (?, ?, 'expired', ?, '')
+            """,
+            (
+                order["id"],
+                order["status"],
+                f"Reserva via WhatsApp expirada apos {max_age} minutos.",
+            ),
+        )
+
+    return len(expired_orders)
 
 
 #APPLY_CHECKOUT_COUPON

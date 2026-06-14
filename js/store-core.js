@@ -51,6 +51,20 @@ function normalizarCaminhoImagem(caminho) {
   return String(caminho || "").trim().replace(/^\/+/, "");
 }
 
+function escaparHtmlLoja(valor) {
+  return String(valor ?? "").replace(/[&<>"']/g, caractere => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[caractere]);
+}
+
+function escaparAtributoLoja(valor) {
+  return escaparHtmlLoja(valor).replace(/`/g, "&#96;");
+}
+
 // #REPARAR_TEXTO_CATALOGO
 function repararTextoCatalogo(texto) {
   const valor = String(texto || "");
@@ -77,12 +91,14 @@ function renderizarPrecoCard(produto, volume) {
   const precoBase = volume === 10 ? produto.preco10 : produto.preco5;
   const precoFinal = obterPrecoProduto(produto, volume);
   const label = `${volume}ml`;
+  const precoBaseSeguro = escaparHtmlLoja(precoBase);
+  const precoFinalSeguro = escaparHtmlLoja(precoFinal);
 
   if (produto.promocao && precoFinal !== precoBase) {
-    return `<p class="preco-promocional"><span>${label} <s>R$ ${precoBase}</s></span><strong>R$ ${precoFinal}</strong></p>`;
+    return `<p class="preco-promocional"><span>${label} <s>R$ ${precoBaseSeguro}</s></span><strong>R$ ${precoFinalSeguro}</strong></p>`;
   }
 
-  return `<p>${label} R$ ${precoBase}</p>`;
+  return `<p>${label} R$ ${precoBaseSeguro}</p>`;
 }
 
 // #PRODUTO_DISPONIVEL
