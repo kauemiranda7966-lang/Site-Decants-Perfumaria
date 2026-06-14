@@ -25,51 +25,51 @@ const produtosPadrao = [
   { nome: "Libre Yves Saint", categoria: "feminino", img: "img/produtos/femininos/libre_yves_saint_laurent.png", preco5: "69,99", preco10: "129,99" },
   { nome: "Yara Rosa", categoria: "feminino", img: "img/produtos/femininos/yara_rosa.png", preco5: "54,99", preco10: "69,99" },
   { nome: "La Vie Est Belle", categoria: "feminino", img: "img/produtos/femininos/la_vie_est_belle.png", preco5: "54,99", preco10: "89,99" },
-  { nome: "212 VIP RosÃ©", categoria: "feminino", img: "img/produtos/femininos/212_vip_rose.png", preco5: "54,99", preco10: "89,99" },
+  { nome: "212 VIP Rosé", categoria: "feminino", img: "img/produtos/femininos/212_vip_rose.png", preco5: "54,99", preco10: "89,99" },
   { nome: "Lady Million", categoria: "feminino", img: "img/produtos/femininos/lady_million.png", preco5: "59,99", preco10: "109,99" },
   { nome: "Issey Miyake Fem", categoria: "feminino", img: "img/produtos/femininos/issey_miyake_fem.png", preco5: "54,99", preco10: "99,99" },
   { nome: "Afeef Lattafa", categoria: "feminino", img: "img/produtos/femininos/afeef_lattafa.png", preco5: "44,99", preco10: "69,99" },
   { nome: "Royal Amber Rouge", categoria: "feminino", img: "img/produtos/femininos/royal_amber_rougue.png", preco5: "59,99", preco10: "109,99" },
   { nome: "My Way", categoria: "feminino", img: "img/produtos/femininos/my_way.png", preco5: "59,99", preco10: "109,99" },
-  { nome: "IdÃ´le", categoria: "feminino", img: "img/produtos/femininos/Idole.png", preco5: "59,99", preco10: "109,99" }
+  { nome: "Idôle", categoria: "feminino", img: "img/produtos/femininos/Idole.png", preco5: "59,99", preco10: "109,99" }
 ];
 
 const produtosDestaquePadrao = ["Dior Sauvage", "La Vie Est Belle", "Versace Eros", "Yara Rosa"];
 
 const notasPorProduto = {
   "Dior Sauvage": "bergamota, pimenta, lavanda, ambroxan e madeiras",
-  "Dior Homme Sport": "limÃ£o, bergamota, gengibre, elemi e madeiras",
-  "Bleu de Chanel": "cÃ­tricos, hortelÃ£, gengibre, incenso, Ã¢mbar e sÃ¢ndalo",
-  "Allure Homme Sport": "laranja, notas marinhas, pimenta, almÃ­scar e fava tonka",
-  "Club de Nuit Intense": "limÃ£o, abacaxi, bergamota, rosa, bÃ©tula, almÃ­scar e Ã¢mbar",
-  "Asad Lattafa": "pimenta preta, tabaco, baunilha, Ã¢mbar, patchouli e madeiras",
-  "212 VIP Black": "absinto, lavanda, anis, baunilha e almÃ­scar",
-  "212 Men": "folhas verdes, especiarias, lavanda, sÃ¢ndalo e almÃ­scar",
-  "Encre Noire": "cipreste, vetiver, cashmere, almÃ­scar e madeira",
-  "Ferrari Black": "maÃ§Ã£, ameixa, bergamota, canela, baunilha e cedro",
-  "Le Male Elixir": "lavanda, hortelÃ£, baunilha, mel, tabaco e fava tonka",
-  "Le Male Le Parfum": "cardamomo, lavanda, Ã­ris, baunilha e madeiras",
-  "One Million": "toranja, canela, couro, Ã¢mbar, patchouli e especiarias",
-  "Phantom": "lavanda, limÃ£o, maÃ§Ã£, patchouli, baunilha e vetiver",
-  "Invictus Victory": "limÃ£o, pimenta rosa, lavanda, baunilha, fava tonka e Ã¢mbar",
+  "Dior Homme Sport": "limão, bergamota, gengibre, elemi e madeiras",
+  "Bleu de Chanel": "cítricos, hortelã, gengibre, incenso, âmbar e sândalo",
+  "Allure Homme Sport": "laranja, notas marinhas, pimenta, almíscar e fava tonka",
+  "Club de Nuit Intense": "limão, abacaxi, bergamota, rosa, bétula, almíscar e âmbar",
+  "Asad Lattafa": "pimenta preta, tabaco, baunilha, âmbar, patchouli e madeiras",
+  "212 VIP Black": "absinto, lavanda, anis, baunilha e almíscar",
+  "212 Men": "folhas verdes, especiarias, lavanda, sândalo e almíscar",
+  "Encre Noire": "cipreste, vetiver, cashmere, almíscar e madeira",
+  "Ferrari Black": "maçã, ameixa, bergamota, canela, baunilha e cedro",
+  "Le Male Elixir": "lavanda, hortelã, baunilha, mel, tabaco e fava tonka",
+  "Le Male Le Parfum": "cardamomo, lavanda, íris, baunilha e madeiras",
+  "One Million": "toranja, canela, couro, âmbar, patchouli e especiarias",
+  "Phantom": "lavanda, limão, maçã, patchouli, baunilha e vetiver",
+  "Invictus Victory": "limão, pimenta rosa, lavanda, baunilha, fava tonka e âmbar",
   "Invictus Victory Elixir": "lavanda, cardamomo, pimenta, incenso, baunilha e fava tonka",
-  "Silver Scent": "flor de laranjeira, limÃ£o, lavanda, cardamomo, fava tonka e Ã¢mbar",
-  "Versace Eros": "hortelÃ£, maÃ§Ã£ verde, limÃ£o, fava tonka, baunilha e cedro",
-  "L'eau d'Issey Miyake": "yuzu, bergamota, noz-moscada, lÃ­rio, tabaco e sÃ¢ndalo",
-  "Hugo Boss Night": "lavanda, bÃ©tula, violeta, cardamomo e madeiras",
-  "Scandal Masculino EDT": "sÃ¡lvia, mandarina, caramelo, fava tonka, vetiver e cedro",
-  "Good Girl": "amÃªndoa, cafÃ©, jasmim, tuberosa, cacau, fava tonka e baunilha",
-  "Scandal Feminino": "laranja sanguÃ­nea, mel, gardÃªnia, patchouli e caramelo",
-  "Libre Yves Saint": "lavanda, mandarina, flor de laranjeira, jasmim, baunilha e Ã¢mbar gris",
-  "Yara Rosa": "orquÃ­dea, frutas tropicais, baunilha, almÃ­scar e notas doces",
-  "La Vie Est Belle": "Ã­ris, pera, cassis, jasmim, flor de laranjeira, patchouli e pralinÃª",
-  "212 VIP RosÃ©": "champagne rosÃ©, pÃªssego, flor de pÃªssego, almÃ­scar e Ã¢mbar",
+  "Silver Scent": "flor de laranjeira, limão, lavanda, cardamomo, fava tonka e âmbar",
+  "Versace Eros": "hortelã, maçã verde, limão, fava tonka, baunilha e cedro",
+  "L'eau d'Issey Miyake": "yuzu, bergamota, noz-moscada, lírio, tabaco e sândalo",
+  "Hugo Boss Night": "lavanda, bétula, violeta, cardamomo e madeiras",
+  "Scandal Masculino EDT": "sálvia, mandarina, caramelo, fava tonka, vetiver e cedro",
+  "Good Girl": "amêndoa, café, jasmim, tuberosa, cacau, fava tonka e baunilha",
+  "Scandal Feminino": "laranja sanguínea, mel, gardênia, patchouli e caramelo",
+  "Libre Yves Saint": "lavanda, mandarina, flor de laranjeira, jasmim, baunilha e âmbar gris",
+  "Yara Rosa": "orquídea, frutas tropicais, baunilha, almíscar e notas doces",
+  "La Vie Est Belle": "íris, pera, cassis, jasmim, flor de laranjeira, patchouli e pralinê",
+  "212 VIP Rosé": "champagne rosé, pêssego, flor de pêssego, almíscar e âmbar",
   "Lady Million": "framboesa, neroli, flor de laranjeira, jasmim, mel e patchouli",
-  "Issey Miyake Fem": "lÃ³tus, frÃ©sia, rosa, lÃ­rio, peÃ´nia, madeiras e almÃ­scar",
-  "Afeef Lattafa": "bergamota, pimenta rosa, jasmim, tuberosa, baunilha e sÃ¢ndalo",
-  "Royal Amber Rouge": "aÃ§afrÃ£o, jasmim, Ã¢mbar, madeiras, resinas e almÃ­scar",
+  "Issey Miyake Fem": "lótus, frésia, rosa, lírio, peônia, madeiras e almíscar",
+  "Afeef Lattafa": "bergamota, pimenta rosa, jasmim, tuberosa, baunilha e sândalo",
+  "Royal Amber Rouge": "açafrão, jasmim, âmbar, madeiras, resinas e almíscar",
   "My Way": "bergamota, flor de laranjeira, tuberosa, jasmim, baunilha e cedro",
-  "IdÃ´le": "bergamota, pera, rosa, jasmim, almÃ­scar branco e baunilha"
+  "Idôle": "bergamota, pera, rosa, jasmim, almíscar branco e baunilha"
 };
 
 const marcasPorProduto = {
@@ -98,14 +98,14 @@ const marcasPorProduto = {
   "Scandal Feminino": "Jean Paul Gaultier",
   "Libre Yves Saint": "Yves Saint Laurent",
   "Yara Rosa": "Lattafa",
-  "La Vie Est Belle": "LancÃ´me",
-  "212 VIP RosÃ©": "Carolina Herrera",
+  "La Vie Est Belle": "Lancôme",
+  "212 VIP Rosé": "Carolina Herrera",
   "Lady Million": "Paco Rabanne",
   "Issey Miyake Fem": "Issey Miyake",
   "Afeef Lattafa": "Lattafa",
   "Royal Amber Rouge": "Lattafa",
   "My Way": "Giorgio Armani",
-  "IdÃ´le": "LancÃ´me"
+  "Idôle": "Lancôme"
 };
 
 const logosPorMarca = {
@@ -123,7 +123,7 @@ const logosPorMarca = {
   "Issey Miyake": "img/marcas/issey-miyake.png",
   "Hugo Boss": "img/marcas/hugo-boss.png",
   "Yves Saint Laurent": "img/marcas/yves-saint-laurent.png",
-  "LancÃ´me": "img/marcas/lancome.png",
+  "Lancôme": "img/marcas/lancome.png",
   "Giorgio Armani": "img/marcas/giorgio-armani.png",
   "Decant's": "img/marcas/decants.png"
 };
@@ -232,10 +232,10 @@ const imagensContainerPorProduto = {
     "img/container/masculinos/Encre_Noire/Encre_Noire4.png"
   ],
   "ferrari black": [
-    "img/container/masculinos/ferrari_black/ferrari_black1.png",
-    "img/container/masculinos/ferrari_black/ferrari_black2.png",
     "img/container/masculinos/ferrari_black/ferrari_black3.png",
-    "img/container/masculinos/ferrari_black/ferrari_black4.png"
+    "img/container/masculinos/ferrari_black/ferrari_black4.png",
+    "img/container/masculinos/ferrari_black/ferrari_black1.png",
+    "img/container/masculinos/ferrari_black/ferrari_black2.png"
   ],
   "good girl": [
     "img/container/femininos/Good_Girl/Good_Girl1.png",

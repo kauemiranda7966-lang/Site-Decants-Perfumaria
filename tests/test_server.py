@@ -231,11 +231,15 @@ class ServerTestCase(unittest.TestCase):
             "/js/store-init.js",
         ):
             with self.subTest(asset=asset):
-                self.assertEqual(self.request_status(asset), 200)
+                with request.urlopen(self.base_url + asset, timeout=5) as response:
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(response.headers.get("Cache-Control"), "no-cache")
 
         server.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         (server.UPLOAD_DIR / "produto.png").write_bytes(b"image")
-        self.assertEqual(self.request_status("/img/uploads/produto.png"), 200)
+        with request.urlopen(self.base_url + "/img/uploads/produto.png", timeout=5) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.headers.get("Cache-Control"), "no-cache")
 
     def test_shipping_threshold_is_inclusive(self):
         paid_query = parse.urlencode({"postalCode": "60000000", "productAmount": "299.99"})

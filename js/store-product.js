@@ -158,7 +158,7 @@ function renderizarGaleriaModal(produto, imagens) {
           <button class="modal-galeria-seta modal-galeria-anterior" type="button" aria-label="Imagem anterior" onclick="navegarImagemModal(-1)">
             <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
           </button>
-          <button class="modal-galeria-seta modal-galeria-proxima" type="button" aria-label="PrÃ³xima imagem" onclick="navegarImagemModal(1)">
+          <button class="modal-galeria-seta modal-galeria-proxima" type="button" aria-label="Próxima imagem" onclick="navegarImagemModal(1)">
             <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
           </button>
         ` : ""}
@@ -233,7 +233,7 @@ function comprarViaWhatsAppProduto(nomeProduto) {
   const precoUnitario = precoTextoParaNumero(obterPrecoProduto(produto, volumeAtivo));
   const total = precoUnitario * quantidade;
   const mensagem = [
-    "OlÃ¡! Quero comprar este perfume:",
+    "Olá! Quero comprar este perfume:",
     `${produto.nome} - ${volumeAtivo}ml`,
     `Quantidade: ${quantidade}`,
     `Total: ${formatarMoedaLoja(total)}`
@@ -273,7 +273,7 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
 
       <div class="modal-secao modal-secao-tamanhos">
         <h3>Escolha o tamanho</h3>
-        <div class="modal-opcoes-volume" role="radiogroup" aria-label="Tamanhos disponÃ­veis">
+        <div class="modal-opcoes-volume" role="radiogroup" aria-label="Tamanhos disponíveis">
           ${renderizarVolumeModal(5, preco5, true, semEstoque)}
           ${renderizarVolumeModal(10, preco10, false, semEstoque)}
         </div>
@@ -289,12 +289,12 @@ function renderizarInfoModal(produto, detalhes, acordes, marcaProduto, logoMarca
       <div class="modal-atributos-premium">
         <article>
           <i class="fa-regular fa-clock" aria-hidden="true"></i>
-          <span>FixaÃ§Ã£o</span>
+          <span>Fixação</span>
           <strong>${escaparHtmlLoja(detalhes.intensidade)}</strong>
         </article>
         <article>
           <i class="fa-regular fa-sun" aria-hidden="true"></i>
-          <span>OcasiÃ£o</span>
+          <span>Ocasião</span>
           <strong>${escaparHtmlLoja(detalhes.ocasiao.split(",")[0])}</strong>
         </article>
         <article>
@@ -455,9 +455,9 @@ function montarDetalhesProduto(produto) {
   const masculino = produto.categoria === "masculino";
   const nome = normalizarTexto(produto.nome);
 
-  let familia = masculino ? "Amadeirado aromÃ¡tico" : "Floral elegante";
-  let intensidade = "MÃ©dia";
-  let ocasiao = masculino ? "Dia a dia, encontros e ocasiÃµes especiais" : "Dia a dia, encontros e eventos";
+  let familia = masculino ? "Amadeirado aromático" : "Floral elegante";
+  let intensidade = "Média";
+  let ocasiao = masculino ? "Dia a dia, encontros e ocasiões especiais" : "Dia a dia, encontros e eventos";
 
   if (nome.includes("elixir") || nome.includes("victory") || nome.includes("million") || nome.includes("good girl") || nome.includes("scandal")) {
     intensidade = "Alta";
@@ -465,8 +465,8 @@ function montarDetalhesProduto(produto) {
   }
 
   if (nome.includes("sport") || nome.includes("issey") || nome.includes("my way")) {
-    familia = masculino ? "CÃ­trico aromÃ¡tico" : "Floral fresco";
-    intensidade = "MÃ©dia";
+    familia = masculino ? "Cítrico aromático" : "Floral fresco";
+    intensidade = "Média";
     ocasiao = "Dia, trabalho e clima quente";
   }
 
@@ -476,7 +476,7 @@ function montarDetalhesProduto(produto) {
 
   return {
     familia,
-    notas: notasPorProduto[produto.nome] || "notas cÃ­tricas, florais, amadeiradas e almiscaradas",
+    notas: notasPorProduto[produto.nome] || "notas cítricas, florais, amadeiradas e almiscaradas",
     intensidade,
     ocasiao
   };
@@ -486,18 +486,18 @@ function montarDetalhesProduto(produto) {
 function montarAcordesProduto(notas, familia) {
   const texto = normalizarTexto(`${notas} ${familia}`);
   const regras = [
-    { nome: "cÃ­trico", cor: "#f5ef3b", termos: ["bergamota", "limao", "laranja", "toranja", "mandarina", "yuzu", "citricos"] },
-    { nome: "aromÃ¡tico", cor: "#3a8c7e", termos: ["lavanda", "hortela", "anis", "absinto", "alecrim", "aromatico"] },
+    { nome: "cítrico", cor: "#f5ef3b", termos: ["bergamota", "limao", "laranja", "toranja", "mandarina", "yuzu", "citricos"] },
+    { nome: "aromático", cor: "#3a8c7e", termos: ["lavanda", "hortela", "anis", "absinto", "alecrim", "aromatico"] },
     { nome: "amadeirado", cor: "#7a4920", termos: ["madeira", "madeiras", "cedro", "sandal", "vetiver", "cashmere", "betula", "cipreste"] },
     { nome: "floral", cor: "#d783a8", termos: ["rosa", "jasmim", "tuberosa", "lirio", "peonia", "gardenia", "flor", "floral", "orquidea", "fresia", "lotus"] },
-    { nome: "Ã¢mbarado", cor: "#8e4519", termos: ["ambar", "amber", "resinas"] },
+    { nome: "âmbarado", cor: "#8e4519", termos: ["ambar", "amber", "resinas"] },
     { nome: "doce", cor: "#c27a45", termos: ["baunilha", "mel", "caramelo", "praline", "chocolate", "cacau", "doce"] },
     { nome: "especiado", cor: "#78a436", termos: ["pimenta", "cardamomo", "canela", "noz", "acafrao", "especiarias"] },
     { nome: "fresco", cor: "#6d9ea6", termos: ["marinhas", "fresco", "verde", "folhas", "champagne"] },
     { nome: "frutado", cor: "#d15265", termos: ["maca", "pera", "pessego", "framboesa", "ameixa", "abacaxi", "cassis", "frutas"] },
     { nome: "almiscarado", cor: "#9a9a90", termos: ["almiscar", "almiscarado"] },
     { nome: "couro", cor: "#5b351f", termos: ["couro", "tabaco", "cafe"] },
-    { nome: "balsÃ¢mico", cor: "#73583e", termos: ["incenso", "tonka", "fava tonka", "balsamico"] }
+    { nome: "balsâmico", cor: "#73583e", termos: ["incenso", "tonka", "fava tonka", "balsamico"] }
   ];
 
   const encontrados = regras
@@ -515,7 +515,7 @@ function montarAcordesProduto(notas, familia) {
     .slice(0, 6);
 
   const base = encontrados.length ? encontrados : [
-    { nome: "aromÃ¡tico", cor: "#3a8c7e", valor: 96 },
+    { nome: "aromático", cor: "#3a8c7e", valor: 96 },
     { nome: "amadeirado", cor: "#7a4920", valor: 82 },
     { nome: "fresco", cor: "#6d9ea6", valor: 70 },
     { nome: "almiscarado", cor: "#9a9a90", valor: 62 }
@@ -532,14 +532,14 @@ function extrairMarcaProduto(nomeProduto) {
   if (marcasPorProduto[nomeProduto]) return marcasPorProduto[nomeProduto];
 
   const nome = normalizarTexto(nomeProduto);
-  const marcas = ["Dior", "Chanel", "Lattafa", "Paco Rabanne", "Carolina Herrera", "Yves Saint Laurent", "LancÃ´me", "Issey Miyake", "Ferrari", "Versace", "Hugo Boss", "Jean Paul Gaultier", "Armaf", "Lalique", "Jacques Bogart", "Giorgio Armani"];
+  const marcas = ["Dior", "Chanel", "Lattafa", "Paco Rabanne", "Carolina Herrera", "Yves Saint Laurent", "Lancôme", "Issey Miyake", "Ferrari", "Versace", "Hugo Boss", "Jean Paul Gaultier", "Armaf", "Lalique", "Jacques Bogart", "Giorgio Armani"];
   const marca = marcas.find(item => nome.includes(normalizarTexto(item)));
 
   if (marca) return marca;
   if (nome.includes("one million") || nome.includes("phantom") || nome.includes("invictus")) return "Paco Rabanne";
   if (nome.includes("good girl")) return "Carolina Herrera";
   if (nome.includes("libre")) return "Yves Saint Laurent";
-  if (nome.includes("idole") || nome.includes("la vie est belle")) return "LancÃ´me";
+  if (nome.includes("idole") || nome.includes("la vie est belle")) return "Lancôme";
 
   return "Decant's";
 }

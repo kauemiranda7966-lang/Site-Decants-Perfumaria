@@ -53,6 +53,8 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #END_HEADERS
     def end_headers(self):
+        if self.is_public_static_request():
+            self.send_header("Cache-Control", "no-cache")
         self.add_cors_headers()
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")

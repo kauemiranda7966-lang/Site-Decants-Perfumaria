@@ -143,7 +143,7 @@ function renderProdutos(lista, container) {
       <div class="card ${semEstoque ? "produto-esgotado" : ""}" style="--card-index: ${index};">
         <span class="card-brilho" aria-hidden="true"></span>
         <img src="${imagem}" alt="${nomeAtributo}" data-fallback-image="${fallback}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, this.dataset.fallbackImage)">
-        ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
+        ${produto.promocao ? '<span class="tag-promocao">Promoção</span>' : ""}
         <h3>${nome}</h3>
         ${renderizarPrecoCard(produto, 5)}
         ${renderizarPrecoCard(produto, 10)}
@@ -186,7 +186,7 @@ function renderizarPaginaCatalogo() {
         <div class="catalogo-card-imagem">
           <img src="${imagem}" alt="${nomeAtributo}" data-fallback-image="${fallback}" loading="lazy" onerror="marcarImagemProdutoIndisponivel(this, this.dataset.fallbackImage)">
         </div>
-        ${produto.promocao ? '<span class="tag-promocao">PromoÃ§Ã£o</span>' : ""}
+        ${produto.promocao ? '<span class="tag-promocao">Promoção</span>' : ""}
         <h3>${nome}</h3>
         <div class="catalogo-precos">
           <span>5ml: R$ ${escaparHtmlLoja(obterPrecoProduto(produto, 5))}</span>
@@ -221,7 +221,7 @@ function iniciarCarouselDestaques() {
         <img src="${escaparAtributoLoja(imagem)}" alt="${nomeAtributo}" loading="lazy">
         <div class="carousel-conteudo">
           <span class="selo-destaque">${escaparHtmlLoja(produto.selo || (produto.promocao ? "Oferta" : "Destaque"))}</span>
-          ${produto.promocao ? '<strong class="selo-desconto">PromoÃ§Ã£o</strong>' : ""}
+          ${produto.promocao ? '<strong class="selo-desconto">Promoção</strong>' : ""}
           <p class="carousel-kicker">${escaparHtmlLoja(produto.chamada || (produto.categoria === "masculino" ? "Masculino selecionado" : "Feminino selecionado"))}</p>
           <h2>${nome.toUpperCase()}</h2>
           <p class="carousel-preco">R$ ${escaparHtmlLoja(obterPrecoProduto(produto, 5))}</p>
