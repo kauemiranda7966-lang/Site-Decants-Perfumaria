@@ -2,6 +2,7 @@ import decants_app as app
 from decants_app import *
 
 class DecantsHandler(http.server.SimpleHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
     PUBLIC_FILES = {
         "/index.html",
         "/produtos.html",
@@ -53,13 +54,45 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #END_HEADERS
     def end_headers(self):
-        if self.is_public_static_request():
-            self.send_header("Cache-Control", "no-cache")
+        path = parse.urlparse(self.path).path
+        suffix = Path(path).suffix.lower()
+        if path == "/" or path in self.PUBLIC_FILES or path.startswith(("/login", "/dashboard", "/produtos", "/pedidos", "/clientes", "/solicitacoes", "/logs")):
+            self.send_header("Cache-Control", "no-cache, must-revalidate")
+        elif path.startswith("/api/"):
+            self.send_header("Cache-Control", "no-store")
+        elif path.startswith("/img/uploads/"):
+            self.send_header("Cache-Control", "public, max-age=3600")
+        elif suffix in {".css", ".js"}:
+            self.send_header("Cache-Control", "public, max-age=604800")
+        elif suffix in {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"}:
+            self.send_header("Cache-Control", "public, max-age=2592000")
         self.add_cors_headers()
+        self.send_header("Content-Security-Policy", self.content_security_policy())
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Referrer-Policy", "same-origin")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         super().end_headers()
+
+    def content_security_policy(self):
+        directives = [
+            "default-src 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "script-src 'self'",
+            "script-src-attr 'unsafe-inline'",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+            "img-src 'self' data: blob:",
+            "connect-src 'self'",
+            "frame-src 'none'",
+            "manifest-src 'self'",
+        ]
+        if IS_PRODUCTION:
+            directives.append("upgrade-insecure-requests")
+        return "; ".join(directives)
 
     #ADD_CORS_HEADERS
     def add_cors_headers(self):
@@ -69,7 +102,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
         self.send_header("Access-Control-Allow-Origin", origin)
         self.send_header("Access-Control-Allow-Credentials", "true")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Vary", "Origin")
 
@@ -82,6 +115,33 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.is_admin_page_request():
             self.serve_admin_app()
+            return
+        admin_attachment_match = re.match(r"/api/admin/requests/(\d+)/attachments/(\d+)$", parse.urlparse(self.path).path)
+        if admin_attachment_match:
+            if not self.require_auth():
+                return
+            self.handle_request_attachment(
+                int(admin_attachment_match.group(1)),
+                int(admin_attachment_match.group(2)),
+                admin=True,
+            )
+            return
+        admin_reverse_match = re.match(r"/api/admin/requests/(\d+)/reverse-label\.pdf$", parse.urlparse(self.path).path)
+        if admin_reverse_match:
+            if not self.require_auth():
+                return
+            self.handle_reverse_label(int(admin_reverse_match.group(1)), admin=True)
+            return
+        admin_request_match = re.match(r"/api/admin/requests/(\d+)$", parse.urlparse(self.path).path)
+        if admin_request_match:
+            if not self.require_auth():
+                return
+            self.handle_admin_request_detail(int(admin_request_match.group(1)))
+            return
+        if self.path.startswith("/api/admin/requests"):
+            if not self.require_auth():
+                return
+            self.handle_admin_requests()
             return
         if self.path.startswith("/api/admin/dashboard"):
             if not self.require_auth():
@@ -126,6 +186,24 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith("/api/customer/orders"):
             self.handle_customer_orders()
             return
+        customer_attachment_match = re.match(r"/api/customer/requests/(\d+)/attachments/(\d+)$", parse.urlparse(self.path).path)
+        if customer_attachment_match:
+            self.handle_request_attachment(
+                int(customer_attachment_match.group(1)),
+                int(customer_attachment_match.group(2)),
+                admin=False,
+            )
+            return
+        customer_reverse_match = re.match(r"/api/customer/requests/(\d+)/reverse-label\.pdf$", parse.urlparse(self.path).path)
+        if customer_reverse_match:
+            self.handle_reverse_label(int(customer_reverse_match.group(1)), admin=False)
+            return
+        if self.path.startswith("/api/customer/requests"):
+            self.handle_customer_requests()
+            return
+        if self.path.startswith("/api/public/business"):
+            self.handle_public_business()
+            return
         if self.path.startswith("/api/orders/"):
             self.handle_get_order()
             return
@@ -162,6 +240,23 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 return
             self.handle_customer_logout()
             return
+        attachment_match = re.match(r"/api/customer/requests/(\d+)/attachments$", parse.urlparse(self.path).path)
+        if attachment_match:
+            if not self.require_csrf():
+                return
+            self.handle_customer_request_attachment(int(attachment_match.group(1)))
+            return
+        if self.path.startswith("/api/customer/requests"):
+            if not self.require_csrf():
+                return
+            self.handle_create_customer_request()
+            return
+        refund_match = re.match(r"/api/admin/requests/(\d+)/refund$", parse.urlparse(self.path).path)
+        if refund_match:
+            if not self.require_auth() or not self.require_csrf():
+                return
+            self.handle_admin_request_refund(int(refund_match.group(1)))
+            return
         if self.path.startswith("/api/checkout"):
             self.handle_checkout()
             return
@@ -194,6 +289,12 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
     #DO_PUT
     def do_PUT(self):
+        request_match = re.match(r"/api/admin/requests/(\d+)$", parse.urlparse(self.path).path)
+        if request_match:
+            if not self.require_auth() or not self.require_csrf():
+                return
+            self.handle_admin_update_request(int(request_match.group(1)))
+            return
         order_match = re.match(r"/api/admin/orders/(\d+)/status", self.path)
         if order_match:
             if not self.require_auth():
@@ -272,7 +373,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         if not self.is_admin_host():
             return False
         path = parse.urlparse(self.path).path
-        return path in {"/login", "/dashboard", "/produtos", "/pedidos", "/clientes", "/logs"}
+        return path in {"/login", "/dashboard", "/produtos", "/pedidos", "/clientes", "/solicitacoes", "/logs"}
 
     #SERVE_ADMIN_APP
     def serve_admin_app(self):
@@ -327,7 +428,8 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             rows = conn.execute(
                 """
                 SELECT id, reference, customer_name, customer_email, customer_phone,
-                       product_amount, shipping_amount, total, status, payment_method, created_at, updated_at
+                       product_amount, shipping_amount, total, status, payment_method,
+                       payment_risk_status, payment_risk_reason, created_at, updated_at
                 FROM orders ORDER BY created_at DESC
                 """
             ).fetchall()
@@ -469,6 +571,460 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             ],
         )
 
+    def handle_public_business(self):
+        self.send_json(
+            {
+                "tradeName": BUSINESS_TRADE_NAME,
+                "legalName": BUSINESS_LEGAL_NAME,
+                "taxId": BUSINESS_TAX_ID,
+                "address": BUSINESS_ADDRESS,
+                "email": BUSINESS_EMAIL,
+                "whatsapp": STORE_WHATSAPP_NUMBER,
+                "formalized": bool(BUSINESS_LEGAL_NAME and BUSINESS_TAX_ID and BUSINESS_ADDRESS),
+            }
+        )
+
+    def handle_create_customer_request(self):
+        payload = self.read_json()
+        request_type = str(payload.get("requestType", "")).strip().lower()
+        category = str(payload.get("category", "")).strip().lower()
+        reason = re.sub(r"\s+", " ", str(payload.get("reason", "")).strip())[:180]
+        details = str(payload.get("details", "")).strip()[:4000]
+        customer = self.get_customer_session()
+
+        if request_type not in {"privacy", "return"}:
+            self.send_json({"error": "Tipo de solicitacao invalido."}, status=400)
+            return
+        if len(details) < 10:
+            self.send_json({"error": "Descreva a solicitacao com pelo menos 10 caracteres."}, status=400)
+            return
+
+        order_id = None
+        customer_name = re.sub(r"\s+", " ", str(payload.get("name", "")).strip())[:120]
+        customer_email = str(payload.get("email", "")).strip().lower()
+        customer_phone = re.sub(r"\D+", "", str(payload.get("phone", "")))
+
+        with connect_db() as conn:
+            begin_immediate(conn)
+            if request_type == "return":
+                if not customer:
+                    self.send_json({"error": "Entre em Meus Pedidos para solicitar uma devolucao."}, status=401)
+                    return
+                if payload.get("acceptedPolicy") is not True:
+                    self.send_json({"error": "Leia e aceite as regras da solicitacao."}, status=400)
+                    return
+                reference = str(payload.get("orderReference", "")).strip().upper()
+                order = conn.execute(
+                    """
+                    SELECT id, customer_name, customer_email, customer_phone, status
+                    FROM orders
+                    WHERE reference = ? AND LOWER(customer_email) = ? AND customer_phone = ?
+                    """,
+                    (reference, customer["email"], customer["phone"]),
+                ).fetchone()
+                if not order:
+                    self.send_json({"error": "Pedido nao encontrado para esta conta."}, status=404)
+                    return
+                order_id = order["id"]
+                customer_name = order["customer_name"]
+                customer_email = order["customer_email"].lower()
+                customer_phone = order["customer_phone"]
+                allowed_categories = {
+                    "cancelamento_antes_separacao", "arrependimento", "produto_incorreto",
+                    "avaria", "vazamento", "defeito", "outro"
+                }
+                cancellable_statuses = {
+                    "creating_payment", "awaiting_payment", "pending", "approved",
+                    "paid", "to_separate", "whatsapp_pending",
+                }
+                if category == "cancelamento_antes_separacao" and order["status"] not in cancellable_statuses:
+                    self.send_json(
+                        {
+                            "error": (
+                                "O pedido ja entrou em separacao ou envio. "
+                                "Use a opcao adequada de troca ou devolucao."
+                            )
+                        },
+                        status=409,
+                    )
+                    return
+                duplicate = conn.execute(
+                    """
+                    SELECT protocol FROM service_requests
+                    WHERE order_id = ? AND request_type = 'return'
+                      AND status NOT IN ('rejected', 'refunded', 'completed')
+                    LIMIT 1
+                    """,
+                    (order_id,),
+                ).fetchone()
+                if duplicate:
+                    self.send_json(
+                        {"error": f"Ja existe uma solicitacao aberta: {duplicate['protocol']}."},
+                        status=409,
+                    )
+                    return
+            else:
+                if customer:
+                    customer_email = customer["email"]
+                    customer_phone = customer["phone"]
+                    order = conn.execute(
+                        """
+                        SELECT customer_name FROM orders
+                        WHERE LOWER(customer_email) = ? AND customer_phone = ?
+                        ORDER BY created_at DESC LIMIT 1
+                        """,
+                        (customer_email, customer_phone),
+                    ).fetchone()
+                    if order:
+                        customer_name = order["customer_name"]
+                allowed_categories = {
+                    "access", "correction", "deletion", "anonymization",
+                    "sharing", "marketing_opt_out", "other"
+                }
+
+            if category not in allowed_categories:
+                self.send_json({"error": "Categoria de solicitacao invalida."}, status=400)
+                return
+            if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", customer_email):
+                self.send_json({"error": "Informe um e-mail valido."}, status=400)
+                return
+            if not customer_name:
+                customer_name = "Titular de dados"
+
+            protocol = ("LGPD" if request_type == "privacy" else "DEV") + secrets.token_hex(5).upper()
+            cursor = conn.execute(
+                """
+                INSERT INTO service_requests (
+                    protocol, request_type, order_id, customer_name, customer_email,
+                    customer_phone, category, reason, details
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    protocol, request_type, order_id, customer_name, customer_email,
+                    customer_phone, category, reason, details,
+                ),
+            )
+            request_id = cursor.lastrowid
+
+        self.send_json(
+            {
+                "ok": True,
+                "id": request_id,
+                "protocol": protocol,
+                "message": "Solicitacao registrada. Guarde o protocolo.",
+            },
+            status=201,
+        )
+
+    def handle_customer_requests(self):
+        customer = self.get_customer_session()
+        if not customer:
+            self.send_json({"error": "Entre para consultar suas solicitacoes."}, status=401)
+            return
+        with connect_db() as conn:
+            rows = conn.execute(
+                """
+                SELECT r.*, o.reference AS order_reference
+                FROM service_requests r
+                LEFT JOIN orders o ON o.id = r.order_id
+                WHERE LOWER(r.customer_email) = ? AND r.customer_phone = ?
+                ORDER BY r.created_at DESC
+                """,
+                (customer["email"], customer["phone"]),
+            ).fetchall()
+            payload = [self.serialize_service_request(conn, row) for row in rows]
+        self.send_json({"requests": payload})
+
+    def handle_customer_request_attachment(self, request_id):
+        customer = self.get_customer_session()
+        if not customer:
+            self.send_json({"error": "Entre para anexar imagens."}, status=401)
+            return
+        with connect_db() as conn:
+            service_request = conn.execute(
+                """
+                SELECT id FROM service_requests
+                WHERE id = ? AND LOWER(customer_email) = ? AND customer_phone = ?
+                """,
+                (request_id, customer["email"], customer["phone"]),
+            ).fetchone()
+        if not service_request:
+            self.send_json({"error": "Solicitacao nao encontrada."}, status=404)
+            return
+        try:
+            original_name, content, mime = self.read_private_image()
+        except ValueError as exc:
+            self.send_json({"error": str(exc)}, status=400)
+            return
+        stored_name = safe_upload_name(original_name)
+        PRIVATE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        (PRIVATE_UPLOAD_DIR / stored_name).write_bytes(content)
+        with connect_db() as conn:
+            conn.execute(
+                """
+                INSERT INTO request_attachments
+                    (request_id, stored_name, original_name, mime_type, size)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (request_id, stored_name, original_name[:180], mime, len(content)),
+            )
+            attachment_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        self.send_json({"ok": True, "attachmentId": attachment_id}, status=201)
+
+    def handle_admin_requests(self):
+        with connect_db() as conn:
+            rows = conn.execute(
+                """
+                SELECT r.*, o.reference AS order_reference, o.payment_id, o.payment_method
+                FROM service_requests r
+                LEFT JOIN orders o ON o.id = r.order_id
+                ORDER BY CASE r.status WHEN 'pending' THEN 0 WHEN 'in_review' THEN 1 ELSE 2 END,
+                         r.created_at DESC
+                """
+            ).fetchall()
+            payload = [self.serialize_service_request(conn, row) for row in rows]
+        self.send_json(payload)
+
+    def handle_admin_request_detail(self, request_id):
+        with connect_db() as conn:
+            row = conn.execute(
+                """
+                SELECT r.*, o.reference AS order_reference, o.payment_id, o.payment_method
+                FROM service_requests r
+                LEFT JOIN orders o ON o.id = r.order_id
+                WHERE r.id = ?
+                """,
+                (request_id,),
+            ).fetchone()
+            if not row:
+                self.send_error(404)
+                return
+            payload = self.serialize_service_request(conn, row)
+        self.send_json(payload)
+
+    def handle_admin_update_request(self, request_id):
+        payload = self.read_json()
+        status = str(payload.get("status", "")).strip()
+        resolution = str(payload.get("resolution", "")).strip()[:4000]
+        allowed = {
+            "pending", "in_review", "awaiting_customer", "awaiting_return",
+            "approved", "rejected", "refunded", "completed",
+        }
+        if status not in allowed:
+            self.send_json({"error": "Status invalido."}, status=400)
+            return
+        with connect_db() as conn:
+            begin_immediate(conn)
+            row = conn.execute(
+                "SELECT id, request_type, category, reverse_code FROM service_requests WHERE id = ?",
+                (request_id,),
+            ).fetchone()
+            if not row:
+                self.send_error(404)
+                return
+            reverse_code = row["reverse_code"]
+            if (
+                row["request_type"] == "return"
+                and row["category"] != "cancelamento_antes_separacao"
+                and status == "awaiting_return"
+                and not reverse_code
+            ):
+                reverse_code = "REV" + secrets.token_hex(5).upper()
+            resolved_at = (
+                "CURRENT_TIMESTAMP"
+                if status in {"rejected", "refunded", "completed"}
+                else "''"
+            )
+            conn.execute(
+                f"""
+                UPDATE service_requests
+                SET status = ?, resolution = ?, reverse_code = ?,
+                    resolved_at = {resolved_at}, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (status, resolution, reverse_code, request_id),
+            )
+        self.log_admin_action("service_request_update", "service_requests", request_id, status)
+        self.send_json({"ok": True, "reverseCode": reverse_code})
+
+    def handle_admin_request_refund(self, request_id):
+        with connect_db() as conn:
+            row = conn.execute(
+                """
+                SELECT r.*, o.payment_id, o.status AS order_status, o.id AS linked_order_id
+                FROM service_requests r
+                JOIN orders o ON o.id = r.order_id
+                WHERE r.id = ? AND r.request_type = 'return'
+                """,
+                (request_id,),
+            ).fetchone()
+            if not row:
+                self.send_json({"error": "Solicitacao de devolucao nao encontrada."}, status=404)
+                return
+            if row["refund_id"]:
+                self.send_json(
+                    {"ok": True, "refundId": row["refund_id"], "status": row["refund_status"]}
+                )
+                return
+            cancellable_statuses = {
+                "creating_payment", "awaiting_payment", "pending", "approved",
+                "paid", "to_separate", "whatsapp_pending",
+            }
+            if (
+                row["category"] == "cancelamento_antes_separacao"
+                and row["order_status"] not in cancellable_statuses
+            ):
+                self.send_json(
+                    {
+                        "error": (
+                            "O pedido avancou para separacao ou envio. "
+                            "Converta o atendimento para o fluxo de devolucao antes de reembolsar."
+                        )
+                    },
+                    status=409,
+                )
+                return
+            payment_id = row["payment_id"]
+            protocol = row["protocol"]
+            if not payment_id:
+                self.send_json(
+                    {
+                        "error": (
+                            "Este pedido nao possui pagamento identificado no Mercado Pago. "
+                            "O reembolso deve ser feito pelo meio de pagamento original."
+                        )
+                    },
+                    status=409,
+                )
+                return
+
+        refund = refund_mercado_pago_payment(payment_id, f"refund-{protocol.lower()}")
+        refund_id = str(refund.get("id") or "")
+        refund_status = str(refund.get("status") or "approved")
+        with connect_db() as conn:
+            begin_immediate(conn)
+            release_order_stock(conn, row["linked_order_id"])
+            conn.execute(
+                """
+                UPDATE service_requests
+                SET status = 'refunded', refund_id = ?, refund_status = ?,
+                    resolution = CASE WHEN resolution = '' THEN 'Reembolso processado pelo Mercado Pago.' ELSE resolution END,
+                    resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (refund_id, refund_status, request_id),
+            )
+            conn.execute(
+                "UPDATE orders SET status = 'refunded', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (row["linked_order_id"],),
+            )
+            conn.execute(
+                """
+                INSERT INTO order_history (order_id, old_status, new_status, note, admin_user)
+                VALUES (?, ?, 'refunded', ?, ?)
+                """,
+                (
+                    row["linked_order_id"],
+                    row["order_status"],
+                    f"Reembolso automatico. Protocolo {protocol}.",
+                    ADMIN_USER,
+                ),
+            )
+        self.log_admin_action("mercado_pago_refund", "service_requests", request_id, refund_id)
+        self.send_json({"ok": True, "refundId": refund_id, "status": refund_status})
+
+    def handle_reverse_label(self, request_id, admin=False):
+        customer = None if admin else self.get_customer_session()
+        if not admin and not customer:
+            self.send_json({"error": "Entre para acessar a etiqueta."}, status=401)
+            return
+        with connect_db() as conn:
+            where = "r.id = ?"
+            params = [request_id]
+            if customer:
+                where += " AND LOWER(r.customer_email) = ? AND r.customer_phone = ?"
+                params.extend([customer["email"], customer["phone"]])
+            row = conn.execute(
+                f"""
+                SELECT r.*, o.*
+                FROM service_requests r
+                JOIN orders o ON o.id = r.order_id
+                WHERE {where}
+                """,
+                params,
+            ).fetchone()
+        if not row or not row["reverse_code"]:
+            self.send_json({"error": "Etiqueta reversa ainda nao disponivel."}, status=404)
+            return
+        pdf = build_reverse_label_pdf(row, row)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/pdf")
+        self.send_header("Content-Length", str(len(pdf)))
+        self.send_header("Content-Disposition", f'attachment; filename="devolucao-{row["protocol"]}.pdf"')
+        self.end_headers()
+        self.wfile.write(pdf)
+
+    def handle_request_attachment(self, request_id, attachment_id, admin=False):
+        customer = None if admin else self.get_customer_session()
+        if not admin and not customer:
+            self.send_json({"error": "Entre para acessar o anexo."}, status=401)
+            return
+        with connect_db() as conn:
+            where = "a.id = ? AND a.request_id = ?"
+            params = [attachment_id, request_id]
+            if customer:
+                where += " AND LOWER(r.customer_email) = ? AND r.customer_phone = ?"
+                params.extend([customer["email"], customer["phone"]])
+            attachment = conn.execute(
+                f"""
+                SELECT a.* FROM request_attachments a
+                JOIN service_requests r ON r.id = a.request_id
+                WHERE {where}
+                """,
+                params,
+            ).fetchone()
+        if not attachment:
+            self.send_error(404)
+            return
+        path = PRIVATE_UPLOAD_DIR / attachment["stored_name"]
+        if not path.exists():
+            self.send_error(404)
+            return
+        content = path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", attachment["mime_type"])
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Content-Disposition", f'inline; filename="{safe_upload_name(attachment["original_name"])}"')
+        self.end_headers()
+        self.wfile.write(content)
+
+    def serialize_service_request(self, conn, row):
+        data = dict(row)
+        attachments = conn.execute(
+            """
+            SELECT id, original_name, mime_type, size, created_at
+            FROM request_attachments WHERE request_id = ? ORDER BY id
+            """,
+            (row["id"],),
+        ).fetchall()
+        data["attachments"] = [dict(item) for item in attachments]
+        return data
+
+    def read_private_image(self):
+        content_type = self.headers.get("Content-Type", "")
+        size = int(self.headers.get("Content-Length", 0))
+        if not content_type.startswith("multipart/form-data") or size <= 0:
+            raise ValueError("Envie uma imagem em multipart/form-data.")
+        if size > 6 * 1024 * 1024:
+            raise ValueError("Imagem maior que 5MB.")
+        original_name, content = parse_multipart_image(self.headers, self.rfile.read(size))
+        if len(content) > 5 * 1024 * 1024:
+            raise ValueError("Imagem maior que 5MB.")
+        mime = mimetypes.guess_type(original_name)[0] or ""
+        if mime not in {"image/jpeg", "image/png", "image/webp"}:
+            raise ValueError("Use imagens JPG, PNG ou WebP.")
+        return original_name, content, mime
+
     #HANDLE_SHIPPING_QUOTE
     def handle_shipping_quote(self):
         query = parse.parse_qs(parse.urlparse(self.path).query)
@@ -515,9 +1071,17 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                 "SELECT old_status, new_status, note, admin_user, created_at FROM order_history WHERE order_id = ? ORDER BY created_at DESC",
                 (order_id,),
             ).fetchall()
+            payment_alerts = conn.execute(
+                """
+                SELECT event_type, event_id, payment_id, status, details, created_at
+                FROM payment_alerts WHERE order_id = ? ORDER BY created_at DESC
+                """,
+                (order_id,),
+            ).fetchall()
         payload = dict(order)
         payload["items"] = [dict(item) for item in items]
         payload["history"] = [dict(item) for item in history]
+        payload["paymentAlerts"] = [dict(item) for item in payment_alerts]
         self.send_json(payload)
 
     #HANDLE_ADMIN_SHIPPING_LABEL
@@ -527,19 +1091,32 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             if not order:
                 self.send_error(404)
                 return
+            if order["payment_risk_status"]:
+                self.send_json(
+                    {"error": "Etiqueta bloqueada enquanto houver alerta financeiro ativo."},
+                    status=409,
+                )
+                return
             items = conn.execute(
-                "SELECT quantity FROM order_items WHERE order_id = ? ORDER BY id",
+                """
+                SELECT product_name, volume, quantity, unit_price, subtotal
+                FROM order_items WHERE order_id = ? ORDER BY id
+                """,
                 (order_id,),
             ).fetchall()
 
-        pdf = build_shipping_label_pdf(order, items)
+        try:
+            pdf = build_shipping_label_pdf(order, items)
+        except ValueError as exc:
+            self.send_json({"error": str(exc)}, status=409)
+            return
         disposition = "inline" if "print=1" in self.path else "attachment"
         self.send_response(200)
         self.send_header("Content-Type", "application/pdf")
         self.send_header("Content-Length", str(len(pdf)))
         self.send_header(
             "Content-Disposition",
-            f'{disposition}; filename="etiqueta-{order["reference"]}.pdf"',
+            f'{disposition}; filename="expedicao-{order["reference"]}.pdf"',
         )
         self.end_headers()
         self.wfile.write(pdf)
@@ -552,7 +1129,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         allowed = {
             "creating_payment", "whatsapp_pending", "awaiting_payment", "pending", "approved",
             "to_separate", "separated", "preparing", "shipped", "delivered",
-            "cancelled", "refunded", "charged_back", "rejected", "expired",
+            "risk_review", "cancelled", "refunded", "charged_back", "rejected", "expired",
         }
         if new_status not in allowed:
             self.send_json({"error": "Status invalido."}, status=400)
@@ -560,11 +1137,75 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
         try:
             with connect_db() as conn:
-                order = conn.execute("SELECT id, status FROM orders WHERE id = ?", (order_id,)).fetchone()
+                begin_immediate(conn)
+                order = conn.execute(
+                    """
+                    SELECT id, status, payment_method, payment_id, payment_risk_status
+                    FROM orders WHERE id = ?
+                    """,
+                    (order_id,),
+                ).fetchone()
                 if not order:
                     self.send_error(404)
                     return
                 old_status = order["status"]
+                is_mercado_pago = order["payment_method"] != "WhatsApp"
+                risk_release = bool(
+                    order["payment_risk_status"]
+                    and new_status not in {"cancelled", "refunded", "charged_back", "risk_review"}
+                    and order["payment_id"]
+                )
+                if order["payment_risk_status"] and new_status not in {
+                    "cancelled", "refunded", "charged_back", "risk_review"
+                }:
+                    if len(note) < 10:
+                        self.send_json(
+                            {
+                                "error": (
+                                    "Pedido bloqueado por risco financeiro. "
+                                    "Registre uma observacao de pelo menos 10 caracteres para liberar."
+                                )
+                            },
+                            status=409,
+                        )
+                        return
+                if (
+                    is_mercado_pago
+                    and old_status not in PAID_ORDER_STATUSES
+                    and new_status in PAID_ORDER_STATUSES
+                    and not risk_release
+                ):
+                    self.send_json(
+                        {
+                            "error": (
+                                "Pagamentos do Mercado Pago so podem ser confirmados "
+                                "pelo webhook oficial."
+                            )
+                        },
+                        status=409,
+                    )
+                    return
+                if is_mercado_pago and new_status == "refunded":
+                    self.send_json(
+                        {
+                            "error": (
+                                "Reembolsos do Mercado Pago devem ser processados "
+                                "pela solicitacao de devolucao."
+                            )
+                        },
+                        status=409,
+                    )
+                    return
+                if risk_release:
+                    conn.execute(
+                        """
+                        UPDATE orders
+                        SET payment_risk_status = '', payment_risk_reason = '',
+                            payment_risk_event_id = ''
+                        WHERE id = ?
+                        """,
+                        (order_id,),
+                    )
                 if new_status in {"cancelled", "refunded", "charged_back", "rejected", "expired"}:
                     release_order_stock(conn, order_id)
                 elif (
@@ -733,6 +1374,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             base_url = get_public_base_url(self)
 
             with connect_db() as conn:
+                begin_immediate(conn)
                 release_expired_whatsapp_reservations(conn)
                 order_items = build_order_items(conn, checkout["items"])
                 discount = apply_checkout_coupon(order_items, checkout["coupon"])
@@ -750,9 +1392,10 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                     """
                     INSERT INTO orders (
                         reference, customer_name, customer_email, customer_phone, customer_address,
-                        customer_postal_code, product_amount, shipping_amount, total, status,
+                        customer_postal_code, customer_document,
+                        product_amount, shipping_amount, total, status,
                         payment_method, payment_preference_id, payment_url, whatsapp_url
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         reference,
@@ -761,6 +1404,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                         customer["phone"],
                         customer["address"],
                         customer["postal_code"],
+                        customer["document"],
                         product_amount,
                         shipping_amount,
                         total,
@@ -800,6 +1444,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                     payment_preference_id = preference["id"]
                 except Exception:
                     with connect_db() as conn:
+                        begin_immediate(conn)
                         release_order_stock(conn, order_id)
                         conn.execute(
                             """
@@ -813,6 +1458,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
 
             whatsapp_url = build_whatsapp_url(reference, customer, order_items, total, payment_url)
             with connect_db() as conn:
+                begin_immediate(conn)
                 conn.execute(
                     """
                     UPDATE orders
@@ -906,10 +1552,112 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         try:
             payload = self.read_json()
             query = parse.parse_qs(parse.urlparse(self.path).query)
-            payment_id = extract_mercado_pago_payment_id(payload, query)
-            if not verify_mercado_pago_webhook_signature(self.headers, payment_id, query):
+            event_id = extract_mercado_pago_payment_id(payload, query)
+            event_type = str(
+                payload.get("type")
+                or payload.get("topic")
+                or query.get("type", [""])[0]
+                or query.get("topic", [""])[0]
+                or "payment"
+            ).strip()
+            event_type = {
+                "stop_delivery_op": "stop_delivery_op_wh",
+                "claim": "topic_claims_integration_wh",
+                "claims": "topic_claims_integration_wh",
+                "chargeback": "topic_chargebacks_wh",
+                "chargebacks": "topic_chargebacks_wh",
+            }.get(event_type, event_type)
+            if not verify_mercado_pago_webhook_signature(self.headers, event_id, query):
                 self.send_json({"ok": False, "error": "Assinatura invalida."}, status=401)
                 return
+
+            risk_events = {
+                "stop_delivery_op_wh": ("fraud_alert", "Alerta antifraude: interromper entrega."),
+                "topic_claims_integration_wh": ("claim_open", "Reclamacao ou disputa aberta."),
+                "topic_chargebacks_wh": ("chargeback", "Chargeback ou contestacao financeira."),
+            }
+            if event_type in risk_events:
+                risk_status, reason = risk_events[event_type]
+                payment_id = payment_id_from_alert(event_type, event_id)
+                order = None
+                if payment_id:
+                    payment = fetch_mercado_pago_payment(payment_id)
+                    reference = str(payment.get("external_reference") or "").strip()
+                    with connect_db() as conn:
+                        order = conn.execute(
+                            "SELECT id, reference, status FROM orders WHERE payment_id = ? OR reference = ?",
+                            (payment_id, reference),
+                        ).fetchone()
+                with connect_db() as conn:
+                    begin_immediate(conn)
+                    order_id = order["id"] if order else None
+                    existing_alert = conn.execute(
+                        """
+                        SELECT id FROM payment_alerts
+                        WHERE event_type = ? AND event_id = ?
+                        """,
+                        (event_type, event_id),
+                    ).fetchone()
+                    conn.execute(
+                        """
+                        INSERT INTO payment_alerts (
+                            event_type, event_id, payment_id, order_id, status, details, payload
+                        ) VALUES (?, ?, ?, ?, 'received', ?, ?)
+                        ON CONFLICT(event_type, event_id) DO UPDATE SET
+                            payment_id = excluded.payment_id,
+                            order_id = COALESCE(excluded.order_id, payment_alerts.order_id),
+                            details = excluded.details,
+                            payload = excluded.payload,
+                            updated_at = CURRENT_TIMESTAMP
+                        """,
+                        (
+                            event_type,
+                            event_id,
+                            payment_id,
+                            order_id,
+                            reason,
+                            json.dumps(payload, ensure_ascii=True)[:8000],
+                        ),
+                    )
+                    if order and not existing_alert:
+                        next_status = "charged_back" if risk_status == "chargeback" else "risk_review"
+                        conn.execute(
+                            """
+                            UPDATE orders
+                            SET status = ?, payment_risk_status = ?,
+                                payment_risk_reason = ?, payment_risk_event_id = ?,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = ?
+                            """,
+                            (next_status, risk_status, reason, event_id, order["id"]),
+                        )
+                        conn.execute(
+                            """
+                            INSERT INTO order_history (
+                                order_id, old_status, new_status, note, admin_user
+                            ) VALUES (?, ?, ?, ?, 'Mercado Pago')
+                            """,
+                            (order["id"], order["status"], next_status, reason),
+                        )
+                    if not existing_alert:
+                        conn.execute(
+                            """
+                            INSERT INTO admin_logs (
+                                admin_user, action, entity, entity_id, ip, details
+                            ) VALUES ('Mercado Pago', 'payment_risk_alert', 'orders', ?, ?, ?)
+                            """,
+                            (
+                                str(order_id or ""),
+                                self.client_address[0],
+                                f"{event_type}: {event_id} - {reason}",
+                            ),
+                        )
+                if order and not existing_alert:
+                    send_admin_payment_risk_notification(order["reference"], reason, event_id)
+                self.send_json({"ok": True, "blocked": bool(order)})
+                return
+
+            payment_id = event_id
 
             payment = fetch_mercado_pago_payment(payment_id)
             reference = str(payment.get("external_reference") or "").strip()
@@ -918,10 +1666,11 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
             if reference:
                 notify_admin = None
                 with connect_db() as conn:
+                    begin_immediate(conn)
                     current_order = conn.execute(
                         """
                         SELECT id, reference, status, customer_name, customer_email, total, stock_reserved,
-                               admin_whatsapp_sent_at
+                               admin_whatsapp_sent_at, payment_risk_status
                         FROM orders WHERE reference = ?
                         """,
                         (reference,),
@@ -931,9 +1680,23 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                         return
 
                     validate_payment_for_order(payment, current_order)
-                    next_status = "to_separate" if status == "approved" else status
+                    duplicate_payment = conn.execute(
+                        """
+                        SELECT reference FROM orders
+                        WHERE payment_id = ? AND payment_id <> '' AND reference <> ?
+                        LIMIT 1
+                        """,
+                        (payment_id, reference),
+                    ).fetchone()
+                    if duplicate_payment:
+                        raise ValueError("Pagamento ja vinculado a outro pedido.")
+                    next_status = (
+                        current_order["status"]
+                        if current_order["payment_risk_status"]
+                        else ("to_separate" if status == "approved" else status)
+                    )
 
-                    if status == "approved":
+                    if status == "approved" and not current_order["payment_risk_status"]:
                         if not current_order["stock_reserved"] and current_order["status"] not in PAID_ORDER_STATUSES:
                             reserve_order_stock(conn, current_order["id"])
                         if not current_order["admin_whatsapp_sent_at"]:
@@ -942,7 +1705,7 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
                                 "customer_name": current_order["customer_name"],
                                 "total": current_order["total"],
                             }
-                    elif status in FAILED_PAYMENT_STATUSES:
+                    elif status in FAILED_PAYMENT_STATUSES and not current_order["payment_risk_status"]:
                         release_order_stock(conn, current_order["id"])
 
                     conn.execute(
@@ -993,28 +1756,42 @@ class DecantsHandler(http.server.SimpleHTTPRequestHandler):
         clear_login_attempts(ip)
         signed_session = create_admin_session(connect_db, SECRET_KEY, SESSION_MAX_AGE)
         csrf = self.get_cookie(CSRF_COOKIE) or create_csrf_token()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header(
-            "Set-Cookie",
-            f"{SESSION_COOKIE}={signed_session}; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}",
-        )
-        self.send_header("Set-Cookie", f"{CSRF_COOKIE}={csrf}; {self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}")
-        self.end_headers()
         self.log_admin_action("login_success", "auth", "", ADMIN_USER)
-        self.wfile.write(json.dumps({"ok": True, "user": ADMIN_USER, "csrfToken": csrf}).encode("utf-8"))
+        self.send_json(
+            {"ok": True, "user": ADMIN_USER, "csrfToken": csrf},
+            headers=[
+                (
+                    "Set-Cookie",
+                    f"{SESSION_COOKIE}={signed_session}; HttpOnly; "
+                    f"{self.cookie_same_site()}; Path=/; Max-Age={SESSION_MAX_AGE}",
+                ),
+                (
+                    "Set-Cookie",
+                    f"{CSRF_COOKIE}={csrf}; {self.cookie_same_site()}; "
+                    f"Path=/; Max-Age={SESSION_MAX_AGE}",
+                ),
+            ],
+        )
 
     #HANDLE_LOGOUT
     def handle_logout(self):
         session = self.get_cookie(SESSION_COOKIE)
         revoke_admin_session(connect_db, session, SECRET_KEY)
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Set-Cookie", f"{SESSION_COOKIE}=; HttpOnly; {self.cookie_same_site()}; Path=/; Max-Age=0")
-        self.send_header("Set-Cookie", f"{CSRF_COOKIE}=; {self.cookie_same_site()}; Path=/; Max-Age=0")
-        self.end_headers()
         self.log_admin_action("logout", "auth", "", ADMIN_USER)
-        self.wfile.write(json.dumps({"ok": True}).encode("utf-8"))
+        self.send_json(
+            {"ok": True},
+            headers=[
+                (
+                    "Set-Cookie",
+                    f"{SESSION_COOKIE}=; HttpOnly; {self.cookie_same_site()}; "
+                    "Path=/; Max-Age=0",
+                ),
+                (
+                    "Set-Cookie",
+                    f"{CSRF_COOKIE}=; {self.cookie_same_site()}; Path=/; Max-Age=0",
+                ),
+            ],
+        )
 
     #COOKIE_SAME_SITE
     def cookie_same_site(self):

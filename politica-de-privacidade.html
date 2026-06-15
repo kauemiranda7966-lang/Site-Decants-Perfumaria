@@ -7,7 +7,7 @@
   <title>Política de Privacidade | Decant's Perfumaria</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=37">
-  <link rel="stylesheet" href="css/legal.css?v=1">
+  <link rel="stylesheet" href="css/legal.css?v=2">
 </head>
 <body class="pagina-legal">
   <header class="legal-topo">
@@ -24,7 +24,7 @@
     <section>
       <h2>2. Dados coletados</h2>
       <ul>
-        <li>Nome, e-mail, WhatsApp, CEP e endereço informados no pedido.</li>
+        <li>Nome, e-mail, WhatsApp, CPF/CNPJ, CEP e endereço informados no pedido.</li>
         <li>Produtos, valores, forma de pagamento e histórico do pedido.</li>
         <li>Dados de cadastro no Clube de Ofertas, quando fornecidos voluntariamente.</li>
         <li>Dados técnicos necessários à segurança, como endereço IP e registros administrativos.</li>
@@ -32,7 +32,7 @@
     </section>
     <section>
       <h2>3. Finalidades</h2>
-      <p>Usamos os dados para criar e entregar pedidos, processar pagamentos, prestar atendimento, prevenir fraudes, cumprir obrigações legais e, mediante cadastro voluntário, enviar ofertas.</p>
+      <p>Usamos os dados para criar e entregar pedidos, processar pagamentos, gerar documentos de expedição, prestar atendimento, prevenir fraudes, cumprir obrigações legais e, mediante cadastro voluntário, enviar ofertas.</p>
     </section>
     <section>
       <h2>4. Compartilhamento</h2>
@@ -44,10 +44,34 @@
     </section>
     <section>
       <h2>6. Direitos do titular</h2>
-      <p>Você pode solicitar confirmação de tratamento, acesso, correção, anonimização, bloqueio, eliminação quando cabível, informação sobre compartilhamento e revogação de consentimento pelo nosso WhatsApp.</p>
+      <p>Você pode solicitar confirmação de tratamento, acesso, correção, anonimização, bloqueio, eliminação quando cabível, informação sobre compartilhamento e revogação de consentimento.</p>
+      <form id="lgpdForm" class="legal-form">
+        <label>Nome<input id="lgpdNome" required maxlength="120"></label>
+        <label>E-mail<input id="lgpdEmail" type="email" required></label>
+        <label>WhatsApp<input id="lgpdTelefone" type="tel"></label>
+        <label>Solicitação
+          <select id="lgpdCategoria" required>
+            <option value="access">Acesso aos dados</option>
+            <option value="correction">Correção</option>
+            <option value="deletion">Eliminação, quando cabível</option>
+            <option value="anonymization">Anonimização ou bloqueio</option>
+            <option value="sharing">Informações de compartilhamento</option>
+            <option value="marketing_opt_out">Cancelar marketing</option>
+            <option value="other">Outro direito</option>
+          </select>
+        </label>
+        <label>Detalhes<textarea id="lgpdDetalhes" minlength="10" maxlength="4000" required></textarea></label>
+        <button type="submit">Enviar solicitação LGPD</button>
+        <p id="lgpdMensagem" aria-live="polite" hidden></p>
+      </form>
     </section>
     <section>
-      <h2>7. Alterações</h2>
+      <h2>7. Retenção e descarte</h2>
+      <p>Pedidos e registros necessários a obrigações legais e defesa de direitos são mantidos, por padrão, por 5 anos e depois anonimizados. Contatos de marketing sem compra são eliminados após 2 anos de inatividade. Logs administrativos são eliminados após 1 ano. Fotos anexadas a solicitações são eliminadas 180 dias após o encerramento.</p>
+      <p>A eliminação pode ser suspensa quando houver obrigação legal, disputa, fraude ou necessidade de exercício regular de direitos.</p>
+    </section>
+    <section>
+      <h2>8. Alterações</h2>
       <p>Esta política poderá ser atualizada para refletir mudanças legais ou operacionais. A versão vigente ficará sempre disponível nesta página.</p>
     </section>
   </main>
@@ -55,5 +79,7 @@
     <div class="footer-marca"><h3>DECANT'S</h3><p>Perfumes originais em decants</p></div>
     <div class="footer-coluna"><h4>Documentos</h4><a href="termos-de-compra.html">Termos de compra</a><a href="trocas-e-devolucoes.html">Trocas e devoluções</a><a href="prazos-de-entrega.html">Prazos de entrega</a><a href="contatos.html">Contato</a></div>
   </footer>
+  <script src="js/privacy-request.js?v=1"></script>
+  <script src="js/business-info.js?v=1"></script>
 </body>
 </html>

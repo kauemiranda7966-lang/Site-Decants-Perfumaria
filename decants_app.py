@@ -7,10 +7,8 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
 import time
-from decimal import Decimal, InvalidOperation
-from email import policy
-from email.parser import BytesParser
 from http import cookies
 from pathlib import Path
 from urllib import error, parse, request
@@ -23,6 +21,17 @@ from decants_auth import (
     revoke_session as revoke_admin_session,
     verify_customer_session,
     verify_session as verify_admin_session,
+)
+from decants_pdf import build_pdf_pages, build_simple_pdf
+from decants_uploads import parse_multipart_image, safe_upload_name
+from decants_validation import (
+    money_to_brl,
+    normalize_checkout,
+    normalize_lead,
+    normalize_product,
+    parse_price,
+    product_from_row,
+    valid_brazilian_document,
 )
 
 
@@ -59,6 +68,9 @@ load_env_file()
 
 DB_PATH = Path(os.environ.get("DECANTS_DB_PATH", DEFAULT_DB_PATH))
 UPLOAD_DIR = Path(os.environ.get("DECANTS_UPLOAD_DIR", ROOT / "img" / "uploads"))
+PRIVATE_UPLOAD_DIR = Path(
+    os.environ.get("DECANTS_PRIVATE_UPLOAD_DIR", DB_PATH.parent / "private-uploads")
+)
 ADMIN_USER = os.environ.get("DECANTS_ADMIN_USER", "").strip()
 ADMIN_PASSWORD = os.environ.get("DECANTS_ADMIN_PASSWORD", "")
 ADMIN_PASSWORD_HASH = os.environ.get("DECANTS_ADMIN_PASSWORD_HASH", "")
@@ -69,6 +81,9 @@ MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
 MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
 MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
 MERCADO_PAGO_COLLECTOR_ID = os.environ.get("MERCADO_PAGO_COLLECTOR_ID", "").strip()
+MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS = max(
+    60, int(os.environ.get("MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS", "300"))
+)
 try:
     SHIPPING_FEE = max(0.0, float(os.environ.get("DECANTS_SHIPPING_FEE", "19.90").replace(",", ".")))
 except ValueError:
@@ -85,10 +100,69 @@ try:
     )
 except ValueError:
     WHATSAPP_RESERVATION_MINUTES = 30
+try:
+    SQLITE_BUSY_TIMEOUT_SECONDS = max(
+        1, int(os.environ.get("DECANTS_SQLITE_BUSY_TIMEOUT_SECONDS", "15"))
+    )
+except ValueError:
+    SQLITE_BUSY_TIMEOUT_SECONDS = 15
+try:
+    SQLITE_WRITE_RETRIES = max(
+        0, min(5, int(os.environ.get("DECANTS_SQLITE_WRITE_RETRIES", "2")))
+    )
+except ValueError:
+    SQLITE_WRITE_RETRIES = 2
+SQLITE_BACKUP_DIR = Path(
+    os.environ.get("DECANTS_SQLITE_BACKUP_DIR", DB_PATH.parent / "backups")
+)
+try:
+    SQLITE_BACKUP_INTERVAL_HOURS = max(
+        1, int(os.environ.get("DECANTS_SQLITE_BACKUP_INTERVAL_HOURS", "24"))
+    )
+except ValueError:
+    SQLITE_BACKUP_INTERVAL_HOURS = 24
+try:
+    SQLITE_BACKUP_RETENTION_DAYS = max(
+        1, int(os.environ.get("DECANTS_SQLITE_BACKUP_RETENTION_DAYS", "7"))
+    )
+except ValueError:
+    SQLITE_BACKUP_RETENTION_DAYS = 7
+try:
+    MAX_REQUEST_THREADS = max(
+        4, min(256, int(os.environ.get("DECANTS_MAX_REQUEST_THREADS", "64")))
+    )
+except ValueError:
+    MAX_REQUEST_THREADS = 64
 WHATSAPP_CLOUD_TOKEN = os.environ.get("WHATSAPP_CLOUD_TOKEN", "")
 WHATSAPP_CLOUD_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_CLOUD_PHONE_NUMBER_ID", "")
 WHATSAPP_ADMIN_NUMBER = re.sub(r"\D+", "", os.environ.get("WHATSAPP_ADMIN_NUMBER", STORE_WHATSAPP_NUMBER))
 PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
+BUSINESS_TRADE_NAME = os.environ.get("DECANTS_BUSINESS_TRADE_NAME", "Decant's Perfumaria").strip()
+BUSINESS_LEGAL_NAME = os.environ.get("DECANTS_BUSINESS_LEGAL_NAME", "").strip()
+BUSINESS_TAX_ID = os.environ.get("DECANTS_BUSINESS_TAX_ID", "").strip()
+BUSINESS_ADDRESS = os.environ.get("DECANTS_BUSINESS_ADDRESS", "").strip()
+BUSINESS_POSTAL_CODE = re.sub(
+    r"\D+", "", os.environ.get("DECANTS_BUSINESS_POSTAL_CODE", "")
+)
+BUSINESS_EMAIL = os.environ.get("DECANTS_BUSINESS_EMAIL", "").strip()
+try:
+    RETENTION_ORDER_DAYS = max(365, int(os.environ.get("DECANTS_RETENTION_ORDER_DAYS", "1825")))
+except ValueError:
+    RETENTION_ORDER_DAYS = 1825
+try:
+    RETENTION_LEAD_DAYS = max(30, int(os.environ.get("DECANTS_RETENTION_LEAD_DAYS", "730")))
+except ValueError:
+    RETENTION_LEAD_DAYS = 730
+try:
+    RETENTION_LOG_DAYS = max(30, int(os.environ.get("DECANTS_RETENTION_LOG_DAYS", "365")))
+except ValueError:
+    RETENTION_LOG_DAYS = 365
+try:
+    RETENTION_ATTACHMENT_DAYS = max(
+        30, int(os.environ.get("DECANTS_RETENTION_ATTACHMENT_DAYS", "180"))
+    )
+except ValueError:
+    RETENTION_ATTACHMENT_DAYS = 180
 
 
 def host_from_setting(value):
@@ -133,9 +207,69 @@ def connect_db():
         db_path = DEFAULT_DB_PATH
         db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=SQLITE_BUSY_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
+    conn.execute(f"PRAGMA busy_timeout = {SQLITE_BUSY_TIMEOUT_SECONDS * 1000}")
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
+
+
+def begin_immediate(conn, retries=None):
+    retry_count = SQLITE_WRITE_RETRIES if retries is None else max(0, int(retries))
+    for attempt in range(retry_count + 1):
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            return
+        except sqlite3.OperationalError as exc:
+            message = str(exc).lower()
+            if ("locked" not in message and "busy" not in message) or attempt >= retry_count:
+                raise
+            time.sleep(0.1 * (attempt + 1))
+
+
+def backup_database():
+    SQLITE_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d-%H%M%S", time.gmtime())
+    destination_path = SQLITE_BACKUP_DIR / f"decants-{timestamp}.sqlite3"
+    temporary_path = destination_path.with_suffix(".tmp")
+
+    source = connect_db()
+    destination = sqlite3.connect(temporary_path)
+    try:
+        source.backup(destination)
+        destination.commit()
+    finally:
+        destination.close()
+        source.close()
+    temporary_path.replace(destination_path)
+
+    cutoff = time.time() - (SQLITE_BACKUP_RETENTION_DAYS * 24 * 60 * 60)
+    for backup_path in SQLITE_BACKUP_DIR.glob("decants-*.sqlite3"):
+        if backup_path.stat().st_mtime < cutoff:
+            backup_path.unlink()
+    return destination_path
+
+
+def start_backup_worker():
+    if not IS_PRODUCTION:
+        return None
+
+    def worker():
+        while True:
+            try:
+                backup_path = backup_database()
+                print(f"Backup SQLite criado em {backup_path}")
+                retention = apply_retention_policy()
+                print(f"Politica de retencao executada: {retention}")
+            except Exception as exc:
+                print(f"Falha na manutencao programada: {exc}")
+            time.sleep(SQLITE_BACKUP_INTERVAL_HOURS * 60 * 60)
+
+    thread = threading.Thread(target=worker, name="sqlite-backup", daemon=True)
+    thread.start()
+    return thread
 
 
 #INIT_DB
@@ -186,6 +320,7 @@ def init_db():
                 customer_phone TEXT NOT NULL,
                 customer_address TEXT NOT NULL DEFAULT '',
                 customer_postal_code TEXT NOT NULL DEFAULT '',
+                customer_document TEXT NOT NULL DEFAULT '',
                 product_amount REAL NOT NULL DEFAULT 0,
                 shipping_amount REAL NOT NULL DEFAULT 0,
                 total REAL NOT NULL,
@@ -196,6 +331,9 @@ def init_db():
                 payment_url TEXT NOT NULL DEFAULT '',
                 whatsapp_url TEXT NOT NULL DEFAULT '',
                 stock_reserved INTEGER NOT NULL DEFAULT 0,
+                payment_risk_status TEXT NOT NULL DEFAULT '',
+                payment_risk_reason TEXT NOT NULL DEFAULT '',
+                payment_risk_event_id TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
@@ -210,12 +348,20 @@ def init_db():
             conn.execute("ALTER TABLE orders ADD COLUMN stock_reserved INTEGER NOT NULL DEFAULT 0")
         if "customer_postal_code" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN customer_postal_code TEXT NOT NULL DEFAULT ''")
+        if "customer_document" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN customer_document TEXT NOT NULL DEFAULT ''")
         if "product_amount" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN product_amount REAL NOT NULL DEFAULT 0")
         if "shipping_amount" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN shipping_amount REAL NOT NULL DEFAULT 0")
         if "payment_method" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN payment_method TEXT NOT NULL DEFAULT ''")
+        if "payment_risk_status" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN payment_risk_status TEXT NOT NULL DEFAULT ''")
+        if "payment_risk_reason" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN payment_risk_reason TEXT NOT NULL DEFAULT ''")
+        if "payment_risk_event_id" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN payment_risk_event_id TEXT NOT NULL DEFAULT ''")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS order_history (
@@ -268,6 +414,72 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS payment_alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                event_id TEXT NOT NULL,
+                payment_id TEXT NOT NULL DEFAULT '',
+                order_id INTEGER,
+                status TEXT NOT NULL DEFAULT 'received',
+                details TEXT NOT NULL DEFAULT '',
+                payload TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(event_type, event_id),
+                FOREIGN KEY(order_id) REFERENCES orders(id)
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_payment_alerts_order ON payment_alerts(order_id, created_at)"
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS service_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                protocol TEXT NOT NULL UNIQUE,
+                request_type TEXT NOT NULL,
+                order_id INTEGER,
+                customer_name TEXT NOT NULL DEFAULT '',
+                customer_email TEXT NOT NULL,
+                customer_phone TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL,
+                reason TEXT NOT NULL DEFAULT '',
+                details TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'pending',
+                resolution TEXT NOT NULL DEFAULT '',
+                reverse_code TEXT NOT NULL DEFAULT '',
+                refund_id TEXT NOT NULL DEFAULT '',
+                refund_status TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                resolved_at TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY(order_id) REFERENCES orders(id)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS request_attachments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                request_id INTEGER NOT NULL,
+                stored_name TEXT NOT NULL UNIQUE,
+                original_name TEXT NOT NULL,
+                mime_type TEXT NOT NULL,
+                size INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(request_id) REFERENCES service_requests(id) ON DELETE CASCADE
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_service_requests_customer ON service_requests(customer_email, customer_phone)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status, created_at)"
+        )
         count = conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
         if count == 0:
             seed_products(conn)
@@ -296,107 +508,6 @@ def load_default_products():
         return []
     data = re.sub(r"(\w+):", r'"\1":', match.group(1))
     return json.loads(data)
-
-
-#PRODUCT_FROM_ROW
-def product_from_row(row):
-    return {
-        "id": row["id"],
-        "nome": row["nome"],
-        "categoria": row["categoria"],
-        "img": row["img"],
-        "estoque": row["estoque"],
-        "preco5": row["preco5"],
-        "preco10": row["preco10"],
-        "promocao": bool(row["promocao"]),
-        "precoPromocional5": row["precoPromocional5"],
-        "precoPromocional10": row["precoPromocional10"],
-        "destaque": bool(row["destaque"]),
-        "selo": row["selo"],
-        "chamada": row["chamada"],
-    }
-
-
-#NORMALIZE_PRODUCT
-def normalize_product(payload):
-    product = {
-        "nome": str(payload.get("nome", "")).strip(),
-        "categoria": str(payload.get("categoria", "masculino")).strip(),
-        "img": str(payload.get("img", "")).strip(),
-        "estoque": max(0, int(payload.get("estoque") or 0)),
-        "preco5": str(payload.get("preco5", "")).strip(),
-        "preco10": str(payload.get("preco10", "")).strip(),
-        "promocao": 1 if payload.get("promocao") else 0,
-        "precoPromocional5": str(payload.get("precoPromocional5", "")).strip(),
-        "precoPromocional10": str(payload.get("precoPromocional10", "")).strip(),
-        "destaque": 1 if payload.get("destaque") else 0,
-        "selo": str(payload.get("selo", "")).strip(),
-        "chamada": str(payload.get("chamada", "")).strip(),
-    }
-
-    if not product["nome"] or not product["img"] or not product["preco5"] or not product["preco10"]:
-        raise ValueError("Nome, imagem e precos sao obrigatorios.")
-    if product["categoria"] not in {"masculino", "feminino"}:
-        raise ValueError("Categoria invalida.")
-
-    return product
-
-
-#NORMALIZE_LEAD
-def normalize_lead(payload):
-    nome = str(payload.get("nome", "")).strip()
-    email = str(payload.get("email", "")).strip().lower()
-    telefone = re.sub(r"\D+", "", str(payload.get("telefone", "")))
-
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        raise ValueError("Informe um email valido.")
-    if len(telefone) < 10:
-        raise ValueError("Informe um telefone com DDD.")
-
-    return {"nome": nome[:120], "email": email, "telefone": telefone}
-
-
-#PARSE_PRICE
-def parse_price(value):
-    if isinstance(value, (int, float, Decimal)):
-        try:
-            return round(float(Decimal(str(value))), 2)
-        except (InvalidOperation, ValueError):
-            return 0.0
-
-    clean = re.sub(r"[^\d,.\-]", "", str(value or "").strip())
-    if not clean or clean in {"-", ".", ",", "-.", "-,"}:
-        return 0.0
-
-    comma = clean.rfind(",")
-    dot = clean.rfind(".")
-    if comma >= 0 and dot >= 0:
-        decimal_separator = "," if comma > dot else "."
-        thousands_separator = "." if decimal_separator == "," else ","
-        clean = clean.replace(thousands_separator, "").replace(decimal_separator, ".")
-    elif comma >= 0:
-        decimal_digits = len(clean) - comma - 1
-        clean = clean.replace(",", ".") if decimal_digits in {1, 2} else clean.replace(",", "")
-    elif dot >= 0:
-        decimal_digits = len(clean) - dot - 1
-        if clean.count(".") > 1:
-            if decimal_digits == 2:
-                parts = clean.split(".")
-                clean = "".join(parts[:-1]) + "." + parts[-1]
-            else:
-                clean = clean.replace(".", "")
-        elif decimal_digits not in {1, 2}:
-            clean = clean.replace(".", "")
-
-    try:
-        return round(float(Decimal(clean)), 2)
-    except (InvalidOperation, ValueError):
-        return 0.0
-
-
-#MONEY_TO_BRL
-def money_to_brl(value):
-    return f"{value:.2f}".replace(".", ",")
 
 
 #GET_PUBLIC_BASE_URL
@@ -469,6 +580,8 @@ def payment_amount(payment):
 #VALIDATE_PAYMENT_FOR_ORDER
 def validate_payment_for_order(payment, order):
     validate_mercado_pago_owner(payment)
+    if IS_PRODUCTION and payment.get("live_mode") is not True:
+        raise ValueError("Pagamento de teste recebido no ambiente de producao.")
     reference = str(payment.get("external_reference") or "").strip()
     if reference != order["reference"]:
         raise ValueError("Referencia do pagamento nao corresponde ao pedido.")
@@ -479,8 +592,13 @@ def validate_payment_for_order(payment, order):
         raise ValueError("E-mail do pagador nao corresponde ao pedido.")
 
     amount = payment_amount(payment)
-    if amount and abs(amount - float(order["total"])) > 0.01:
+    if amount <= 0:
+        raise ValueError("Pagamento sem valor confirmado.")
+    if abs(amount - float(order["total"])) > 0.01:
         raise ValueError("Valor pago nao corresponde ao total do pedido.")
+    currency = str(payment.get("currency_id") or "").strip().upper()
+    if currency and currency != "BRL":
+        raise ValueError("Moeda do pagamento nao corresponde a BRL.")
 
 
 #PRODUCT_PRICE
@@ -489,75 +607,6 @@ def product_price(product, volume):
     base_key = "preco10" if volume == 10 else "preco5"
     price = product[promo_key] if product["promocao"] and product[promo_key] else product[base_key]
     return parse_price(price)
-
-
-#NORMALIZE_CHECKOUT
-def normalize_checkout(payload):
-    customer = payload.get("customer") or {}
-    name = str(customer.get("name", "")).strip()
-    email = str(customer.get("email", "")).strip().lower()
-    phone = re.sub(r"\D+", "", str(customer.get("phone", "")))
-    address = str(customer.get("address", "")).strip()
-    postal_code = re.sub(r"\D+", "", str(customer.get("postalCode", "")))
-    items = payload.get("items") or []
-    coupon = str(payload.get("coupon", "")).strip().upper()
-    payment_method = str(payload.get("paymentMethod", "mercado_pago")).strip()
-
-    normalized_name = re.sub(r"\s+", " ", name)
-    name_parts = normalized_name.split()
-    inappropriate_names = {
-        "admin", "administrador", "teste", "test", "null", "undefined",
-        "palavrao", "xingamento", "porra", "caralho", "merda", "puta",
-        "puto", "foda", "fdp",
-    }
-    if (
-        len(normalized_name) < 5
-        or len(name_parts) < 2
-        or any(len(part) < 2 for part in name_parts)
-        or not re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ ]+", normalized_name)
-        or any(part.lower() in inappropriate_names for part in name_parts)
-    ):
-        raise ValueError("Informe o nome completo.")
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        raise ValueError("Informe um email valido.")
-    if len(phone) not in {10, 11} or len(set(phone)) == 1:
-        raise ValueError("Informe um WhatsApp com DDD.")
-    if len(postal_code) != 8 or len(set(postal_code)) == 1:
-        raise ValueError("Informe um CEP valido com 8 digitos.")
-    if (
-        len(address) < 10
-        or not re.fullmatch(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9 ,.\/-]+", address)
-        or not re.search(r"[A-Za-zÀ-ÖØ-öø-ÿ]", address)
-        or not re.search(r"\d", address)
-    ):
-        raise ValueError("Informe endereco completo com rua, numero, bairro e cidade.")
-    if not items:
-        raise ValueError("Escolha ao menos um perfume.")
-
-    normalized_items = []
-    for item in items:
-        product_id = int(item.get("productId") or 0)
-        product_name = str(item.get("productName", "")).strip()
-        volume = int(item.get("volume") or 0)
-        quantity = max(1, min(20, int(item.get("quantity") or 1)))
-        if (product_id <= 0 and not product_name) or volume not in {5, 10}:
-            raise ValueError("Item invalido no carrinho.")
-        normalized_items.append(
-            {"product_id": product_id, "product_name": product_name, "volume": volume, "quantity": quantity}
-        )
-
-    return {
-        "customer": {
-            "name": normalized_name,
-            "email": email,
-            "phone": phone,
-            "address": re.sub(r"\s+", " ", address),
-            "postal_code": postal_code,
-        },
-        "items": normalized_items,
-        "coupon": coupon if coupon == "DECANTS5" else "",
-        "payment_method": payment_method if payment_method in {"mercado_pago", "whatsapp"} else "mercado_pago",
-    }
 
 
 #BUILD_ORDER_ITEMS
@@ -645,18 +694,24 @@ def release_order_stock(conn, order_id):
 
 def release_expired_whatsapp_reservations(conn, max_age_minutes=None):
     max_age = int(max_age_minutes or WHATSAPP_RESERVATION_MINUTES)
-    expired_orders = conn.execute(
-        """
+    query = """
         SELECT id, status
         FROM orders
         WHERE payment_method = 'WhatsApp'
           AND status = 'whatsapp_pending'
           AND stock_reserved = 1
           AND updated_at <= datetime('now', ?)
-        """,
-        (f"-{max_age} minutes",),
-    ).fetchall()
+    """
+    age_parameter = (f"-{max_age} minutes",)
+    expired_orders = conn.execute(query, age_parameter).fetchall()
+    if not expired_orders:
+        return 0
 
+    if not conn.in_transaction:
+        begin_immediate(conn)
+        expired_orders = conn.execute(query, age_parameter).fetchall()
+
+    released = 0
     for order in expired_orders:
         if not release_order_stock(conn, order["id"]):
             continue
@@ -679,8 +734,9 @@ def release_expired_whatsapp_reservations(conn, max_age_minutes=None):
                 f"Reserva via WhatsApp expirada apos {max_age} minutos.",
             ),
         )
+        released += 1
 
-    return len(expired_orders)
+    return released
 
 
 #APPLY_CHECKOUT_COUPON
@@ -737,6 +793,26 @@ def build_admin_order_message(reference, customer_name="", total=0):
 
 #SEND_ADMIN_WHATSAPP_NOTIFICATION
 def send_admin_whatsapp_notification(reference, customer_name="", total=0):
+    return send_admin_whatsapp_text(
+        build_admin_order_message(reference, customer_name, total),
+        f"pedido {reference}",
+    )
+
+
+def send_admin_payment_risk_notification(reference, reason, event_id):
+    message = "\n".join(
+        [
+            "ALERTA FINANCEIRO - ENVIO BLOQUEADO",
+            f"Pedido: {reference}",
+            f"Motivo: {reason}",
+            f"Evento Mercado Pago: {event_id}",
+            "Acesse o painel e nao envie o pedido antes da analise.",
+        ]
+    )
+    return send_admin_whatsapp_text(message, f"alerta do pedido {reference}")
+
+
+def send_admin_whatsapp_text(message, context="notificacao"):
     if not WHATSAPP_CLOUD_TOKEN or not WHATSAPP_CLOUD_PHONE_NUMBER_ID or not WHATSAPP_ADMIN_NUMBER:
         return False
 
@@ -745,7 +821,7 @@ def send_admin_whatsapp_notification(reference, customer_name="", total=0):
             "messaging_product": "whatsapp",
             "to": WHATSAPP_ADMIN_NUMBER,
             "type": "text",
-            "text": {"preview_url": False, "body": build_admin_order_message(reference, customer_name, total)},
+            "text": {"preview_url": False, "body": str(message)[:4000]},
         },
         ensure_ascii=False,
     ).encode("utf-8")
@@ -763,7 +839,7 @@ def send_admin_whatsapp_notification(reference, customer_name="", total=0):
         with request.urlopen(req, timeout=12):
             return True
     except Exception as exc:
-        print(f"Falha ao enviar WhatsApp administrativo do pedido {reference}: {exc}")
+        print(f"Falha ao enviar WhatsApp administrativo ({context}): {exc}")
         return False
 
 
@@ -803,6 +879,10 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
         "payer": {
             "name": customer["name"],
             "email": customer["email"],
+            "identification": {
+                "type": "CNPJ" if len(customer["document"]) == 14 else "CPF",
+                "number": customer["document"],
+            },
             "phone": {"number": customer["phone"]},
             "address": {
                 "zip_code": customer["postal_code"],
@@ -852,73 +932,206 @@ def create_mercado_pago_preference(reference, customer, items, total, base_url):
 
 #BUILD_SHIPPING_LABEL_PDF
 def build_shipping_label_pdf(order, items):
-    def clean(value):
-        text = str(value or "").encode("latin-1", errors="replace").decode("latin-1")
-        return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    if not BUSINESS_TAX_ID or not BUSINESS_ADDRESS or not BUSINESS_POSTAL_CODE:
+        raise ValueError(
+            "Configure CNPJ/CPF, endereco e CEP empresarial para gerar o kit de expedicao."
+        )
 
-    lines = [
-        ("ETIQUETA DE ENVIO", 18),
-        ("DECANT'S PERFUMARIA", 12),
-        ("", 10),
-        (f"PEDIDO: {order['reference']}", 14),
-        (f"DESTINATARIO: {order['customer_name']}", 12),
-        (f"TELEFONE: {order['customer_phone']}", 11),
-        (f"CEP: {order['customer_postal_code']}", 14),
-        ("ENDERECO:", 11),
+    def wrap(value, width=72):
+        words = str(value or "").split()
+        lines = []
+        current = ""
+        for word in words:
+            candidate = f"{current} {word}".strip()
+            if len(candidate) > width and current:
+                lines.append(current)
+                current = word
+            else:
+                current = candidate
+        if current:
+            lines.append(current)
+        return lines or [""]
+
+    sender = BUSINESS_LEGAL_NAME or BUSINESS_TRADE_NAME
+    label_lines = [
+        ("ETIQUETA DE ENDERECAMENTO", 18),
+        ("DOCUMENTO AUXILIAR - SEM FRANQUIA OU RASTREAMENTO", 9),
+        ("", 8),
+        ("DESTINATARIO", 12),
+        (order["customer_name"], 14),
+        (f"CPF/CNPJ: {order['customer_document']}", 10),
+        (f"TELEFONE: {order['customer_phone']}", 10),
     ]
-    address_words = str(order["customer_address"] or "").split()
-    address_lines = []
-    current = ""
-    for word in address_words:
-        candidate = f"{current} {word}".strip()
-        if len(candidate) > 62 and current:
-            address_lines.append(current)
-            current = word
-        else:
-            current = candidate
-    if current:
-        address_lines.append(current)
-    lines.extend((line, 11) for line in address_lines[:4])
-    lines.extend([
-        ("", 10),
-        (f"VOLUMES/ITENS: {sum(int(item['quantity']) for item in items)}", 11),
-        (f"VALOR DO PEDIDO: R$ {float(order['total']):.2f}".replace(".", ","), 11),
-        ("", 10),
-        ("REMETENTE: DECANT'S PERFUMARIA", 11),
-        (f"PEDIDO {order['reference']} - NAO DOBRAR", 10),
+    label_lines.extend((line, 12) for line in wrap(order["customer_address"], 62))
+    label_lines.extend([
+        (f"CEP: {order['customer_postal_code']}", 16),
+        ("", 8),
+        ("REMETENTE", 12),
+        (sender, 12),
+        (f"CPF/CNPJ: {BUSINESS_TAX_ID}", 10),
+    ])
+    label_lines.extend((line, 10) for line in wrap(BUSINESS_ADDRESS, 68))
+    label_lines.extend([
+        (f"CEP: {BUSINESS_POSTAL_CODE}", 12),
+        ("", 8),
+        (f"PEDIDO: {order['reference']}", 12),
+        ("ATENCAO: contrate a postagem para obter etiqueta oficial e rastreamento.", 9),
     ])
 
-    commands = ["BT", "/F1 12 Tf", "48 790 Td"]
-    for index, (text, size) in enumerate(lines):
-        if index:
-            commands.append("0 -28 Td")
-        commands.extend([f"/F1 {size} Tf", f"({clean(text)}) Tj"])
-    commands.append("ET")
-    stream = "\n".join(commands).encode("latin-1")
-
-    objects = [
-        b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-        b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"\nendstream",
-        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    declaration_lines = [
+        ("DECLARACAO DE CONTEUDO", 18),
+        (f"PEDIDO: {order['reference']}", 10),
+        ("", 8),
+        (f"REMETENTE: {sender}", 11),
+        (f"CPF/CNPJ: {BUSINESS_TAX_ID}", 10),
+        (f"ENDERECO: {BUSINESS_ADDRESS} - CEP {BUSINESS_POSTAL_CODE}", 9),
+        ("", 8),
+        (f"DESTINATARIO: {order['customer_name']}", 11),
+        (f"CPF/CNPJ: {order['customer_document']}", 10),
+        (f"ENDERECO: {order['customer_address']} - CEP {order['customer_postal_code']}", 9),
+        ("", 8),
+        ("CONTEUDO", 12),
     ]
-    pdf = bytearray(b"%PDF-1.4\n")
-    offsets = [0]
-    for number, obj in enumerate(objects, 1):
-        offsets.append(len(pdf))
-        pdf.extend(f"{number} 0 obj\n".encode("ascii"))
-        pdf.extend(obj)
-        pdf.extend(b"\nendobj\n")
-    xref_offset = len(pdf)
-    pdf.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
-    pdf.extend(b"0000000000 65535 f \n")
-    for offset in offsets[1:]:
-        pdf.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
-    pdf.extend(
-        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF".encode("ascii")
+    for index, item in enumerate(items, 1):
+        description = f"{item['product_name']} - decant {item['volume']}ml"
+        value = float(item["subtotal"])
+        declaration_lines.append(
+            (
+                f"{index}. {description} | QTD {item['quantity']} | R$ {value:.2f}".replace(".", ","),
+                9,
+            )
+        )
+    declaration_lines.extend([
+        ("", 8),
+        (f"VALOR TOTAL DECLARADO: R$ {float(order['total']):.2f}".replace(".", ","), 11),
+        ("", 8),
+        (
+            "Declaro que o conteudo descrito corresponde ao objeto apresentado para postagem "
+            "e assumo responsabilidade pelas informacoes.",
+            9,
+        ),
+        (
+            "Esta declaracao nao substitui nota fiscal quando sua emissao for legalmente obrigatoria.",
+            9,
+        ),
+        ("", 12),
+        ("LOCAL E DATA: _________________________________________________", 10),
+        ("", 12),
+        ("ASSINATURA DO REMETENTE: ______________________________________", 10),
+    ])
+    return build_pdf_pages([label_lines, declaration_lines])
+
+
+def build_reverse_label_pdf(service_request, order):
+    if not BUSINESS_ADDRESS:
+        raise ValueError("Configure DECANTS_BUSINESS_ADDRESS para emitir a etiqueta reversa.")
+    return build_simple_pdf(
+        [
+            ("ETIQUETA DE LOGISTICA REVERSA", 18),
+            (BUSINESS_TRADE_NAME.upper(), 12),
+            ("", 10),
+            (f"CODIGO: {service_request['reverse_code']}", 15),
+            (f"PROTOCOLO: {service_request['protocol']}", 12),
+            (f"PEDIDO: {order['reference']}", 12),
+            ("", 10),
+            ("DESTINATARIO:", 11),
+            (BUSINESS_LEGAL_NAME or BUSINESS_TRADE_NAME, 12),
+            (BUSINESS_ADDRESS, 11),
+            (f"CNPJ: {BUSINESS_TAX_ID}" if BUSINESS_TAX_ID else "", 10),
+            ("", 10),
+            ("REMETENTE:", 11),
+            (order["customer_name"], 12),
+            (order["customer_address"], 11),
+            (f"CEP: {order['customer_postal_code']}", 11),
+            ("", 10),
+            ("Apresente esta etiqueta conforme as instrucoes enviadas pela loja.", 9),
+        ]
     )
-    return bytes(pdf)
+
+
+def refund_mercado_pago_payment(payment_id, idempotency_key):
+    if not MERCADO_PAGO_ACCESS_TOKEN:
+        raise ValueError("Credencial do Mercado Pago nao configurada.")
+    if not payment_id:
+        raise ValueError("Pedido sem identificador de pagamento para reembolso.")
+
+    req = request.Request(
+        f"https://api.mercadopago.com/v1/payments/{parse.quote(str(payment_id))}/refunds",
+        data=b"{}",
+        headers={
+            "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
+            "Content-Type": "application/json",
+            "X-Idempotency-Key": idempotency_key,
+        },
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=15) as response:
+            refund = json.loads(response.read().decode("utf-8"))
+            refund_id = str(refund.get("id") or "").strip()
+            refund_status = str(refund.get("status") or "").strip().lower()
+            if not refund_id or refund_status != "approved":
+                raise ValueError(
+                    f"Mercado Pago nao confirmou o reembolso: {refund_status or 'sem status'}."
+                )
+            return refund
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="ignore")
+        raise ValueError(f"Mercado Pago recusou o reembolso: {detail[:240]}")
+    except error.URLError as exc:
+        raise ValueError(f"Nao foi possivel conectar ao Mercado Pago: {exc.reason}")
+
+
+def apply_retention_policy():
+    removed_files = []
+    with connect_db() as conn:
+        begin_immediate(conn)
+        attachments = conn.execute(
+            """
+            SELECT a.id, a.stored_name
+            FROM request_attachments a
+            JOIN service_requests r ON r.id = a.request_id
+            WHERE r.resolved_at <> ''
+              AND r.resolved_at <= datetime('now', ?)
+            """,
+            (f"-{RETENTION_ATTACHMENT_DAYS} days",),
+        ).fetchall()
+        if attachments:
+            ids = [row["id"] for row in attachments]
+            placeholders = ",".join("?" for _ in ids)
+            conn.execute(f"DELETE FROM request_attachments WHERE id IN ({placeholders})", ids)
+            removed_files = [row["stored_name"] for row in attachments]
+
+        conn.execute(
+            "DELETE FROM leads WHERE created_at <= datetime('now', ?)",
+            (f"-{RETENTION_LEAD_DAYS} days",),
+        )
+        conn.execute(
+            "DELETE FROM admin_logs WHERE created_at <= datetime('now', ?)",
+            (f"-{RETENTION_LOG_DAYS} days",),
+        )
+        conn.execute(
+            """
+            UPDATE orders
+            SET customer_name = 'Cliente anonimizado',
+                customer_email = 'anonimizado-' || id || '@invalid.local',
+                customer_phone = '',
+                customer_address = '',
+                customer_postal_code = '',
+                customer_document = '',
+                payment_url = '',
+                whatsapp_url = ''
+            WHERE created_at <= datetime('now', ?)
+              AND customer_email NOT LIKE 'anonimizado-%@invalid.local'
+            """,
+            (f"-{RETENTION_ORDER_DAYS} days",),
+        )
+
+    for stored_name in removed_files:
+        path = PRIVATE_UPLOAD_DIR / stored_name
+        if path.exists():
+            path.unlink()
+    return {"attachmentsDeleted": len(removed_files)}
 
 
 #FETCH_MERCADO_PAGO_PAYMENT
@@ -933,6 +1146,33 @@ def fetch_mercado_pago_payment(payment_id):
     )
     with request.urlopen(req, timeout=12) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_mercado_pago_resource(path):
+    if not MERCADO_PAGO_ACCESS_TOKEN:
+        raise ValueError("Credencial do Mercado Pago nao configurada.")
+    safe_path = str(path or "").strip()
+    if not safe_path.startswith("/"):
+        raise ValueError("Recurso Mercado Pago invalido.")
+    req = request.Request(
+        f"https://api.mercadopago.com{safe_path}",
+        headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"},
+        method="GET",
+    )
+    with request.urlopen(req, timeout=12) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def payment_id_from_alert(event_type, event_id):
+    if event_type == "stop_delivery_op_wh":
+        return str(event_id)
+    if event_type == "topic_claims_integration_wh":
+        claim = fetch_mercado_pago_resource(f"/v1/claims/{parse.quote(str(event_id))}")
+        return str(claim.get("resource_id") or claim.get("payment_id") or "")
+    if event_type == "topic_chargebacks_wh":
+        chargeback = fetch_mercado_pago_resource(f"/v1/chargebacks/{parse.quote(str(event_id))}")
+        return str(chargeback.get("payment_id") or chargeback.get("resource_id") or "")
+    return ""
 
 
 #EXTRACT_MERCADO_PAGO_PAYMENT_ID
@@ -972,8 +1212,16 @@ def verify_mercado_pago_webhook_signature(headers, payment_id, query):
     signature = signature_parts.get("v1", "")
     if not timestamp or not signature:
         return False
+    try:
+        timestamp_value = int(timestamp)
+    except ValueError:
+        return False
+    if timestamp_value > 10_000_000_000:
+        timestamp_value //= 1000
+    if abs(int(time.time()) - timestamp_value) > MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS:
+        return False
 
-    data_id = query.get("data.id", [""])[0] or payment_id
+    data_id = str(query.get("data.id", [""])[0] or payment_id).lower()
     manifest = f"id:{data_id};request-id:{request_id};ts:{timestamp};"
     expected = hmac.new(
         MERCADO_PAGO_WEBHOOK_SECRET.encode("utf-8"),
@@ -1015,43 +1263,6 @@ def insert_product(conn, product, position=None):
 #CREATE_CSRF_TOKEN
 def create_csrf_token():
     return secrets.token_urlsafe(32)
-
-
-#SAFE_UPLOAD_NAME
-def safe_upload_name(filename):
-    stem = Path(filename or "produto").stem
-    suffix = Path(filename or "").suffix.lower()
-    if suffix not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
-        suffix = ".png"
-    stem = re.sub(r"[^a-zA-Z0-9_-]+", "-", stem).strip("-").lower() or "produto"
-    return f"{int(time.time())}-{secrets.token_hex(4)}-{stem}{suffix}"
-
-
-#PARSE_MULTIPART_IMAGE
-def parse_multipart_image(headers, body):
-    content_type = headers.get("Content-Type", "")
-    message_bytes = (
-        f"Content-Type: {content_type}\r\nMIME-Version: 1.0\r\n\r\n".encode("utf-8")
-        + body
-    )
-    message = BytesParser(policy=policy.default).parsebytes(message_bytes)
-    if not message.is_multipart():
-        raise ValueError("Envie uma imagem em multipart/form-data.")
-
-    for part in message.iter_parts():
-        disposition = part.get_content_disposition()
-        if disposition != "form-data":
-            continue
-        params = dict(part.get_params(header="content-disposition") or [])
-        if params.get("name") != "image":
-            continue
-        filename = part.get_filename()
-        payload = part.get_payload(decode=True) or b""
-        if not filename or not payload:
-            raise ValueError("Imagem obrigatoria.")
-        return filename, payload
-
-    raise ValueError("Imagem obrigatoria.")
 
 
 #ADMIN_CLIENT_IP
@@ -1102,12 +1313,39 @@ def validate_runtime_config():
 
 from decants_handler import DecantsHandler
 
+
+class DecantsHTTPServer(http.server.ThreadingHTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+    block_on_close = False
+    request_queue_size = 128
+
+    def __init__(self, *args, **kwargs):
+        self.request_slots = threading.BoundedSemaphore(MAX_REQUEST_THREADS)
+        super().__init__(*args, **kwargs)
+
+    def process_request(self, request_socket, client_address):
+        self.request_slots.acquire()
+        try:
+            super().process_request(request_socket, client_address)
+        except Exception:
+            self.request_slots.release()
+            raise
+
+    def process_request_thread(self, request_socket, client_address):
+        try:
+            super().process_request_thread(request_socket, client_address)
+        finally:
+            self.request_slots.release()
+
+
 #MAIN
 def main():
     validate_runtime_config()
     init_db()
+    start_backup_worker()
     port = int(os.environ.get("PORT", "8000"))
-    server = http.server.ThreadingHTTPServer(("0.0.0.0", port), DecantsHandler)
+    server = DecantsHTTPServer(("0.0.0.0", port), DecantsHandler)
     print(f"Decant's Perfumaria rodando em http://localhost:{port}")
     if ADMIN_USER:
         print("Painel administrativo protegido por credenciais configuradas no ambiente.")

@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css?v=37">
   <link rel="stylesheet" href="css/carrinho.css?v=2">
-  <link rel="stylesheet" href="css/meus-pedidos.css?v=1">
+  <link rel="stylesheet" href="css/meus-pedidos.css?v=3">
 </head>
 <body class="pagina-carrinho pagina-meus-pedidos">
   <header class="carrinho-header">
@@ -63,6 +63,53 @@
       </div>
 
       <div id="pedidosLista" class="pedidos-lista"></div>
+
+      <section class="solicitacoes-cliente">
+        <div class="solicitacoes-cliente-grid">
+          <form id="devolucaoForm" class="solicitacao-form">
+            <span>Cancelamento, troca ou devolucao</span>
+            <h2>Solicitar analise</h2>
+            <div class="regras-devolucao" role="note">
+              <strong>Leia antes de solicitar</strong>
+              <ul>
+                <li>Cancelamento antes da separacao: disponivel somente enquanto o pedido ainda nao foi separado, preparado ou enviado.</li>
+                <li>Compra online recebida: o arrependimento pode ser solicitado em ate 7 dias corridos do recebimento.</li>
+                <li>Abertura e teste razoavel da fragrancia nao anulam automaticamente o direito.</li>
+                <li>Consumo expressivo, frasco adulterado, dano causado pelo cliente ou ausencia de itens serao documentados e analisados individualmente.</li>
+                <li>Produto incorreto, avaria, vazamento ou defeito deve ser informado com fotos sempre que possivel.</li>
+                <li>O reembolso no Mercado Pago ocorre somente apos aprovacao da solicitacao; o prazo de credito depende do meio de pagamento e da instituicao financeira.</li>
+              </ul>
+            </div>
+            <label>Pedido<select id="devolucaoPedido" required></select></label>
+            <label>Motivo
+              <select id="devolucaoCategoria" required>
+                <option value="cancelamento_antes_separacao">Cancelar antes da separacao</option>
+                <option value="arrependimento">Direito de arrependimento</option>
+                <option value="produto_incorreto">Produto incorreto</option>
+                <option value="avaria">Produto avariado</option>
+                <option value="vazamento">Vazamento</option>
+                <option value="defeito">Problema de qualidade</option>
+                <option value="outro">Outro</option>
+              </select>
+            </label>
+            <label>Resumo<input id="devolucaoMotivo" maxlength="180" required></label>
+            <label>Detalhes<textarea id="devolucaoDetalhes" minlength="10" maxlength="4000" required></textarea></label>
+            <label>Fotos, se disponiveis<input id="devolucaoFotos" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+            <label class="aceite-regras">
+              <input id="devolucaoAceite" type="checkbox" required>
+              <span>Li as regras acima e confirmo que as informacoes prestadas sao verdadeiras.</span>
+            </label>
+            <button type="submit">Registrar solicitacao</button>
+            <p id="devolucaoMensagem" aria-live="polite" hidden></p>
+          </form>
+
+          <article class="solicitacoes-historico">
+            <span>Protocolos</span>
+            <h2>Minhas solicitacoes</h2>
+            <div id="solicitacoesLista"></div>
+          </article>
+        </div>
+      </section>
     </section>
   </main>
 
@@ -71,9 +118,9 @@
   <script src="js/store-catalog.js?v=1"></script>
   <script src="js/store-product.js?v=1"></script>
   <script src="js/store-cart.js?v=1"></script>
-  <script src="js/store-checkout.js?v=1"></script>
+  <script src="js/store-checkout.js?v=2"></script>
   <script src="js/store-navigation.js?v=1"></script>
   <script src="js/store-init.js?v=1"></script>
-  <script src="js/meus-pedidos.js?v=3"></script>
+  <script src="js/meus-pedidos.js?v=5"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/admin-panel.css?v=5">
+  <link rel="stylesheet" href="/css/admin-panel.css?v=7">
 </head>
 <body class="admin-shell">
   <main id="loginView" class="login-view" hidden>
@@ -46,6 +46,7 @@
         <a href="/produtos" data-route="produtos">Produtos</a>
         <a href="/pedidos" data-route="pedidos">Pedidos</a>
         <a href="/clientes" data-route="clientes">Clientes</a>
+        <a href="/solicitacoes" data-route="solicitacoes">Solicitacoes</a>
         <a href="/logs" data-route="logs">Logs</a>
       </nav>
 
@@ -167,6 +168,7 @@
             <button type="button" data-status="to_separate">Para separar</button>
             <button type="button" data-status="separated">Separados</button>
             <button type="button" data-status="delivered">Entregues</button>
+            <button type="button" data-status="risk_review">Risco</button>
             <button type="button" data-status="refunded">Extorno</button>
             <button type="button" data-status="cancelled">Cancelados</button>
           </div>
@@ -192,6 +194,16 @@
           <div id="logsList" class="table-list"></div>
         </article>
       </section>
+
+      <section id="requestsSection" class="section-panel" hidden>
+        <article class="panel">
+          <div class="panel-head">
+            <div><span>Privacidade e pos-venda</span><h2>Solicitacoes de clientes</h2></div>
+            <input id="requestSearch" class="search-input" type="search" placeholder="Buscar protocolo ou cliente">
+          </div>
+          <div id="requestsList" class="table-list"></div>
+        </article>
+      </section>
     </section>
   </div>
 
@@ -202,6 +214,13 @@
     <div id="orderDetail"></div>
   </dialog>
 
-  <script src="/js/admin-panel.js?v=5"></script>
+  <dialog id="requestDialog" class="order-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="close" aria-label="Fechar">x</button>
+    </form>
+    <div id="requestDetail"></div>
+  </dialog>
+
+  <script src="/js/admin-panel.js?v=7"></script>
 </body>
 </html>

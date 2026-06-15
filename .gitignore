@@ -1,6 +1,11 @@
 data/*.sqlite3
 data/*.sqlite3-*
+data/backups/
+data/private-uploads/
 __pycache__/
 *.pyc
 *.log
 .env
+node_modules/
+test-results/
+playwright-report/

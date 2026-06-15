@@ -63,6 +63,10 @@ function abrirCheckout(nomeProduto) {
             <input id="checkoutEmail" type="email" autocomplete="email" required>
           </label>
           <label class="checkout-label">
+            CPF ou CNPJ para postagem
+            <input id="checkoutDocumento" inputmode="numeric" maxlength="18" placeholder="Somente numeros" required>
+          </label>
+          <label class="checkout-label">
             CEP
             <input id="checkoutCep" autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000" required oninput="mascararECalcularCepCheckout(event)">
           </label>
@@ -215,6 +219,7 @@ async function enviarCheckout(event, preferirWhatsApp = false) {
           name: document.getElementById("checkoutNome").value,
           phone: document.getElementById("checkoutTelefone").value,
           email: document.getElementById("checkoutEmail").value,
+          document: document.getElementById("checkoutDocumento").value,
           postalCode,
           address: document.getElementById("checkoutEndereco").value
         },

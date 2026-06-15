@@ -133,6 +133,49 @@
   line-height: 1.6;
 }
 
+.legal-form {
+  margin-top: 22px;
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid #e6d4ac;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+
+.legal-form label {
+  display: grid;
+  gap: 7px;
+  color: #6d4b16;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.legal-form input,
+.legal-form select,
+.legal-form textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #d8c69f;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.legal-form textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.legal-form button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 6px;
+  background: #a8731f;
+  color: #fff;
+  font-weight: 800;
+}
+
 @media (max-width: 700px) {
   .legal-conteudo {
     margin-top: 24px;

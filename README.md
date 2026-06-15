@@ -175,10 +175,17 @@ Recursos implementados:
 - webhook para atualização automática;
 - consulta do pagamento diretamente na API;
 - validação da assinatura do webhook;
+- rejeição de webhooks antigos para reduzir repetição maliciosa;
 - validação da referência do pedido;
 - conferência do e-mail do pagador, quando informado;
-- conferência do valor pago;
+- conferência obrigatória do valor integral e da moeda BRL;
+- rejeição de pagamentos de teste no ambiente de produção;
 - validação opcional do proprietário da credencial por `collector_id`;
+- bloqueio de confirmação e reembolso manual para pedidos do Mercado Pago;
+- reembolso concluído somente após aprovação explícita da API;
+- recebimento de alertas antifraude, reclamações e chargebacks;
+- bloqueio automático de etiqueta, separação e envio durante análise de risco;
+- alerta no painel, log administrativo e WhatsApp Cloud quando configurado;
 - liberação do estoque em resultados negativos;
 - mudança automática de pagamento aprovado para `Para separar`.
 
@@ -191,8 +198,19 @@ MERCADO_PAGO_PUBLIC_KEY=APP_USR_EXEMPLO
 MERCADO_PAGO_ACCESS_TOKEN=APP_USR_EXEMPLO
 MERCADO_PAGO_WEBHOOK_SECRET=SEGREDO_EXEMPLO
 MERCADO_PAGO_COLLECTOR_ID=ID_EXEMPLO
+MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS=300
 DECANTS_PUBLIC_BASE_URL=https://loja.exemplo.com.br
 ```
+
+No painel **Suas integrações > Webhooks** do Mercado Pago, use
+`https://seu-dominio/api/payments/webhook` e habilite:
+
+- Pagamentos;
+- Alertas de fraude (`stop_delivery_op_wh`);
+- Reclamações (`topic_claims_integration_wh`);
+- Chargebacks (`topic_chargebacks_wh`).
+
+O código registra eventos não conciliados sem bloquear pedidos aleatórios. Eventos vinculados mudam o pedido para **Revisão de risco** ou **Chargeback**. A liberação manual exige uma observação auditável.
 
 ### WhatsApp
 
@@ -336,10 +354,17 @@ O sistema registra até os 100 eventos administrativos mais recentes exibidos no
 
 ```text
 server.py             Ponto de entrada compatível
-decants_app.py        Configuração, banco, regras de negócio e integrações
+decants_app.py        Configuração, banco e orquestração das regras de negócio
 decants_handler.py    Rotas HTTP, API e entrega de arquivos públicos
 decants_auth.py       Senhas, sessões administrativas e sessões de clientes
+decants_validation.py Normalização e validação de produtos, leads e checkout
+decants_pdf.py        Geração dos documentos PDF
+decants_uploads.py    Validação e normalização de uploads
 ```
+
+Os módulos especializados mantêm regras puras isoladas da camada HTTP. O
+`decants_app.py` continua exportando essas funções para preservar
+compatibilidade com o ponto de entrada, os testes e integrações existentes.
 
 ### Frontend
 
@@ -385,6 +410,7 @@ O SQLite é inicializado automaticamente e contém as seguintes tabelas:
 | `orders` | Dados do cliente, entrega, pagamento, valores e status |
 | `order_items` | Produtos, volumes, quantidades e preços do pedido |
 | `order_history` | Histórico de mudanças de status |
+| `payment_alerts` | Alertas antifraude, reclamações e chargebacks do Mercado Pago |
 | `admin_logs` | Auditoria de ações administrativas |
 | `admin_sessions` | Sessões administrativas persistentes e revogáveis |
 
@@ -418,7 +444,7 @@ O catálogo inicial é carregado de `js/catalog-data.js` quando o banco ainda n�
 | `GET` | `/api/admin/orders` | Lista pedidos |
 | `GET` | `/api/admin/orders/{id}` | Exibe detalhes e histórico |
 | `PUT` | `/api/admin/orders/{id}/status` | Atualiza status |
-| `GET` | `/api/admin/orders/{id}/label.pdf` | Gera etiqueta PDF |
+| `GET` | `/api/admin/orders/{id}/label.pdf` | Gera kit PDF de endereçamento e declaração de conteúdo |
 | `GET` | `/api/admin/customers` | Lista clientes e leads |
 | `GET` | `/api/admin/logs` | Lista logs recentes |
 | `POST` | `/api/admin/upload` | Envia imagem |
@@ -487,6 +513,12 @@ Use `.env.example` como referência. O arquivo `.env` real está ignorado pelo G
 | `DECANTS_PUBLIC_BASE_URL` | URL pública HTTPS |
 | `DECANTS_DB_PATH` | Caminho do banco SQLite |
 | `DECANTS_UPLOAD_DIR` | Diretório persistente de uploads |
+| `DECANTS_SQLITE_BUSY_TIMEOUT_SECONDS` | Espera máxima por uma escrita concorrente |
+| `DECANTS_SQLITE_WRITE_RETRIES` | Tentativas adicionais para iniciar transações críticas |
+| `DECANTS_SQLITE_BACKUP_DIR` | Diretório dos backups online do SQLite |
+| `DECANTS_SQLITE_BACKUP_INTERVAL_HOURS` | Intervalo entre backups automáticos em produção |
+| `DECANTS_SQLITE_BACKUP_RETENTION_DAYS` | Retenção local dos backups automáticos |
+| `DECANTS_MAX_REQUEST_THREADS` | Limite de requisições processadas simultaneamente |
 | `DECANTS_ADMIN_DOMAIN` | Host autorizado para o painel |
 | `DECANTS_ALLOWED_ORIGINS` | Origens permitidas, separadas por vírgula |
 
@@ -654,20 +686,45 @@ O titular pode solicitar, quando aplicável:
 - oposição a tratamento irregular;
 - revisão de decisões automatizadas, caso venham a existir.
 
-As solicitações devem ser recebidas pelo canal oficial publicado na página de contato e registradas internamente para comprovação do atendimento.
+As solicitações podem ser abertas pelo formulário da página de privacidade. Cada envio gera um protocolo `LGPD`, fica registrado no banco e pode ser analisado na área **Solicitações** do painel administrativo.
 
 ### Retenção e descarte
 
-O sistema não executa atualmente uma política automática de retenção ou anonimização. A organização responsável deve definir uma tabela de retenção que considere:
+O sistema executa a política automática de retenção durante a rotina de manutenção e backup. Os prazos podem ser configurados por variáveis de ambiente e, por padrão, são:
 
-- obrigações legais e fiscais;
-- garantia e defesa do consumidor;
-- prevenção a fraudes;
-- exercício regular de direitos;
-- necessidade operacional;
-- retirada de consentimento para marketing.
+- pedidos: 1.825 dias, com anonimização dos dados pessoais após o prazo;
+- cadastros de marketing: 730 dias, com exclusão;
+- logs administrativos: 365 dias, com exclusão;
+- fotos de solicitações resolvidas: 180 dias, com exclusão do arquivo e do registro.
 
 Encerrada a finalidade e inexistindo obrigação de conservação, os dados devem ser eliminados ou anonimizados de forma segura, inclusive em cópias e backups conforme o ciclo técnico aplicável.
+
+### Operação de trocas e devoluções
+
+- Antes do envio, o cliente precisa ler e aceitar as regras sobre prazo, teste razoável, conservação e análise de consumo expressivo.
+- O cancelamento antes da separação é uma categoria própria e só pode ser aberto enquanto o pedido ainda não foi separado, preparado ou enviado.
+- O cliente autenticado abre a solicitação em **Meus pedidos**, vinculando o pedido, motivo, relato e até cinco fotos.
+- A solicitação recebe protocolo `DEV` e permanece disponível ao cliente e ao administrador.
+- O administrador registra o status, a análise e o resultado no painel.
+- Ao marcar a solicitação como aguardando devolução, o sistema gera código interno e etiqueta PDF de logística reversa.
+- No cancelamento pré-separação não há logística reversa. Pagamentos do Mercado Pago podem ser reembolsados integralmente pelo painel, usando a API oficial e chave de idempotência.
+- O pedido e o estoque só são atualizados para reembolsado após a API confirmar a operação. O prazo para o crédito aparecer depende do meio de pagamento.
+- Pedidos feitos pelo fluxo manual do WhatsApp continuam exigindo devolução financeira pelo respectivo meio de pagamento.
+
+### Kit de expedição
+
+O painel gera um PDF de duas páginas para cada pedido:
+
+- etiqueta auxiliar de endereçamento com remetente, destinatário, CPF/CNPJ e CEP;
+- declaração de conteúdo com itens, quantidades, valores, total e campos de assinatura.
+
+Configure `DECANTS_BUSINESS_LEGAL_NAME`, `DECANTS_BUSINESS_TAX_ID`,
+`DECANTS_BUSINESS_ADDRESS` e `DECANTS_BUSINESS_POSTAL_CODE`. O checkout coleta
+e valida CPF/CNPJ do destinatário.
+
+Esse PDF não compra a postagem, não gera rastreamento e não substitui a etiqueta
+oficial emitida pelos Correios ou transportadora. A declaração de conteúdo
+também não substitui nota fiscal quando sua emissão for obrigatória.
 
 ### Cookies e armazenamento local
 
@@ -763,6 +820,14 @@ Execute:
 python -m unittest discover -s tests -v
 ```
 
+Os testes de navegador usam Playwright em perfis desktop e mobile:
+
+```powershell
+npm install
+npx playwright install chromium
+npm run test:e2e
+```
+
 A suíte atual cobre, entre outros pontos:
 
 - validação de leads;
@@ -777,6 +842,11 @@ A suíte atual cobre, entre outros pontos:
 - leitura de preços brasileiros e internacionais;
 - expiração de reserva via WhatsApp;
 - devolução automática de estoque;
+- concorrência entre checkouts pela última unidade;
+- rollback integral de reservas com múltiplos itens;
+- WAL, timeout de escrita e integridade referencial do SQLite;
+- CSP e políticas de cache para HTML, API e assets;
+- catálogo, busca, carrinho, modal de produto e menu mobile em navegador real;
 - obrigatoriedade do CEP;
 - validação do proprietário da conta Mercado Pago;
 - rejeição de configuração administrativa insegura em produção.
@@ -807,7 +877,14 @@ Exemplo de caminhos persistentes:
 ```dotenv
 DECANTS_DB_PATH=/var/data/decants.sqlite3
 DECANTS_UPLOAD_DIR=/var/data/uploads
+DECANTS_SQLITE_BACKUP_DIR=/var/data/backups
 ```
+
+Em produção, o servidor usa HTTP/1.1, fila ampliada e um limite configurável de
+threads. O SQLite opera em WAL com transações imediatas nos fluxos de estoque.
+Essa configuração atende uma loja pequena ou média em uma única instância; para
+escalabilidade horizontal, migre a persistência para PostgreSQL antes de iniciar
+múltiplas instâncias da aplicação.
 
 ### DNS e HTTPS
 

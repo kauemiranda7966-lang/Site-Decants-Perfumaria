@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=37">
-  <link rel="stylesheet" href="css/legal.css?v=1">
+  <link rel="stylesheet" href="css/legal.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
@@ -89,9 +89,13 @@
       <span>Canal oficial</span>
       <h2 id="dados-loja">Dados de contato da loja</h2>
       <p><strong>Nome comercial:</strong> Decant's Perfumaria</p>
+      <p><strong>Razão social:</strong> <span data-business="legalName">Não formalizada</span></p>
+      <p><strong>CNPJ:</strong> <span data-business="taxId">Não formalizado</span></p>
+      <p><strong>Endereço empresarial:</strong> <span data-business="address">Não formalizado</span></p>
+      <p><strong>E-mail:</strong> <span data-business="email">Não formalizado</span></p>
       <p><strong>WhatsApp:</strong> (88) 99641-0605</p>
       <p><strong>Atendimento:</strong> exclusivamente online pelo canal informado nesta página.</p>
-      <p class="aviso-cadastro">CNPJ, endereço comercial e e-mail serão publicados assim que formalizados.</p>
+      <p class="aviso-cadastro" data-business-formalization>CNPJ, endereço comercial e e-mail serão publicados automaticamente assim que formalizados.</p>
     </div>
   </section>
 
@@ -111,8 +115,9 @@
   <script src="js/store-catalog.js?v=1"></script>
   <script src="js/store-product.js?v=1"></script>
   <script src="js/store-cart.js?v=1"></script>
-  <script src="js/store-checkout.js?v=1"></script>
+  <script src="js/store-checkout.js?v=2"></script>
   <script src="js/store-navigation.js?v=1"></script>
   <script src="js/store-init.js?v=1"></script>
+  <script src="js/business-info.js?v=1"></script>
 </body>
 </html>

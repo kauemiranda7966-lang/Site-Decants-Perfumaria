@@ -1,5 +1,6 @@
 const estadoMeusPedidos = {
   pedidos: [],
+  solicitacoes: [],
   statusAtivo: "to_separate",
   csrfToken: ""
 };
@@ -12,12 +13,17 @@ const meusPedidosEls = {
   mensagem: document.getElementById("pedidosMensagem"),
   conteudo: document.getElementById("pedidosConteudo"),
   tabs: document.getElementById("pedidosTabs"),
-  lista: document.getElementById("pedidosLista")
+  lista: document.getElementById("pedidosLista"),
+  devolucaoForm: document.getElementById("devolucaoForm"),
+  devolucaoPedido: document.getElementById("devolucaoPedido"),
+  devolucaoMensagem: document.getElementById("devolucaoMensagem"),
+  solicitacoesLista: document.getElementById("solicitacoesLista")
 };
 
 meusPedidosEls.form.addEventListener("submit", entrarMeusPedidos);
 meusPedidosEls.sair.addEventListener("click", sairMeusPedidos);
 meusPedidosEls.tabs.addEventListener("click", trocarAbaPedidos);
+meusPedidosEls.devolucaoForm.addEventListener("submit", enviarSolicitacaoDevolucao);
 iniciarMeusPedidos();
 
 async function iniciarMeusPedidos() {
@@ -70,10 +76,111 @@ async function carregarMeusPedidos() {
   if (!resposta.ok) throw new Error(dados.error || "Nao foi possivel buscar seus pedidos.");
 
   estadoMeusPedidos.pedidos = dados.orders || [];
+  await carregarSolicitacoes();
   mostrarMensagem(`${estadoMeusPedidos.pedidos.length} pedido(s) encontrado(s).`);
   meusPedidosEls.conteudo.hidden = estadoMeusPedidos.pedidos.length === 0;
   meusPedidosEls.sair.hidden = false;
   renderizarMeusPedidos();
+  meusPedidosEls.devolucaoPedido.innerHTML = estadoMeusPedidos.pedidos
+    .map(pedido => `<option value="${escaparHtml(pedido.reference)}">${escaparHtml(pedido.reference)} · ${moedaPedido(Number(pedido.total) || 0)}</option>`)
+    .join("");
+}
+
+async function carregarSolicitacoes() {
+  const resposta = await fetch("/api/customer/requests", { credentials: "same-origin" });
+  const dados = await resposta.json().catch(() => ({}));
+  if (!resposta.ok) throw new Error(dados.error || "Nao foi possivel buscar as solicitacoes.");
+  estadoMeusPedidos.solicitacoes = dados.requests || [];
+  renderizarSolicitacoes();
+}
+
+async function enviarSolicitacaoDevolucao(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const botao = formElement.querySelector("button[type='submit']");
+  botao.disabled = true;
+  meusPedidosEls.devolucaoMensagem.hidden = false;
+  meusPedidosEls.devolucaoMensagem.textContent = "Registrando solicitacao...";
+  try {
+    const resposta = await fetch("/api/customer/requests", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": estadoMeusPedidos.csrfToken },
+      body: JSON.stringify({
+        requestType: "return",
+        orderReference: meusPedidosEls.devolucaoPedido.value,
+        category: document.getElementById("devolucaoCategoria").value,
+        reason: document.getElementById("devolucaoMotivo").value,
+        details: document.getElementById("devolucaoDetalhes").value,
+        acceptedPolicy: document.getElementById("devolucaoAceite").checked
+      })
+    });
+    const dados = await resposta.json().catch(() => ({}));
+    if (!resposta.ok) throw new Error(dados.error || "Nao foi possivel registrar.");
+
+    const fotos = [...document.getElementById("devolucaoFotos").files].slice(0, 5);
+    for (const foto of fotos) {
+      const form = new FormData();
+      form.append("image", foto);
+      const upload = await fetch(`/api/customer/requests/${dados.id}/attachments`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": estadoMeusPedidos.csrfToken },
+        body: form
+      });
+      const uploadData = await upload.json().catch(() => ({}));
+      if (!upload.ok) throw new Error(uploadData.error || "Solicitacao criada, mas uma foto falhou.");
+    }
+    formElement.reset();
+    meusPedidosEls.devolucaoMensagem.textContent = `Solicitacao registrada. Protocolo ${dados.protocol}.`;
+    await carregarSolicitacoes();
+  } catch (error) {
+    meusPedidosEls.devolucaoMensagem.textContent = error.message;
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+function renderizarSolicitacoes() {
+  meusPedidosEls.solicitacoesLista.innerHTML = estadoMeusPedidos.solicitacoes.map(item => {
+    const anexos = (item.attachments || []).map(anexo =>
+      `<a target="_blank" rel="noopener" href="/api/customer/requests/${item.id}/attachments/${anexo.id}">${escaparHtml(anexo.original_name)}</a>`
+    ).join("");
+    const etiqueta = item.reverse_code
+      ? `<a class="pedido-acao secundario" href="/api/customer/requests/${item.id}/reverse-label.pdf" download>Baixar etiqueta reversa</a>`
+      : "";
+    return `
+      <article class="solicitacao-card">
+        <div><strong>${escaparHtml(item.protocol)}</strong><span>${rotuloSolicitacao(item.status)}</span></div>
+        <p>${escaparHtml(item.order_reference || "LGPD")} · ${escaparHtml(rotuloCategoriaSolicitacao(item.category))}${item.reason ? " · " + escaparHtml(item.reason) : ""}</p>
+        ${item.resolution ? `<p><b>Resposta:</b> ${escaparHtml(item.resolution)}</p>` : ""}
+        ${anexos ? `<div class="solicitacao-anexos">${anexos}</div>` : ""}
+        ${etiqueta}
+      </article>
+    `;
+  }).join("") || `<p>Nenhuma solicitacao registrada.</p>`;
+}
+
+function rotuloCategoriaSolicitacao(category) {
+  const labels = {
+    cancelamento_antes_separacao: "Cancelamento antes da separacao",
+    arrependimento: "Direito de arrependimento",
+    produto_incorreto: "Produto incorreto",
+    avaria: "Produto avariado",
+    vazamento: "Vazamento",
+    defeito: "Problema de qualidade",
+    outro: "Outro"
+  };
+  return labels[category] || category;
+}
+
+function rotuloSolicitacao(status) {
+  const labels = {
+    pending: "Pendente", in_review: "Em analise", awaiting_customer: "Aguardando voce",
+    awaiting_return: "Aguardando devolucao", approved: "Aprovada", rejected: "Recusada",
+    refunded: "Reembolsada", completed: "Concluida"
+  };
+  return labels[status] || status;
 }
 
 async function sairMeusPedidos() {
@@ -83,6 +190,7 @@ async function sairMeusPedidos() {
     headers: { "X-CSRF-Token": estadoMeusPedidos.csrfToken }
   });
   estadoMeusPedidos.pedidos = [];
+  estadoMeusPedidos.solicitacoes = [];
   meusPedidosEls.form.reset();
   meusPedidosEls.sair.hidden = true;
   meusPedidosEls.conteudo.hidden = true;
@@ -166,6 +274,7 @@ function statusOperacionalCliente(status) {
     pending: "to_separate", awaiting_payment: "to_separate", whatsapp_pending: "to_separate",
     preparing: "to_separate", to_separate: "to_separate", separated: "separated",
     shipped: "separated", delivered: "separated", completed: "separated",
+    risk_review: "to_separate",
     cancelled: "cancelled", refunded: "cancelled", charged_back: "cancelled",
     rejected: "cancelled", expired: "cancelled", payment_error: "cancelled"
   };
@@ -178,7 +287,8 @@ function rotuloStatusCliente(status) {
     whatsapp_pending: "Aguardando WhatsApp", pending: "Pagamento pendente",
     approved: "Em separacao", paid: "Em separacao", to_separate: "Em separacao",
     preparing: "Em separacao", separated: "Separado", shipped: "Separado",
-    delivered: "Entregue", completed: "Entregue", cancelled: "Cancelado",
+    delivered: "Entregue", completed: "Entregue", risk_review: "Pagamento em analise",
+    cancelled: "Cancelado",
     refunded: "Cancelado", charged_back: "Cancelado", rejected: "Recusado",
     expired: "Expirado", payment_error: "Erro no pagamento"
   };

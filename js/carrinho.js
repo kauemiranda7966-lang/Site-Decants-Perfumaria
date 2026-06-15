@@ -228,6 +228,7 @@ async function finalizarCarrinho(event, preferirWhatsApp) {
       name: document.getElementById("carrinhoNome").value.trim(),
       phone: document.getElementById("carrinhoTelefone").value.trim(),
       email: document.getElementById("carrinhoEmail").value.trim(),
+      document: document.getElementById("carrinhoDocumento").value.trim(),
       postalCode: document.getElementById("carrinhoCep").value.trim(),
       address: document.getElementById("carrinhoEndereco").value.trim()
     },

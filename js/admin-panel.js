@@ -4,6 +4,7 @@ const state = {
   products: [],
   orders: [],
   customers: [],
+  requests: [],
   logs: [],
   activeOrderStatus: "all"
 };
@@ -14,6 +15,7 @@ const routes = {
   "/produtos": "produtos",
   "/pedidos": "pedidos",
   "/clientes": "clientes",
+  "/solicitacoes": "solicitacoes",
   "/logs": "logs"
 };
 
@@ -22,6 +24,7 @@ const titles = {
   produtos: ["Catalogo", "Produtos"],
   pedidos: ["Pedidos", "Gerenciamento de pedidos"],
   clientes: ["Clientes", "Base de clientes"],
+  solicitacoes: ["Privacidade e pos-venda", "Solicitacoes"],
   logs: ["Seguranca", "Logs administrativos"]
 };
 
@@ -38,6 +41,7 @@ const els = {
   productsSection: document.getElementById("productsSection"),
   ordersSection: document.getElementById("ordersSection"),
   customersSection: document.getElementById("customersSection"),
+  requestsSection: document.getElementById("requestsSection"),
   logsSection: document.getElementById("logsSection"),
   productForm: document.getElementById("productForm"),
   productMessage: document.getElementById("productMessage"),
@@ -51,9 +55,13 @@ const els = {
   orderSearchResult: document.getElementById("orderSearchResult"),
   customersList: document.getElementById("customersList"),
   customerSearch: document.getElementById("customerSearch"),
+  requestsList: document.getElementById("requestsList"),
+  requestSearch: document.getElementById("requestSearch"),
   logsList: document.getElementById("logsList"),
   orderDialog: document.getElementById("orderDialog"),
-  orderDetail: document.getElementById("orderDetail")
+  orderDetail: document.getElementById("orderDetail"),
+  requestDialog: document.getElementById("requestDialog"),
+  requestDetail: document.getElementById("requestDetail")
 };
 
 document.addEventListener("click", handleNavigation);
@@ -67,6 +75,7 @@ els.productSearch.addEventListener("input", renderProducts);
 els.orderTabs.addEventListener("click", handleOrderTabClick);
 els.orderSearch.addEventListener("input", renderOrders);
 els.customerSearch.addEventListener("input", renderCustomers);
+els.requestSearch.addEventListener("input", renderRequests);
 
 init();
 
@@ -88,21 +97,24 @@ async function init() {
 }
 
 async function loadAll() {
-  const [dashboard, products, orders, customers, logs] = await Promise.all([
+  const [dashboard, products, orders, customers, requests, logs] = await Promise.all([
     api("/api/admin/dashboard"),
     api("/api/products"),
     api("/api/admin/orders"),
     api("/api/admin/customers"),
+    api("/api/admin/requests"),
     api("/api/admin/logs")
   ]);
   state.products = products;
   state.orders = orders;
   state.customers = customers;
+  state.requests = requests;
   state.logs = logs;
   renderDashboard(dashboard);
   renderProducts();
   renderOrders();
   renderCustomers();
+  renderRequests();
   renderLogs();
 }
 
@@ -170,6 +182,7 @@ function renderRoute() {
   els.productsSection.hidden = route !== "produtos";
   els.ordersSection.hidden = route !== "pedidos";
   els.customersSection.hidden = route !== "clientes";
+  els.requestsSection.hidden = route !== "solicitacoes";
   els.logsSection.hidden = route !== "logs";
 }
 
@@ -365,9 +378,15 @@ window.openOrder = async function openOrder(id) {
   const order = await api(`/api/admin/orders/${id}`);
   els.orderDetail.innerHTML = `
     <h2>Pedido ${escapeHtml(order.reference)}</h2>
+    ${order.payment_risk_status ? `
+      <div class="payment-risk-alert">
+        <strong>Envio bloqueado por risco financeiro</strong>
+        <p>${escapeHtml(order.payment_risk_reason || "Analise o alerta antes de prosseguir.")}</p>
+      </div>
+    ` : ""}
     <div class="order-detail-actions">
-      <a class="primary-btn" href="/api/admin/orders/${order.id}/label.pdf" download>Baixar etiqueta PDF</a>
-      <button class="ghost-btn" type="button" onclick="printShippingLabel(${order.id})">Imprimir etiqueta</button>
+      <a class="primary-btn" href="/api/admin/orders/${order.id}/label.pdf" download>Baixar kit de expedicao</a>
+      <button class="ghost-btn" type="button" onclick="printShippingLabel(${order.id})">Imprimir kit</button>
     </div>
     <div class="detail-block order-detail-vertical">
       <article><strong>Número do pedido</strong><p>${escapeHtml(order.reference)}</p></article>
@@ -379,11 +398,18 @@ window.openOrder = async function openOrder(id) {
       <article><strong>Nome completo</strong><p>${escapeHtml(order.customer_name)}</p></article>
       <article><strong>WhatsApp</strong><p>${escapeHtml(order.customer_phone)}</p></article>
       <article><strong>E-mail</strong><p>${escapeHtml(order.customer_email)}</p></article>
+      <article><strong>CPF/CNPJ de postagem</strong><p>${escapeHtml(order.customer_document || "Nao informado")}</p></article>
       <article><strong>CEP</strong><p>${formatPostalCode(order.customer_postal_code)}</p></article>
       <article><strong>Endereço</strong><p>${escapeHtml(order.customer_address || "Não informado")}</p></article>
       <article>
         <strong>Itens</strong>
         ${(order.items || []).map(item => `<p>${item.quantity}x ${escapeHtml(item.product_name)} ${item.volume}ml · ${brl(item.subtotal)}</p>`).join("")}
+      </article>
+      <article>
+        <strong>Alertas de pagamento</strong>
+        ${(order.paymentAlerts || []).map(alert => `
+          <p><b>${paymentAlertLabel(alert.event_type)}</b> · ${dateTime(alert.created_at)}<br>${escapeHtml(alert.details || "")} · ID ${escapeHtml(alert.event_id)}</p>
+        `).join("") || "<p>Nenhum alerta financeiro.</p>"}
       </article>
       <article>
         <strong>Atualizar status</strong>
@@ -444,6 +470,88 @@ function renderCustomers() {
   `).join("") || empty("Nenhum cliente encontrado.");
 }
 
+function renderRequests() {
+  const search = normalize(els.requestSearch.value);
+  const requests = state.requests.filter(item => {
+    const haystack = normalize(`${item.protocol} ${item.customer_name} ${item.customer_email} ${item.order_reference || ""}`);
+    return !search || haystack.includes(search);
+  });
+  els.requestsList.innerHTML = requests.map(item => `
+    <article class="table-row">
+      <div>
+        <h3>${escapeHtml(item.protocol)} · ${item.request_type === "privacy" ? "LGPD" : "Devolucao"}</h3>
+        <p>${escapeHtml(item.customer_name)} · ${escapeHtml(item.customer_email)} ${item.order_reference ? "· " + escapeHtml(item.order_reference) : ""}</p>
+      </div>
+      <div>
+        <strong>${requestCategoryLabel(item.category)}</strong><br>
+        <span class="status-pill ${escapeAttr(item.status)}">${requestStatusLabel(item.status)}</span>
+      </div>
+      <button class="ghost-btn" type="button" onclick="openRequest(${item.id})">Analisar</button>
+    </article>
+  `).join("") || empty("Nenhuma solicitacao registrada.");
+}
+
+window.openRequest = async function openRequest(id) {
+  const item = await api(`/api/admin/requests/${id}`);
+  const attachments = (item.attachments || []).map(attachment => `
+    <a class="ghost-btn" target="_blank" rel="noopener" href="/api/admin/requests/${item.id}/attachments/${attachment.id}">
+      ${escapeHtml(attachment.original_name)}
+    </a>
+  `).join("") || "<p>Sem fotos anexadas.</p>";
+  const isPreSeparationCancellation = item.category === "cancelamento_antes_separacao";
+  const reverseLabel = item.reverse_code
+    ? `<a class="primary-btn" href="/api/admin/requests/${item.id}/reverse-label.pdf" download>Baixar etiqueta reversa</a>`
+    : "";
+  const refundButton = item.request_type === "return" && item.payment_id && !item.refund_id
+    ? `<button class="danger-btn" type="button" onclick="refundRequest(${item.id})">Reembolsar no Mercado Pago</button>`
+    : "";
+
+  els.requestDetail.innerHTML = `
+    <h2>${escapeHtml(item.protocol)}</h2>
+    <div class="detail-block order-detail-vertical">
+      <article><strong>Tipo</strong><p>${item.request_type === "privacy" ? "Solicitacao LGPD" : isPreSeparationCancellation ? "Cancelamento antes da separacao" : "Troca ou devolucao"}</p></article>
+      <article><strong>Cliente</strong><p>${escapeHtml(item.customer_name)} · ${escapeHtml(item.customer_email)} · ${escapeHtml(item.customer_phone || "")}</p></article>
+      <article><strong>Pedido</strong><p>${escapeHtml(item.order_reference || "Nao vinculado")}</p></article>
+      <article><strong>Motivo</strong><p>${requestCategoryLabel(item.category)}${item.reason ? " · " + escapeHtml(item.reason) : ""}</p></article>
+      <article><strong>Relato</strong><p>${escapeHtml(item.details)}</p></article>
+      <article><strong>Anexos</strong><div class="request-attachments">${attachments}</div></article>
+      <article>
+        <strong>Analise e resultado</strong>
+        <label>Status<select id="requestStatus">${requestStatusOptions(item.status)}</select></label>
+        <label>Resposta ao cliente<textarea id="requestResolution" maxlength="4000">${escapeHtml(item.resolution || "")}</textarea></label>
+        <button class="primary-btn" type="button" onclick="updateRequest(${item.id})">Salvar analise</button>
+      </article>
+      ${item.reverse_code ? `<article><strong>Codigo reverso</strong><p>${escapeHtml(item.reverse_code)}</p>${reverseLabel}</article>` : ""}
+      ${item.refund_id ? `<article><strong>Reembolso</strong><p>${escapeHtml(item.refund_id)} · ${escapeHtml(item.refund_status)}</p></article>` : ""}
+      ${refundButton ? `<article><strong>Financeiro</strong><p>${isPreSeparationCancellation ? "Confirme que o pedido ainda nao foi separado. Nao ha devolucao fisica nesse caso." : "Confirme a elegibilidade e o recebimento quando aplicavel antes de reembolsar."} O Mercado Pago recebe o pedido de reembolso imediatamente, mas o prazo para o cliente visualizar o credito depende do meio de pagamento.</p>${refundButton}</article>` : ""}
+    </div>
+  `;
+  if (!els.requestDialog.open) els.requestDialog.showModal();
+};
+
+window.updateRequest = async function updateRequest(id) {
+  await api(`/api/admin/requests/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      status: document.getElementById("requestStatus").value,
+      resolution: document.getElementById("requestResolution").value
+    })
+  });
+  state.requests = await api("/api/admin/requests");
+  renderRequests();
+  await window.openRequest(id);
+};
+
+window.refundRequest = async function refundRequest(id) {
+  if (!window.confirm("Confirmar reembolso integral deste pagamento no Mercado Pago?")) return;
+  await api(`/api/admin/requests/${id}/refund`, { method: "POST", body: "{}" });
+  state.requests = await api("/api/admin/requests");
+  state.orders = await api("/api/admin/orders");
+  renderRequests();
+  renderOrders();
+  await window.openRequest(id);
+};
+
 function renderLogs() {
   els.logsList.innerHTML = state.logs.map(log => `
     <article class="table-row">
@@ -477,7 +585,7 @@ function statusOptions(selected) {
   return [
     "creating_payment", "whatsapp_pending", "awaiting_payment", "pending", "approved",
     "to_separate", "separated", "preparing", "shipped", "delivered",
-    "refunded", "charged_back", "cancelled", "rejected", "expired"
+    "risk_review", "refunded", "charged_back", "cancelled", "rejected", "expired"
   ].map(status => `<option value="${status}" ${status === selected ? "selected" : ""}>${labelStatus(status)}</option>`).join("");
 }
 
@@ -493,6 +601,7 @@ function labelStatus(status) {
     preparing: "Preparando",
     shipped: "Enviado",
     delivered: "Entregue",
+    risk_review: "Revisao de risco",
     cancelled: "Cancelado",
     rejected: "Recusado",
     expired: "Expirado",
@@ -517,16 +626,58 @@ function orderOperationalStatus(status) {
     to_separate: "to_separate",
     separated: "separated",
     shipped: "separated",
+    risk_review: "risk_review",
     delivered: "delivered",
     completed: "delivered",
     refunded: "refunded",
-    charged_back: "refunded",
+    charged_back: "risk_review",
     rejected: "cancelled",
     expired: "cancelled",
     payment_error: "cancelled",
     cancelled: "cancelled"
   };
   return map[status] || status;
+}
+
+function paymentAlertLabel(eventType) {
+  const labels = {
+    stop_delivery_op_wh: "Alerta antifraude",
+    topic_claims_integration_wh: "Reclamacao ou disputa",
+    topic_chargebacks_wh: "Chargeback"
+  };
+  return labels[eventType] || eventType;
+}
+
+function requestStatusOptions(selected) {
+  return ["pending", "in_review", "awaiting_customer", "awaiting_return", "approved", "rejected", "refunded", "completed"]
+    .map(status => `<option value="${status}" ${status === selected ? "selected" : ""}>${requestStatusLabel(status)}</option>`)
+    .join("");
+}
+
+function requestStatusLabel(status) {
+  const labels = {
+    pending: "Pendente",
+    in_review: "Em analise",
+    awaiting_customer: "Aguardando cliente",
+    awaiting_return: "Aguardando devolucao",
+    approved: "Aprovada",
+    rejected: "Recusada",
+    refunded: "Reembolsada",
+    completed: "Concluida"
+  };
+  return labels[status] || status;
+}
+
+function requestCategoryLabel(category) {
+  const labels = {
+    access: "Acesso aos dados", correction: "Correcao", deletion: "Eliminacao",
+    anonymization: "Anonimizacao", sharing: "Compartilhamento",
+    marketing_opt_out: "Cancelar marketing", other: "Outro",
+    cancelamento_antes_separacao: "Cancelamento antes da separacao",
+    arrependimento: "Arrependimento", produto_incorreto: "Produto incorreto",
+    avaria: "Avaria", vazamento: "Vazamento", defeito: "Qualidade", outro: "Outro"
+  };
+  return labels[category] || category;
 }
 
 function priceOf(product, volume) {

@@ -18,6 +18,36 @@ services:
         value: /var/data/decants.sqlite3
       - key: DECANTS_UPLOAD_DIR
         value: /var/data/uploads
+      - key: DECANTS_PRIVATE_UPLOAD_DIR
+        value: /var/data/private-uploads
+      - key: DECANTS_SQLITE_BACKUP_DIR
+        value: /var/data/backups
+      - key: DECANTS_SQLITE_BACKUP_INTERVAL_HOURS
+        value: 24
+      - key: DECANTS_SQLITE_BACKUP_RETENTION_DAYS
+        value: 7
+      - key: DECANTS_MAX_REQUEST_THREADS
+        value: 64
+      - key: DECANTS_RETENTION_ORDER_DAYS
+        value: 1825
+      - key: DECANTS_RETENTION_LEAD_DAYS
+        value: 730
+      - key: DECANTS_RETENTION_LOG_DAYS
+        value: 365
+      - key: DECANTS_RETENTION_ATTACHMENT_DAYS
+        value: 180
+      - key: DECANTS_BUSINESS_TRADE_NAME
+        value: Decant's Perfumaria
+      - key: DECANTS_BUSINESS_LEGAL_NAME
+        sync: false
+      - key: DECANTS_BUSINESS_TAX_ID
+        sync: false
+      - key: DECANTS_BUSINESS_ADDRESS
+        sync: false
+      - key: DECANTS_BUSINESS_POSTAL_CODE
+        sync: false
+      - key: DECANTS_BUSINESS_EMAIL
+        sync: false
       - key: DECANTS_FREE_SHIPPING_THRESHOLD
         value: 300
       - key: DECANTS_WHATSAPP_NUMBER
@@ -42,3 +72,5 @@ services:
         sync: false
       - key: MERCADO_PAGO_COLLECTOR_ID
         sync: false
+      - key: MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS
+        value: 300

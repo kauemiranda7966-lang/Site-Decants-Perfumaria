@@ -156,6 +156,131 @@
   padding: 16px;
 }
 
+.solicitacoes-cliente {
+  padding: 16px;
+  border-top: 1px solid var(--cart-line);
+  background: #fbfaf7;
+}
+
+.solicitacoes-cliente-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+  gap: 16px;
+}
+
+.solicitacao-form,
+.solicitacoes-historico {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--cart-line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.solicitacao-form h2,
+.solicitacoes-historico h2 {
+  margin: 0;
+  font-family: Georgia, serif;
+}
+
+.solicitacao-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--cart-gold-dark);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.solicitacao-form input,
+.solicitacao-form select,
+.solicitacao-form textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--cart-line);
+  border-radius: 6px;
+  padding: 10px;
+  font: inherit;
+}
+
+.solicitacao-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.solicitacao-form button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 6px;
+  background: #b87d1f;
+  color: #fff;
+  font-weight: 800;
+}
+
+.solicitacao-card {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--cart-line);
+  border-radius: 8px;
+}
+
+.regras-devolucao {
+  padding: 14px;
+  border: 1px solid #d8bd81;
+  border-radius: 8px;
+  background: #fff9ec;
+  color: #4f4027;
+}
+
+.regras-devolucao strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.regras-devolucao ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.regras-devolucao li {
+  margin: 5px 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.aceite-regras {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.aceite-regras input {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.solicitacao-card > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.solicitacao-card p {
+  color: var(--cart-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.solicitacao-anexos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .pedido-card {
   border: 1px solid var(--cart-line);
   border-radius: 8px;
@@ -290,7 +415,8 @@
   }
 
   .pedidos-form-campos,
-  .pedidos-tabs {
+  .pedidos-tabs,
+  .solicitacoes-cliente-grid {
     grid-template-columns: 1fr;
   }
 
