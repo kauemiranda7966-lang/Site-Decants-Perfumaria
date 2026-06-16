@@ -1,0 +1,496 @@
+/* Tablet layout */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .topbar {
+    padding: 7px 16px;
+    font-size: 12px;
+  }
+
+  .header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    padding: 12px 26px;
+    gap: 22px;
+  }
+
+  .logo img {
+    height: 66px;
+  }
+
+  .menu {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 22px;
+  }
+
+  .menu a {
+    font-size: 11px;
+  }
+
+  .icons {
+    gap: 18px;
+  }
+
+  .banner {
+    height: auto;
+    aspect-ratio: 2 / 1;
+  }
+
+  .banner-img {
+    object-fit: cover;
+  }
+
+  .banner-content {
+    bottom: 24px;
+  }
+
+  .banner-content button {
+    width: 210px;
+    height: 46px;
+  }
+
+  .busca-avancada {
+    width: min(92%, 820px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .campo-busca {
+    grid-column: 1 / -1;
+  }
+
+  .busca-avancada button {
+    grid-column: 1 / -1;
+  }
+
+  .destaques-secao {
+    padding: 42px 0 34px;
+  }
+
+  .carousel-premium,
+  .carousel-slide img {
+    min-height: 440px;
+  }
+
+  .carousel-conteudo h2 {
+    font-size: clamp(44px, 8vw, 66px);
+  }
+
+  .catalogo-trilho .produtos-scroll {
+    width: calc(100% - 82px);
+    gap: 12px;
+  }
+
+  .card {
+    box-sizing: border-box;
+    min-width: calc((100% - 24px) / 3);
+  }
+
+  .clube-ofertas-conteudo {
+    grid-template-columns: 1fr 1.15fr;
+    align-items: start;
+  }
+
+  .clube-ofertas-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .beneficios {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footer {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* Phone layout */
+@media (max-width: 600px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    min-height: 30px;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    font-size: 10px;
+    line-height: 1.35;
+    letter-spacing: .5px;
+  }
+
+  .header {
+    position: relative;
+    z-index: 60;
+    min-height: 68px;
+    box-sizing: border-box;
+    padding: 8px 16px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .logo {
+    display: block;
+    margin-right: auto;
+  }
+
+  .logo img {
+    height: 52px;
+  }
+
+  .icons {
+    gap: 16px;
+  }
+
+  .icons > i {
+    font-size: 20px;
+  }
+
+  .menu-mobile-botao {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid #dfc98f;
+    border-radius: 50%;
+    background: #fff;
+    color: #111;
+  }
+
+  .menu-mobile-botao i {
+    font-size: 18px;
+  }
+
+  .menu {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 12px;
+    right: 12px;
+    display: grid;
+    gap: 0;
+    padding: 8px;
+    border: 1px solid #ead7ad;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.98);
+    box-shadow: 0 18px 44px rgba(24,19,13,0.16);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
+  }
+
+  .menu.menu-aberto {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .menu a {
+    padding: 13px 14px;
+    border-bottom: 1px solid #f0e9df;
+    font-size: 11px;
+    text-align: left;
+  }
+
+  .menu a:last-child {
+    border-bottom: 0;
+  }
+
+  .banner {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 2 / 1;
+  }
+
+  .banner-img {
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .banner-content {
+    bottom: 31px;
+  }
+
+  .banner-content button {
+    width: 104px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 3px;
+    font-size: 7.2px;
+    font-weight: 700;
+    letter-spacing: .25px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .busca-avancada {
+    width: calc(100% - 24px);
+    box-sizing: border-box;
+    margin: 14px auto 26px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    border-radius: 8px;
+  }
+
+  .campo-busca {
+    grid-column: 1 / -1;
+  }
+
+  .campo-busca,
+  .filtro {
+    box-sizing: border-box;
+    min-width: 0;
+    height: 46px;
+    padding: 0 10px;
+    border-radius: 7px;
+  }
+
+  .campo-busca input,
+  .filtro select {
+    min-width: 0;
+    padding: 0;
+    font-size: 11px;
+  }
+
+  .busca-avancada button {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 44px;
+    border-radius: 7px;
+  }
+
+  .destaques-secao {
+    padding: 30px 0 26px;
+  }
+
+  .destaques-secao .titulo-categoria {
+    margin-bottom: 18px;
+  }
+
+  .destaques {
+    width: calc(100% - 24px);
+  }
+
+  .carousel-premium {
+    min-height: 310px;
+    border-width: 1px;
+    border-radius: 8px;
+  }
+
+  .carousel-slide img {
+    min-height: 310px;
+    object-position: center;
+  }
+
+  .carousel-conteudo {
+    left: 46px;
+    right: 46px;
+    bottom: 34px;
+    max-width: calc(100% - 92px);
+  }
+
+  .carousel-kicker {
+    margin: 10px 0 5px;
+    font-size: 9px;
+    letter-spacing: 1.6px;
+  }
+
+  .carousel-conteudo h2 {
+    font-size: clamp(30px, 10vw, 42px);
+    line-height: .95;
+  }
+
+  .carousel-preco {
+    margin: 10px 0 12px;
+    font-size: 15px;
+  }
+
+  .selo-destaque,
+  .selo-desconto {
+    padding: 6px 8px;
+    font-size: 8px;
+  }
+
+  .acoes-destaque {
+    width: 230px;
+    max-width: 100%;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .acoes-destaque .btn-comprar,
+  .acoes-destaque .btn-ver-mais {
+    min-width: 0;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 9px;
+  }
+
+  .carousel-premium > .carousel-controle {
+    top: 50%;
+    bottom: auto;
+    width: 32px;
+    height: 32px;
+  }
+
+  .carousel-premium > .carousel-anterior {
+    left: 4px;
+  }
+
+  .carousel-premium > .carousel-proximo {
+    right: 4px;
+  }
+
+  .carousel-indicadores {
+    bottom: 12px;
+    gap: 6px;
+  }
+
+  .carousel-indicadores button {
+    width: 20px;
+    height: 3px;
+  }
+
+  .carousel-indicadores button.ativo {
+    width: 34px;
+  }
+
+  .catalogo {
+    padding-bottom: 18px;
+  }
+
+  .catalogo-header {
+    width: calc(100% - 24px);
+    margin-top: 16px;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  .catalogo-header .titulo-categoria {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .catalogo-header button {
+    grid-column: 2;
+    padding: 8px 12px;
+    font-size: 9px;
+  }
+
+  .titulo-categoria {
+    gap: 8px;
+  }
+
+  .titulo-categoria h2 {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .titulo-categoria span {
+    width: 22px;
+  }
+
+  .catalogo-trilho .produtos-scroll {
+    width: calc(100% - 76px);
+    margin: 12px auto 22px;
+    gap: 8px;
+    padding: 2px 0 10px;
+  }
+
+  .card {
+    box-sizing: border-box;
+    min-width: calc((100% - 8px) / 2);
+    padding: 12px 8px 10px;
+    border-radius: 4px;
+  }
+
+  .card img {
+    height: 116px;
+    margin-bottom: 10px;
+  }
+
+  .card h3 {
+    min-height: 30px;
+    font-size: 10px;
+  }
+
+  .card p {
+    font-size: 9px;
+  }
+
+  .acoes-card {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .card .acoes-card button {
+    height: 27px;
+    font-size: 8px;
+  }
+
+  .catalogo-seta {
+    width: 34px;
+    height: 34px;
+  }
+
+  .clube-ofertas {
+    padding: 36px 0;
+  }
+
+  .clube-ofertas-conteudo {
+    width: calc(100% - 28px);
+    gap: 18px;
+  }
+
+  .clube-ofertas-texto h2 {
+    font-size: 30px;
+  }
+
+  .clube-ofertas-form {
+    padding: 14px;
+  }
+
+  .beneficios {
+    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 10px;
+  }
+
+  .beneficios div {
+    min-width: 0;
+    text-align: center;
+  }
+
+  .beneficios i {
+    font-size: 24px;
+  }
+
+  .beneficios strong {
+    font-size: 10px;
+  }
+
+  .beneficios span {
+    font-size: 9px;
+  }
+
+  .footer {
+    padding: 30px 20px;
+    align-items: stretch;
+    gap: 22px;
+    text-align: left;
+  }
+
+  .footer input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

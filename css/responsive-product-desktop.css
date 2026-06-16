@@ -1,0 +1,248 @@
+/* Desktop product details */
+@media (min-width: 981px) {
+  .modal-produto-premium {
+    padding: clamp(18px, 2.5vw, 42px);
+  }
+
+  .modal-conteudo-premium {
+    width: min(1320px, 95vw);
+    max-height: 94vh;
+    padding: 22px 24px 18px;
+    border-radius: 12px;
+  }
+
+  .modal-fechar-premium {
+    top: 18px;
+    right: 18px;
+    left: auto;
+    width: 46px;
+    height: 46px;
+  }
+
+  .modal-layout-premium {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(420px, .88fr);
+    gap: 18px 40px;
+    align-items: start;
+  }
+
+  .modal-detalhes-compra {
+    display: contents;
+  }
+
+  .modal-galeria-premium {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .modal-galeria-imagem {
+    aspect-ratio: 4 / 3;
+    max-height: 540px;
+    border: 1px solid #eee5d8;
+    background:
+      radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--produto-cor) 18%, transparent), transparent 48%),
+      linear-gradient(145deg, #f8f4ed, #eee8df);
+  }
+
+  .modal-galeria-cinematica .modal-galeria-imagem img {
+    object-fit: contain;
+  }
+
+  .modal-selo-categoria {
+    top: 20px;
+    left: 20px;
+  }
+
+  .modal-favorito {
+    top: 18px;
+    right: 18px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .modal-galeria-seta {
+    width: 46px;
+    height: 46px;
+  }
+
+  .modal-galeria-anterior {
+    left: 16px;
+  }
+
+  .modal-galeria-proxima {
+    right: 16px;
+  }
+
+  .modal-thumbs {
+    width: 92%;
+    margin: 14px auto 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .modal-thumb {
+    height: 74px;
+  }
+
+  .modal-info-premium {
+    grid-column: 2;
+    min-width: 0;
+    padding: 18px 0 0;
+  }
+
+  .modal-marca-linha {
+    padding-right: 64px;
+  }
+
+  .modal-info-premium h2 {
+    margin: 10px 0 12px;
+    font-size: clamp(42px, 4vw, 56px);
+  }
+
+  .modal-descricao {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .modal-divisor {
+    margin: 20px 0;
+  }
+
+  .modal-secao {
+    margin-bottom: 20px;
+  }
+
+  .modal-secao h3 {
+    margin-bottom: 12px;
+    font-size: 11px;
+  }
+
+  .modal-info-premium .modal-opcoes-volume {
+    gap: 12px;
+  }
+
+  .modal-info-premium .modal-volume-card {
+    min-height: 100px;
+    padding: 16px 20px;
+  }
+
+  .modal-info-premium .modal-volume-card strong {
+    font-size: 28px;
+  }
+
+  .modal-acordes-premium {
+    gap: 10px;
+  }
+
+  .modal-acordes-premium span {
+    min-width: 0;
+    padding: 9px 8px;
+    font-size: 11px;
+  }
+
+  .modal-atributos-premium {
+    margin: 18px 0 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .modal-atributos-premium article {
+    min-height: 92px;
+    padding: 12px 8px;
+  }
+
+  .modal-atributos-premium i {
+    font-size: 18px;
+  }
+
+  .modal-atributos-premium span {
+    font-size: 9px;
+  }
+
+  .modal-atributos-premium strong {
+    font-size: 11px;
+  }
+
+  .modal-notas {
+    display: none;
+  }
+
+  .modal-compra-premium {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 210px 160px minmax(220px, .8fr) minmax(290px, 1.15fr);
+    grid-template-rows: auto auto;
+    gap: 14px 18px;
+    align-items: center;
+    margin: 0;
+    padding: 16px 22px 13px;
+  }
+
+  .modal-preco-final {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
+  }
+
+  .modal-preco-final strong {
+    font-size: 32px;
+  }
+
+  .modal-quantidade {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-height: 58px;
+  }
+
+  .modal-btn-whatsapp {
+    grid-column: 3;
+    grid-row: 1;
+    min-height: 60px;
+    border-color: #c59336;
+    color: #211b15;
+  }
+
+  .modal-btn-whatsapp i {
+    color: #168c52;
+    font-size: 24px;
+  }
+
+  .modal-btn-principal {
+    grid-column: 4;
+    grid-row: 1;
+    min-height: 60px;
+  }
+
+  .modal-beneficios-premium {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+    padding-top: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    border-top: 1px solid #eee5da;
+  }
+
+  .modal-beneficios-premium span {
+    display: grid;
+    grid-template-columns: 22px auto;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-beneficios-premium i {
+    grid-row: 1;
+    font-size: 17px;
+  }
+
+  .modal-beneficios-premium strong {
+    font-size: 11px;
+    text-transform: none;
+  }
+
+  .modal-beneficios-premium small {
+    display: none;
+  }
+}

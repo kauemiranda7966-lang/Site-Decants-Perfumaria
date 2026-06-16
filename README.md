@@ -355,8 +355,13 @@ O sistema registra até os 100 eventos administrativos mais recentes exibidos no
 ```text
 server.py             Ponto de entrada compatível
 decants_app.py        Configuração, banco e orquestração das regras de negócio
-decants_handler.py    Rotas HTTP, API e entrega de arquivos públicos
+decants_handler.py    Casos de uso e respostas dos endpoints
+decants_customer_handler.py Pedidos do cliente, LGPD e pós-venda
+decants_routes.py     Despacho das rotas HTTP
+decants_http.py       Arquivos públicos, cookies, respostas e proteções HTTP
+decants_config.py     Leitura e normalização das variáveis de ambiente
 decants_auth.py       Senhas, sessões administrativas e sessões de clientes
+decants_orders.py     Itens, cupons, reservas e devoluções de estoque
 decants_validation.py Normalização e validação de produtos, leads e checkout
 decants_pdf.py        Geração dos documentos PDF
 decants_uploads.py    Validação e normalização de uploads
@@ -381,7 +386,12 @@ trocas-e-devolucoes.html           Política de trocas e devoluções
 prazos-de-entrega.html             Política de entrega
 ```
 
-Os módulos `js/store-*.js` separam catálogo, produto, carrinho, checkout, navegação e inicialização. O carrinho completo possui lógica complementar em `js/carrinho.js`, enquanto o painel usa `js/admin-panel.js`.
+Os módulos `js/store-*.js` separam catálogo, produto, carrinho, checkout,
+navegação e inicialização. O carrinho completo possui lógica complementar em
+`js/carrinho.js`, enquanto o painel usa `js/admin-panel.js`.
+
+Os agregadores `css/product-modal.css` e `css/responsive.css` mantêm a ordem da
+cascata e importam arquivos menores por componente e breakpoint.
 
 ### Arquivos estáticos e uploads
 
@@ -827,6 +837,10 @@ npm install
 npx playwright install chromium
 npm run test:e2e
 ```
+
+O workflow `.github/workflows/ci.yml` executa automaticamente compilação,
+testes de backend e Playwright em pushes para `main`, branches `codex/**` e
+pull requests.
 
 A suíte atual cobre, entre outros pontos:
 

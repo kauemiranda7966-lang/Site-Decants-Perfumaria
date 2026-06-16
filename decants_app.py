@@ -1,4 +1,4 @@
-﻿import hashlib
+import hashlib
 import hmac
 import http.server
 import json
@@ -23,6 +23,14 @@ from decants_auth import (
     verify_session as verify_admin_session,
 )
 from decants_pdf import build_pdf_pages, build_simple_pdf
+from decants_orders import (
+    apply_checkout_coupon,
+    build_order_items,
+    product_price,
+    release_order_stock,
+    reserve_order_stock,
+)
+from decants_orders import release_expired_whatsapp_reservations as release_expired_orders
 from decants_uploads import parse_multipart_image, safe_upload_name
 from decants_validation import (
     money_to_brl,
@@ -35,167 +43,7 @@ from decants_validation import (
 )
 
 
-ROOT = Path(__file__).resolve().parent
-DEFAULT_DB_PATH = ROOT / "data" / "decants.sqlite3"
-SESSION_COOKIE = "decants_session"
-CUSTOMER_SESSION_COOKIE = "decants_customer_session"
-CSRF_COOKIE = "decants_csrf"
-SESSION_MAX_AGE = 60 * 60 * 8
-CUSTOMER_SESSION_MAX_AGE = 60 * 60 * 24 * 30
-LOGIN_ATTEMPTS = {}
-LOGIN_LIMIT = 5
-LOGIN_WINDOW = 15 * 60
-
-
-#LOAD_ENV_FILE
-def load_env_file():
-    env_path = ROOT / ".env"
-    if not env_path.exists():
-        return
-
-    for line in env_path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
-
-
-load_env_file()
-
-DB_PATH = Path(os.environ.get("DECANTS_DB_PATH", DEFAULT_DB_PATH))
-UPLOAD_DIR = Path(os.environ.get("DECANTS_UPLOAD_DIR", ROOT / "img" / "uploads"))
-PRIVATE_UPLOAD_DIR = Path(
-    os.environ.get("DECANTS_PRIVATE_UPLOAD_DIR", DB_PATH.parent / "private-uploads")
-)
-ADMIN_USER = os.environ.get("DECANTS_ADMIN_USER", "").strip()
-ADMIN_PASSWORD = os.environ.get("DECANTS_ADMIN_PASSWORD", "")
-ADMIN_PASSWORD_HASH = os.environ.get("DECANTS_ADMIN_PASSWORD_HASH", "")
-SECRET_KEY = os.environ.get("DECANTS_SECRET_KEY", "")
-STORE_WHATSAPP_NUMBER = re.sub(r"\D+", "", os.environ.get("DECANTS_WHATSAPP_NUMBER", "558899641605"))
-ADMIN_DOMAIN = os.environ.get("DECANTS_ADMIN_DOMAIN", "admin.decantperfumaria.com.br")
-MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
-MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
-MERCADO_PAGO_WEBHOOK_SECRET = os.environ.get("MERCADO_PAGO_WEBHOOK_SECRET", "")
-MERCADO_PAGO_COLLECTOR_ID = os.environ.get("MERCADO_PAGO_COLLECTOR_ID", "").strip()
-MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS = max(
-    60, int(os.environ.get("MERCADO_PAGO_WEBHOOK_MAX_AGE_SECONDS", "300"))
-)
-try:
-    SHIPPING_FEE = max(0.0, float(os.environ.get("DECANTS_SHIPPING_FEE", "19.90").replace(",", ".")))
-except ValueError:
-    SHIPPING_FEE = 19.90
-try:
-    FREE_SHIPPING_THRESHOLD = max(
-        0.0, float(os.environ.get("DECANTS_FREE_SHIPPING_THRESHOLD", "300").replace(",", "."))
-    )
-except ValueError:
-    FREE_SHIPPING_THRESHOLD = 300.0
-try:
-    WHATSAPP_RESERVATION_MINUTES = max(
-        5, int(os.environ.get("DECANTS_WHATSAPP_RESERVATION_MINUTES", "30"))
-    )
-except ValueError:
-    WHATSAPP_RESERVATION_MINUTES = 30
-try:
-    SQLITE_BUSY_TIMEOUT_SECONDS = max(
-        1, int(os.environ.get("DECANTS_SQLITE_BUSY_TIMEOUT_SECONDS", "15"))
-    )
-except ValueError:
-    SQLITE_BUSY_TIMEOUT_SECONDS = 15
-try:
-    SQLITE_WRITE_RETRIES = max(
-        0, min(5, int(os.environ.get("DECANTS_SQLITE_WRITE_RETRIES", "2")))
-    )
-except ValueError:
-    SQLITE_WRITE_RETRIES = 2
-SQLITE_BACKUP_DIR = Path(
-    os.environ.get("DECANTS_SQLITE_BACKUP_DIR", DB_PATH.parent / "backups")
-)
-try:
-    SQLITE_BACKUP_INTERVAL_HOURS = max(
-        1, int(os.environ.get("DECANTS_SQLITE_BACKUP_INTERVAL_HOURS", "24"))
-    )
-except ValueError:
-    SQLITE_BACKUP_INTERVAL_HOURS = 24
-try:
-    SQLITE_BACKUP_RETENTION_DAYS = max(
-        1, int(os.environ.get("DECANTS_SQLITE_BACKUP_RETENTION_DAYS", "7"))
-    )
-except ValueError:
-    SQLITE_BACKUP_RETENTION_DAYS = 7
-try:
-    MAX_REQUEST_THREADS = max(
-        4, min(256, int(os.environ.get("DECANTS_MAX_REQUEST_THREADS", "64")))
-    )
-except ValueError:
-    MAX_REQUEST_THREADS = 64
-WHATSAPP_CLOUD_TOKEN = os.environ.get("WHATSAPP_CLOUD_TOKEN", "")
-WHATSAPP_CLOUD_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_CLOUD_PHONE_NUMBER_ID", "")
-WHATSAPP_ADMIN_NUMBER = re.sub(r"\D+", "", os.environ.get("WHATSAPP_ADMIN_NUMBER", STORE_WHATSAPP_NUMBER))
-PUBLIC_BASE_URL = os.environ.get("DECANTS_PUBLIC_BASE_URL", "")
-BUSINESS_TRADE_NAME = os.environ.get("DECANTS_BUSINESS_TRADE_NAME", "Decant's Perfumaria").strip()
-BUSINESS_LEGAL_NAME = os.environ.get("DECANTS_BUSINESS_LEGAL_NAME", "").strip()
-BUSINESS_TAX_ID = os.environ.get("DECANTS_BUSINESS_TAX_ID", "").strip()
-BUSINESS_ADDRESS = os.environ.get("DECANTS_BUSINESS_ADDRESS", "").strip()
-BUSINESS_POSTAL_CODE = re.sub(
-    r"\D+", "", os.environ.get("DECANTS_BUSINESS_POSTAL_CODE", "")
-)
-BUSINESS_EMAIL = os.environ.get("DECANTS_BUSINESS_EMAIL", "").strip()
-try:
-    RETENTION_ORDER_DAYS = max(365, int(os.environ.get("DECANTS_RETENTION_ORDER_DAYS", "1825")))
-except ValueError:
-    RETENTION_ORDER_DAYS = 1825
-try:
-    RETENTION_LEAD_DAYS = max(30, int(os.environ.get("DECANTS_RETENTION_LEAD_DAYS", "730")))
-except ValueError:
-    RETENTION_LEAD_DAYS = 730
-try:
-    RETENTION_LOG_DAYS = max(30, int(os.environ.get("DECANTS_RETENTION_LOG_DAYS", "365")))
-except ValueError:
-    RETENTION_LOG_DAYS = 365
-try:
-    RETENTION_ATTACHMENT_DAYS = max(
-        30, int(os.environ.get("DECANTS_RETENTION_ATTACHMENT_DAYS", "180"))
-    )
-except ValueError:
-    RETENTION_ATTACHMENT_DAYS = 180
-
-
-def host_from_setting(value):
-    if not value:
-        return ""
-    parsed = parse.urlparse(value if "://" in value else f"https://{value}")
-    return (parsed.hostname or "").lower()
-
-
-PUBLIC_HOST = host_from_setting(PUBLIC_BASE_URL)
-ADMIN_HOSTS = {
-    host
-    for host in {
-        host_from_setting(ADMIN_DOMAIN),
-        PUBLIC_HOST,
-        host_from_setting(os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")),
-    }
-    if host
-}
-ADMIN_ALLOWED_ORIGINS = {
-    origin.strip().rstrip("/")
-    for origin in os.environ.get(
-        "DECANTS_ALLOWED_ORIGINS",
-        "https://kauemiranda7966-lang.github.io,http://localhost:8000,http://127.0.0.1:8000",
-    ).split(",")
-    if origin.strip()
-}
-for admin_host in ADMIN_HOSTS:
-    ADMIN_ALLOWED_ORIGINS.add(f"https://{admin_host}")
-IS_PRODUCTION = (
-    os.environ.get("DECANTS_ENV", "").strip().lower() == "production"
-    or bool(os.environ.get("RENDER"))
-)
+from decants_config import *
 
 
 #CONNECT_DB
@@ -601,157 +449,11 @@ def validate_payment_for_order(payment, order):
         raise ValueError("Moeda do pagamento nao corresponde a BRL.")
 
 
-#PRODUCT_PRICE
-def product_price(product, volume):
-    promo_key = "precoPromocional10" if volume == 10 else "precoPromocional5"
-    base_key = "preco10" if volume == 10 else "preco5"
-    price = product[promo_key] if product["promocao"] and product[promo_key] else product[base_key]
-    return parse_price(price)
-
-
-#BUILD_ORDER_ITEMS
-def build_order_items(conn, checkout_items):
-    order_items = []
-    for item in checkout_items:
-        if item["product_id"] > 0:
-            row = conn.execute("SELECT * FROM products WHERE id = ?", (item["product_id"],)).fetchone()
-        else:
-            row = conn.execute("SELECT * FROM products WHERE nome = ?", (item["product_name"],)).fetchone()
-
-        if not row:
-            raise ValueError("Produto nao encontrado.")
-        if row["estoque"] < item["quantity"]:
-            raise ValueError(f"Estoque insuficiente para {row['nome']}.")
-
-        unit_price = product_price(row, item["volume"])
-        if unit_price <= 0:
-            raise ValueError(f"Preco invalido para {row['nome']}.")
-
-        order_items.append(
-            {
-                "product_id": row["id"],
-                "product_name": row["nome"],
-                "volume": item["volume"],
-                "quantity": item["quantity"],
-                "unit_price": unit_price,
-                "subtotal": round(unit_price * item["quantity"], 2),
-            }
-        )
-
-    return order_items
-
-
-#RESERVE_ORDER_STOCK
-def reserve_order_stock(conn, order_id):
-    order = conn.execute("SELECT id, stock_reserved FROM orders WHERE id = ?", (order_id,)).fetchone()
-    if not order or order["stock_reserved"]:
-        return
-
-    items = conn.execute(
-        "SELECT product_id, product_name, quantity FROM order_items WHERE order_id = ?",
-        (order_id,),
-    ).fetchall()
-    for item in items:
-        result = conn.execute(
-            """
-            UPDATE products
-            SET estoque = estoque - ?
-            WHERE id = ? AND estoque >= ?
-            """,
-            (item["quantity"], item["product_id"], item["quantity"]),
-        )
-        if result.rowcount == 0:
-            raise ValueError(f"Estoque insuficiente para {item['product_name']}.")
-
-    conn.execute("UPDATE orders SET stock_reserved = 1 WHERE id = ?", (order_id,))
-
-
-#RELEASE_ORDER_STOCK
-def release_order_stock(conn, order_id):
-    result = conn.execute(
-        """
-        UPDATE orders
-        SET stock_reserved = 0
-        WHERE id = ? AND stock_reserved = 1
-        """,
-        (order_id,),
-    )
-    if result.rowcount == 0:
-        return False
-
-    items = conn.execute(
-        "SELECT product_id, quantity FROM order_items WHERE order_id = ?",
-        (order_id,),
-    ).fetchall()
-    for item in items:
-        conn.execute(
-            "UPDATE products SET estoque = estoque + ? WHERE id = ?",
-            (item["quantity"], item["product_id"]),
-        )
-
-    return True
-
-
 def release_expired_whatsapp_reservations(conn, max_age_minutes=None):
     max_age = int(max_age_minutes or WHATSAPP_RESERVATION_MINUTES)
-    query = """
-        SELECT id, status
-        FROM orders
-        WHERE payment_method = 'WhatsApp'
-          AND status = 'whatsapp_pending'
-          AND stock_reserved = 1
-          AND updated_at <= datetime('now', ?)
-    """
-    age_parameter = (f"-{max_age} minutes",)
-    expired_orders = conn.execute(query, age_parameter).fetchall()
-    if not expired_orders:
-        return 0
-
     if not conn.in_transaction:
         begin_immediate(conn)
-        expired_orders = conn.execute(query, age_parameter).fetchall()
-
-    released = 0
-    for order in expired_orders:
-        if not release_order_stock(conn, order["id"]):
-            continue
-        conn.execute(
-            """
-            UPDATE orders
-            SET status = 'expired', updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """,
-            (order["id"],),
-        )
-        conn.execute(
-            """
-            INSERT INTO order_history (order_id, old_status, new_status, note, admin_user)
-            VALUES (?, ?, 'expired', ?, '')
-            """,
-            (
-                order["id"],
-                order["status"],
-                f"Reserva via WhatsApp expirada apos {max_age} minutos.",
-            ),
-        )
-        released += 1
-
-    return released
-
-
-#APPLY_CHECKOUT_COUPON
-def apply_checkout_coupon(order_items, coupon):
-    if coupon != "DECANTS5":
-        return 0.0
-
-    discount = 0.0
-    for item in order_items:
-        original_subtotal = item["subtotal"]
-        item["unit_price"] = round(item["unit_price"] * 0.95, 2)
-        item["subtotal"] = round(item["unit_price"] * item["quantity"], 2)
-        discount += original_subtotal - item["subtotal"]
-
-    return round(discount, 2)
+    return release_expired_orders(conn, max_age)
 
 
 #BUILD_WHATSAPP_URL
